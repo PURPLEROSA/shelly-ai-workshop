@@ -281,4 +281,78 @@ const links=[...document.querySelectorAll('nav a')];
 const so=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){links.forEach(l=>l.classList.toggle('on',l.getAttribute('href')==='#'+x.target.id));const a=links.find(l=>l.classList.contains('on'));if(a&&innerWidth<900)a.scrollIntoView({inline:'center',block:'nearest'})}}),{rootMargin:'-45% 0px -50% 0px'});
 document.querySelectorAll('section[id]').forEach(s=>so.observe(s));
 </script>
+<!-- ===== Chat agent widget (DEMO: local knowledge base; backend-ready) ===== -->
+<style>
+#sg-chat-btn{position:fixed;bottom:22px;right:22px;z-index:60;display:flex;align-items:center;gap:10px;padding:12px 18px 12px 14px;border:1px solid var(--ink);border-radius:999px;background:var(--chrome);background-size:200% 100%;animation:shine 6s ease-in-out infinite;font:700 15px Heebo,sans-serif;color:var(--ink);cursor:pointer;box-shadow:0 12px 30px #3c526b40}
+#sg-chat-btn .dot{width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:17px}
+#sg-chat-btn:hover{transform:translateY(-2px)}
+#sg-chat{position:fixed;bottom:88px;right:22px;z-index:61;width:min(380px,calc(100vw - 24px));height:min(560px,calc(100vh - 120px));background:#fffdfb;border:1px solid #d7d5db;border-radius:12px;box-shadow:0 22px 60px #3c526b4d;display:none;flex-direction:column;overflow:hidden;direction:rtl}
+#sg-chat.open{display:flex;animation:pop .25s ease}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.97)}}
+.sg-head{background:var(--pink);border-bottom:1px solid #d5a5b8;padding:14px 16px;display:flex;align-items:center;gap:10px}
+.sg-head b{font-family:Bamberger,Heebo;font-size:19px;display:block;line-height:1.2}
+.sg-head small{font-family:Anton;letter-spacing:1px;font-size:11px;color:var(--plum)}
+.sg-demo{font-size:10px;background:#fff;border-radius:4px;padding:1px 6px;margin-inline-start:6px;color:#6c5867;font-family:Heebo;letter-spacing:0}
+.sg-x{margin-inline-start:auto;background:none;border:0;font-size:22px;cursor:pointer;color:var(--ink)}
+.sg-log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--sky)}
+.sg-m{max-width:88%;padding:10px 13px;border-radius:10px;font-size:14.5px;line-height:1.6;white-space:pre-line;overflow-wrap:anywhere}
+.sg-bot{background:#fff;border:1px solid #d7d5db;align-self:flex-start;border-top-right-radius:3px}
+.sg-me{background:var(--ink);color:#fff;align-self:flex-end;border-top-left-radius:3px}
+.sg-m a{color:var(--mag);font-weight:700;text-decoration:underline}
+.sg-cta{display:inline-block;margin-top:6px;background:var(--ink);color:#fff!important;text-decoration:none!important;padding:6px 12px;border-radius:6px;font-size:13px}
+.sg-chips{display:flex;gap:6px;flex-wrap:wrap;padding:10px 12px 0;background:#fffdfb}
+.sg-chips button{border:1px solid #d7d5db;background:var(--cream);border-radius:999px;padding:5px 11px;font:700 12.5px Heebo,sans-serif;cursor:pointer;color:var(--ink)}
+.sg-chips button:hover{background:var(--pink)}
+.sg-form{display:flex;gap:8px;padding:10px 12px 12px;background:#fffdfb}
+.sg-form input{flex:1;min-width:0;border:1px solid #d7d5db;border-radius:7px;padding:10px 12px;font:15px Heebo,sans-serif;background:#fff}
+.sg-form button{border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:7px;padding:0 14px;font:700 14px Heebo;cursor:pointer}
+.sg-typing{opacity:.6;font-style:italic}
+@media(max-width:900px){#sg-chat-btn{bottom:14px;right:14px;padding:8px 14px 8px 8px;font-size:14px}#sg-chat{right:12px;bottom:74px}}
+</style>
+<button id="sg-chat-btn" aria-controls="sg-chat" aria-expanded="false"><span class="dot">✦</span>שאלו את הסוכן של שלי</button>
+<section id="sg-chat" role="dialog" aria-label="צ׳אט עם הסוכן של שלי">
+ <div class="sg-head"><div><b>הסוכן של שלי 💜</b><small>ASK ME ANYTHING</small><span class="sg-demo">דמו</span></div><button class="sg-x" aria-label="סגירה">×</button></div>
+ <div class="sg-log" aria-live="polite"></div>
+ <div class="sg-chips"></div>
+ <form class="sg-form"><input placeholder="מה תרצו לדעת על הסדנה?" aria-label="שאלה"><button>שליחה</button></form>
+</section>
+<script>
+(()=>{
+const SIGNUP='https://shelly-agents-workshop.shellyog.chatgpt.site/';
+const PRICING='https://grok.com/plans';
+const MAIL='shelly@aigosai.com';
+const CTA=`<a class="sg-cta" href="${SIGNUP}" target="_blank" rel="noopener">שמרו לי מקום בסדנה ←</a>`;
+/* Backend hook: set window.SHELLY_CHAT_BACKEND = async (message, history) => replyHtml
+   (e.g. a server proxy to xAI with a teaser-rules system prompt). Never put an API key in this page. */
+const KB=[
+ {label:'מה זו הסדנה?',kw:['מה זו','מה זה','מה לומדים','סוכן','סוכנים','grok','גרוק','לומדים'],a:'<b>סוכנים מאפס עם Grok</b>: סדנה חיה בזום, שבה כל אחד יוצא עם סוכן אישי משלו שעובד בשבילו, לא עם עוד סיכום.\nהעסק, הסושיאל, הניוזלטר, האדמין, הבית. איך בדיוק? את זה שומרים לזום 😉'},
+ {label:'מתי זה?',kw:['מתי','תאריך','תאריכים','שעה','זום','zoom','מפגש','הקלטה','2.11','9.11'],a:'שני מפגשים חיים בזום (שעון ישראל):\n📅 <b>2.11</b> יום שני · 20:00–22:00 (שעתיים)\n📅 <b>9.11</b> יום שני · 20:00–21:00 (מפגש המשך)'},
+ {label:'למי זה מתאים?',kw:['למי','מתאים','מתחיל','מתחילה','ניסיון','טכני','קוד','מתכנת','בעלי עסק','אמא'],a:'לכל מי שרוצה שה‑AI יעבוד בשבילו: בעלי עסקים, יוצרות תוכן, פרילנסרים, הורים עמוסים.\nמתחילים מאפס, בלי קוד ובלי ידע טכני.'},
+ {label:'מי זאת שלי?',kw:['שלי','מי את','מי זאת','חדשות','טלוויזיה','כאן','ערוץ','גיסר','מנחה'],a:'שלי אור גיסר: הפנים מפינת ה‑AI בחדשות 13 ובכאן 11, שנתיים של פינה קבועה וראיונות שבועיים. מעבירה סדנאות, בין היתר לצוות התקשורת של Google Israel, ומנהלת קהילת פרומפטים גדולה בפייסבוק.\nבסדנה היא מראה מה אפשר לעשות כבר מחר בבוקר.'},
+ {label:'צריך מנוי?',kw:['מנוי','מחיר','עולה','כמה','תשלום','supergrok','סופרגרוק','premium','להתקין','התקנה','לפני'],a:`כדי לבנות סוכן תצטרכו מנוי Grok מתאים. המחירים והמסלולים העדכניים מופיעים <a href="${PRICING}" target="_blank" rel="noopener">בדף המחירים הרשמי</a>, כדאי לבדוק שם גם זמינות בישראל.\nאת כל השאר (איזה מסלול ומה מכינים מראש) עושים יחד בסדנה.`},
+ {kw:['יוצאים','מקבלים','בסוף','תוצאה','מה אקבל'],a:'יוצאים עם סוכן אישי שמכיר אתכם ועובד בשבילכם, ועם הביטחון להמשיך לבנות לבד. רוטינות שרצות בזמן שאתם ישנים, טיוטות שמחכות לאישור.'},
+ {kw:['איך','פרומפט','prompt','שלב','צעד','מדריך','תסביר','תלמד','הוראות','כרטיס','מתכון'],a:'זו בדיוק השאלה הנכונה 😄 אבל את ה"איך" אני לא מגלה כאן. בונים את זה יחד, בלייב, בסדנה.'},
+ {kw:['חדשות של','newsroom','דמו','מערכת חדשות'],a:'מערכת חדשות של אישה אחת: שלי תראה אותה בלייב בסדנה. מה קורה מאחורי הקלעים? נשאר נעול עד הזום 🔒'},
+ {kw:['היי','שלום','הי','hello','hi'],a:'היי! 💜 שאלו אותי על הסדנה, על התאריכים או על שלי.'},
+];
+const log=document.querySelector('.sg-log'),panel=document.getElementById('sg-chat'),btn=document.getElementById('sg-chat-btn'),inp=panel.querySelector('input');
+const hist=[];
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function add(who,html){const d=document.createElement('div');d.className='sg-m sg-'+who;d.innerHTML=html;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+function local(q){const t=q.toLowerCase();let best=null,sc=0;for(const e of KB){const s=e.kw.reduce((n,k)=>n+(t.includes(k.toLowerCase())?k.length:0),0);if(s>sc){sc=s;best=e}}
+ return best?best.a:`שאלה מעולה! אין לי תשובה מוכנה עליה כאן, אבל שלי תשמח לענות: <a href="mailto:${MAIL}">${MAIL}</a>`}
+async function reply(q){
+ hist.push({role:'user',content:q});const t=add('bot','<span class="sg-typing">מקלידה…</span>');
+ let html;try{html=window.SHELLY_CHAT_BACKEND?await window.SHELLY_CHAT_BACKEND(q,hist):(await new Promise(r=>setTimeout(r,450)),local(q))}catch(e){html=local(q)}
+ t.innerHTML=html+'\n'+CTA;hist.push({role:'assistant',content:html});log.scrollTop=log.scrollHeight}
+function ask(q){q=q.trim();if(!q)return;add('me',esc(q));reply(q)}
+KB.filter(e=>e.label).forEach(e=>{const b=document.createElement('button');b.type='button';b.textContent=e.label;b.onclick=()=>ask(e.label);panel.querySelector('.sg-chips').appendChild(b)});
+panel.querySelector('form').onsubmit=e=>{e.preventDefault();ask(inp.value);inp.value=''};
+let greeted=false;
+function toggle(o){panel.classList.toggle('open',o);btn.setAttribute('aria-expanded',o);if(o){if(!greeted){greeted=true;add('bot','היי, אני הסוכן של שלי 💜\nשאלו אותי על סדנת <b>סוכנים מאפס עם Grok</b>: מה זה, למי זה מתאים ומתי.')}inp.focus()}}
+btn.onclick=()=>toggle(!panel.classList.contains('open'));panel.querySelector('.sg-x').onclick=()=>toggle(false);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')toggle(false)});
+})();
+</script>
+
 </body></html>
