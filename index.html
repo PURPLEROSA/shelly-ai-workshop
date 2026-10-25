@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>שלי אור גיסר · סוכנים מאפס עם Grok</title>
+<meta name="description" content="תדמיינו סוכן שעובד בשבילכם כל בוקר. סדנת סוכנים מאפס עם Grok, עם שלי אור גיסר.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Heebo:wght@400;500;700;800;900&family=Roboto+Condensed:wght@400;700&family=Shrikhand&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#F7F2ED;--lilac:#D9C9EF;--pink:#F4B8CA;--sky:#DDF4FF;--yellow:#FFF28A;--red:#922C55;--green:#163F37;--side:270px}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:20px}
+body{font-family:Heebo,sans-serif;background:var(--cream);color:var(--green);line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.shell{display:grid;grid-template-columns:var(--side) 1fr;direction:ltr}
+.shell>*{direction:rtl}
+/* sidebar on LEFT */
+aside{position:sticky;top:0;height:100vh;background:var(--green);color:var(--cream);padding:28px 22px;display:flex;flex-direction:column;gap:18px;overflow-y:auto}
+.logo{font-family:Shrikhand,cursive;font-size:30px;color:var(--pink);line-height:1;direction:ltr;text-align:left}
+.logo small{display:block;font-family:'Roboto Condensed';font-size:11px;letter-spacing:.25em;color:var(--lilac);margin-top:8px}
+.navt{font-family:'Roboto Condensed';letter-spacing:.2em;font-size:11px;color:var(--lilac);text-transform:uppercase}
+nav ol{list-style:none;display:flex;flex-direction:column;gap:4px;counter-reset:n}
+nav a{display:flex;gap:10px;align-items:center;padding:9px 12px;border-radius:12px;font-weight:700;font-size:15px;transition:.25s}
+nav a::before{counter-increment:n;content:counter(n,decimal-leading-zero);font-family:Anton;font-size:13px;color:var(--pink);opacity:.8}
+nav a:hover{background:rgba(255,255,255,.08)}
+nav a.on{background:var(--yellow);color:var(--green)}nav a.on::before{color:var(--red)}
+.side-cta{margin-top:auto;background:var(--pink);color:var(--red);font-weight:900;text-align:center;padding:14px;border-radius:999px;font-size:16px;transition:.2s}
+.side-cta:hover{transform:translateY(-2px);background:var(--yellow)}
+main{min-width:0}
+.eyebrow{font-family:'Roboto Condensed';letter-spacing:.28em;font-size:12px;text-transform:uppercase;color:var(--red);font-weight:700}
+h1,h2{font-weight:900;color:var(--red);line-height:1.02;letter-spacing:-.01em}
+.hl{background:var(--yellow);padding:0 .15em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.btn{display:inline-flex;align-items:center;gap:10px;background:var(--red);color:var(--cream);font-weight:800;font-size:18px;padding:16px 30px;border-radius:999px;transition:.25s}
+.btn:hover{background:var(--green);transform:translateY(-3px)}
+.btn.ghost{background:transparent;color:var(--red);border:2px solid var(--red)}
+/* hero */
+.hero{min-height:100vh;padding:60px 6vw 40px;background:linear-gradient(160deg,var(--lilac) 0%,var(--pink) 55%,var(--cream) 100%);display:grid;grid-template-columns:1.2fr .8fr;align-items:center;gap:30px;position:relative;overflow:hidden}
+.hero h1{font-size:clamp(46px,6.4vw,96px);margin:18px 0}
+.hero p.lead{font-size:clamp(18px,1.6vw,22px);max-width:560px;font-weight:500}
+.tv{display:inline-flex;gap:10px;align-items:center;background:var(--green);color:var(--yellow);padding:8px 16px;border-radius:999px;font-weight:700;font-size:14px}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin:26px 0}
+.facts span{background:rgba(247,242,237,.75);padding:8px 14px;border-radius:12px;font-weight:700;font-size:14px}
+.hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+.hero-img{position:relative;justify-self:center}
+.hero-img img{width:min(420px,100%);display:block;filter:drop-shadow(0 30px 40px rgba(146,44,85,.25));animation:float 6s ease-in-out infinite}
+.shrik{font-family:Shrikhand,cursive;color:var(--red);font-size:clamp(28px,3vw,44px);position:absolute;bottom:8%;left:-10%;transform:rotate(-8deg);direction:ltr;white-space:nowrap}
+@keyframes float{50%{transform:translateY(-14px)}}
+/* marquee */
+.marq{background:var(--red);color:var(--yellow);overflow:hidden;white-space:nowrap;padding:14px 0;font-family:Anton;font-size:22px;letter-spacing:.04em;direction:ltr}
+.marq div{display:inline-block;animation:mq 30s linear infinite}
+@keyframes mq{to{transform:translateX(-50%)}}
+/* imagine */
+.imagine{padding:90px 6vw;text-align:center}
+.imagine h2{font-size:clamp(36px,4.6vw,64px);margin:14px auto 22px;max-width:900px}
+.imagine p{font-size:20px;max-width:680px;margin:0 auto}
+/* topics */
+.topic{padding:80px 6vw;display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center;border-top:1px solid rgba(22,63,55,.1)}
+.topic:nth-of-type(even){background:#fff9f4}
+.topic .num{font-family:Anton;font-size:90px;line-height:.8;color:var(--pink)}
+.topic h2{font-size:clamp(32px,3.6vw,52px);margin:12px 0 16px}
+.topic .benefit{font-size:19px;font-weight:500;margin-bottom:26px}
+.topic .benefit b{background:var(--yellow);padding:0 4px}
+.card{border-radius:28px;padding:30px;position:relative}
+.card .tag{position:absolute;top:-13px;right:24px;background:var(--green);color:var(--cream);font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;letter-spacing:.05em}
+.card ul{list-style:none;display:flex;flex-direction:column;gap:14px}
+.card li{background:rgba(255,255,255,.7);border-radius:16px;padding:16px 18px;font-weight:700;font-size:17px;display:flex;gap:12px;align-items:flex-start}
+.card li i{font-style:normal;font-family:'Roboto Condensed';font-size:12px;font-weight:700;color:var(--red);background:var(--cream);border-radius:8px;padding:3px 8px;white-space:nowrap;margin-top:2px;direction:ltr}
+.c1{background:var(--lilac)}.c2{background:var(--pink)}.c3{background:var(--sky)}.c4{background:var(--yellow)}
+.link{font-weight:800;color:var(--red);border-bottom:3px solid var(--yellow);font-size:18px}
+.link:hover{background:var(--yellow)}
+/* newsroom */
+.newsroom{background:var(--green);color:var(--cream)}
+.newsroom:nth-of-type(even){background:var(--green)}
+.newsroom h2{color:var(--yellow)}.newsroom .num{color:var(--red)}
+.newsroom .link{color:var(--yellow);border-color:var(--red)}
+.screen{background:#0f2d27;border-radius:24px;padding:22px;font-family:'Roboto Condensed';border:1px solid rgba(255,255,255,.1)}
+.screen .bar{display:flex;gap:6px;margin-bottom:16px}.screen .bar s{width:11px;height:11px;border-radius:50%;background:var(--pink)}
+.screen .bar s:nth-child(2){background:var(--yellow)}.screen .bar s:nth-child(3){background:var(--sky)}
+.row{display:flex;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px dashed rgba(255,255,255,.15);font-family:Heebo;font-weight:700}
+.row em{font-style:normal;color:var(--yellow);font-family:'Roboto Condensed';white-space:nowrap}
+.blur{filter:blur(5px);user-select:none}
+/* about */
+.about{padding:90px 6vw;display:grid;grid-template-columns:.8fr 1.2fr;gap:50px;align-items:center;background:linear-gradient(180deg,var(--cream),var(--lilac))}
+.about img{width:100%;border-radius:30px;display:block}
+.about h2{font-size:clamp(36px,4vw,58px);margin:12px 0 18px}
+.about p{font-size:19px;margin-bottom:14px}
+.creds{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}
+.creds div{background:var(--cream);border-radius:18px;padding:16px;font-weight:700}
+.creds div b{display:block;color:var(--red);font-size:19px;font-weight:900}
+/* signup */
+.signup{padding:100px 6vw;background:var(--red);color:var(--cream);text-align:center;position:relative;overflow:hidden}
+.signup h2{color:var(--yellow);font-size:clamp(40px,5.5vw,80px);margin:14px 0}
+.signup .eyebrow{color:var(--pink)}
+.dates{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin:34px 0}
+.dates div{background:var(--cream);color:var(--green);border-radius:22px;padding:20px 28px;min-width:230px}
+.dates b{display:block;font-family:Anton;font-size:40px;color:var(--red);line-height:1.1}
+.signup .btn{background:var(--yellow);color:var(--red);font-size:21px;padding:20px 40px}
+.signup .btn:hover{background:var(--cream)}
+.signup .ice{position:absolute;width:190px;left:4%;bottom:-20px;opacity:.95;animation:float 7s ease-in-out infinite}
+footer{background:var(--green);color:var(--lilac);padding:30px 6vw;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:15px}
+footer a{color:var(--yellow);font-weight:700}
+.note{font-size:13px;opacity:.75;margin-top:16px}
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .8s ease,transform .8s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+.mtop{display:none}
+@media (max-width:900px){
+ .shell{grid-template-columns:minmax(0,1fr)}aside,nav,main{min-width:0}
+ aside{position:sticky;top:0;height:auto;z-index:20;flex-direction:row;align-items:center;padding:10px 12px;gap:10px;overflow:visible}
+ .logo{font-size:20px}.logo small,.navt,.side-cta{display:none}
+ nav{overflow-x:auto;flex:1;scrollbar-width:none}nav::-webkit-scrollbar{display:none}
+ nav ol{flex-direction:row;direction:rtl;width:max-content}
+ nav a{padding:7px 12px;font-size:13px;white-space:nowrap;background:rgba(255,255,255,.08)}nav a::before{display:none}
+ .hero,.topic,.about{grid-template-columns:1fr}
+ .hero{min-height:auto;padding:40px 22px 50px;text-align:center}.hero p.lead{margin:0 auto}.facts,.hero .cta{justify-content:center}
+ .hero-img{order:-1}.hero-img img{width:240px}.shrik{left:-30px;font-size:26px}
+ .topic{padding:60px 22px;gap:30px}.topic .num{font-size:64px}
+ .about{padding:60px 22px}.about img{max-width:340px;margin:0 auto}
+ .imagine,.signup{padding:70px 22px}.signup .ice{display:none}
+ .creds{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside>
+ <a href="#top" class="logo">Shelly<small>SHELLY OR GISSER · AI WORKSHOPS</small></a>
+ <div class="navt">Topics / במה זה עוזר</div>
+ <nav><ol>
+  <li><a href="#t1">סוכן שמכיר את העסק</a></li>
+  <li><a href="#t2">סוכן סושיאל</a></li>
+  <li><a href="#t3">ניוזלטר</a></li>
+  <li><a href="#t4">חשבוניות ואדמין</a></li>
+  <li><a href="#t5">ארגון משפחתי</a></li>
+  <li><a href="#t6">מטרנד לטיוטה</a></li>
+  <li><a href="#t7">רוטינות בזמן שאתם ישנים</a></li>
+  <li><a href="#t8">מערכת חדשות של אישה אחת</a></li>
+  <li><a href="#about">מי זאת שלי?</a></li>
+ </ol></nav>
+ <a class="side-cta" href="https://shelly-agents-workshop.shellyog.chatgpt.site/" target="_blank" rel="noopener">שמרו לי מקום 💜</a>
+</aside>
+<main id="top">
+<section class="hero">
+ <div>
+  <span class="tv">📺 הפנים מפינת ה‑AI בחדשות 13 ובכאן 11</span>
+  <h1>תדמיינו סוכן<br><span class="hl">שעובד בשבילכם</span><br>כל בוקר.</h1>
+  <p class="lead">לא עוד צ׳אט שמחכה שתשאלו. סוכן אישי שמכיר אתכם, את העסק ואת הבית, ועושה את העבודה עוד לפני שהקפה מוכן.</p>
+  <div class="facts"><span>🎥 Zoom חי</span><span>⏱ שעתיים + שעת המשך</span><span>🚀 מתחילים מאפס</span></div>
+  <div class="cta"><a class="btn" href="https://shelly-agents-workshop.shellyog.chatgpt.site/" target="_blank" rel="noopener">אני רוצה את זה ←</a><a class="btn ghost" href="#t1">מה הוא יכול לעשות?</a></div>
+ </div>
+ <div class="hero-img"><img src="assets/shelly.png" alt="שלי אור גיסר"><div class="shrik">Fresh thinking</div></div>
+</section>
+<div class="marq" aria-hidden="true"><div>SOCIAL ✦ NEWSLETTER ✦ INVOICES ✦ FAMILY ✦ TRENDS ✦ ROUTINES ✦ NEWSROOM ✦ YOUR BUSINESS ✦ SOCIAL ✦ NEWSLETTER ✦ INVOICES ✦ FAMILY ✦ TRENDS ✦ ROUTINES ✦ NEWSROOM ✦ YOUR BUSINESS ✦&nbsp;</div></div>
+<section class="imagine reveal">
+ <div class="eyebrow">סוכנים מאפס עם Grok</div>
+ <h2>יש לכם רשימת מטלות. <span class="hl">לסוכן שלכם יש אתכם.</span></h2>
+ <p>הנה טעימה ממה שבונים בסדנה. איך? את זה שומרים לזום 😉</p>
+</section>
+
+<section class="topic reveal" id="t1"><div><div class="num">01</div><div class="eyebrow">YOUR BUSINESS BRAIN</div>
+ <h2>סוכן שמכיר את העסק שלכם <span class="hl">יותר טוב מכם.</span></h2>
+ <p class="benefit">הלקוחות, השירותים, הטון. הוא יודע הכל, אז <b>אתם מפסיקים להסביר מחדש</b> כל פעם.</p>
+ <a class="link" href="#signup">אני רוצה סוכן כזה ←</a></div>
+ <div class="card c1"><span class="tag">לדוגמה</span><ul>
+  <li><i>08:00</i>מחכה לכם תשובה מוכנה לליד שנכנס בלילה, בדיוק בקול שלכם.</li>
+  <li><i>לפני פגישה</i>תקציר על הלקוח ומה כדאי להציע לו.</li>
+  <li><i>כל רגע</i>שאלה על העסק? תשובה, בלי לחפש בעשרה קבצים.</li></ul></div></section>
+
+<section class="topic reveal" id="t2"><div><div class="num">02</div><div class="eyebrow">SOCIAL MEDIA AGENT</div>
+ <h2>הסושיאל ממשיך לרוץ <span class="hl">גם כשאתם בחופש.</span></h2>
+ <p class="benefit">נגמר הבוקר של ״מה אני מעלה היום?״. <b>מגיעים עם רעיונות, לא עם דף ריק.</b></p>
+ <a class="link" href="#signup">בא לי סושיאל בלי לחץ ←</a></div>
+ <div class="card c2"><span class="tag">לדוגמה</span><ul>
+  <li><i>ראשון</i>תוכנית תוכן לשבוע שלם, מחכה לאישור שלכם.</li>
+  <li><i>כל יום</i>טיוטות פוסטים שנשמעות כמוכם, לא כמו רובוט.</li>
+  <li><i>אחרי</i>מה עבד השבוע ומה כדאי לנסות עכשיו.</li></ul></div></section>
+
+<section class="topic reveal" id="t3"><div><div class="num">03</div><div class="eyebrow">NEWSLETTER</div>
+ <h2>ניוזלטר שכותב את עצמו. <span class="hl">כמעט.</span></h2>
+ <p class="benefit">אתם מוסיפים את הנגיעה האישית. <b>הוא עושה את כל השאר.</b></p>
+ <a class="link" href="#signup">תראו לי איך ←</a></div>
+ <div class="card c3"><span class="tag">לדוגמה</span><ul>
+  <li><i>שישי</i>טיוטת ניוזלטר מוכנה מכל מה שקרה השבוע.</li>
+  <li><i>תמיד</i>כותרות שמתחשק לפתוח.</li>
+  <li><i>בונוס</i>אותו תוכן, גם כפוסט וגם כסטורי.</li></ul></div></section>
+
+<section class="topic reveal" id="t4"><div><div class="num">04</div><div class="eyebrow">INVOICES & ADMIN</div>
+ <h2>האדמין נעלם. <span class="hl">אתם נשארים.</span></h2>
+ <p class="benefit">החלק שאף אחד לא אוהב בעסק, <b>סוף סוף לא יושב עליכם.</b></p>
+ <a class="link" href="#signup">שחררו אותי מזה ←</a></div>
+ <div class="card c4"><span class="tag">לדוגמה</span><ul>
+  <li><i>סוף חודש</i>תזכורת למי עוד לא שילם, עם נוסח מנומס מוכן.</li>
+  <li><i>מיילים</i>סיכום של מה באמת דורש תשובה ממכם היום.</li>
+  <li><i>שקט</i>פחות דברים נופלים בין הכיסאות.</li></ul></div></section>
+
+<section class="topic reveal" id="t5"><div><div class="num">05</div><div class="eyebrow">FAMILY OPS</div>
+ <h2>הבית מאורגן. <span class="hl">בלי שתהיו המזכירה.</span></h2>
+ <p class="benefit">חוגים, אסיפות, ימי הולדת. <b>הראש שלכם פנוי לדברים שחשובים.</b></p>
+ <a class="link" href="#signup">אני צריכה את זה אתמול ←</a></div>
+ <div class="card c2"><span class="tag">לדוגמה</span><ul>
+  <li><i>ערב</i>מה מחכה למשפחה מחר, בהודעה אחת קצרה.</li>
+  <li><i>שבועי</i>רשימת קניות ותפריט שמתאים לשבוע שלכם.</li>
+  <li><i>מראש</i>תזכורת למתנה לפני יום ההולדת, לא אחריו.</li></ul></div></section>
+
+<section class="topic reveal" id="t6"><div><div class="num">06</div><div class="eyebrow">TRENDS → DRAFTS</div>
+ <h2>הטרנד עלה בבוקר. <span class="hl">הטיוטה שלכם כבר מוכנה.</span></h2>
+ <p class="benefit">להיות הראשונים לדבר על זה, <b>בלי לגלול שעות.</b></p>
+ <a class="link" href="#signup">אני רוצה להקדים את כולם ←</a></div>
+ <div class="card c1"><span class="tag">לדוגמה</span><ul>
+  <li><i>07:30</i>מה מדברים עליו היום בתחום שלכם, בחמש שורות.</li>
+  <li><i>מיד</i>זווית אישית שמתאימה רק לכם.</li>
+  <li><i>מוכן</i>טיוטה לפוסט שמחכה לאישור.</li></ul></div></section>
+
+<section class="topic reveal" id="t7"><div><div class="num">07</div><div class="eyebrow">WHILE YOU SLEEP</div>
+ <h2>רוטינות שרצות <span class="hl">בזמן שאתם ישנים.</span></h2>
+ <p class="benefit">אתם קמים, ו<b>העבודה כבר זזה.</b> זה ההבדל בין צ׳אט לסוכן.</p>
+ <a class="link" href="#signup">תנו לי בוקר כזה ←</a></div>
+ <div class="card c3"><span class="tag">לדוגמה</span><ul>
+  <li><i>06:00</i>תדריך בוקר אישי: יומן, מיילים חשובים, מה חדש.</li>
+  <li><i>כל שעה</i>עדכון רק כשיש משהו שבאמת שווה לדעת.</li>
+  <li><i>ראשון</i>סיכום השבוע שעבר ותוכנית לשבוע הבא.</li></ul></div></section>
+
+<section class="topic newsroom reveal" id="t8"><div><div class="num">08</div><div class="eyebrow" style="color:var(--pink)">DEMO TEASER · ONE‑PERSON NEWSROOM</div>
+ <h2>מערכת חדשות שלמה. <span class="hl" style="color:var(--red)">אישה אחת.</span></h2>
+ <p class="benefit">אחרי שנים של סיקור AI בטלוויזיה, שלי תראה בלייב איך נראית מערכת חדשות של אדם אחד. <b style="color:var(--green)">את המתכון? רק בסדנה.</b></p>
+ <a class="link" href="#signup">אני רוצה לראות את הדמו ←</a></div>
+ <div class="screen"><div class="bar"><s></s><s></s><s></s></div>
+  <div class="row">סריקת מקורות בוקר <em>✓ DONE</em></div>
+  <div class="row">סינון: מה באמת חשוב היום <em>✓ DONE</em></div>
+  <div class="row">טיוטות מוכנות לאישור <em>3 READY</em></div>
+  <div class="row"><span class="blur">ככה זה עובד מבפנים, שלב אחרי שלב</span><em>🔒 בסדנה</em></div>
+  <p class="note">* הדמיה להמחשה בלבד</p></div></section>
+
+<section class="about reveal" id="about">
+ <img src="assets/car.jpg" alt="שלי אור גיסר">
+ <div><div class="eyebrow">MEET SHELLY</div>
+ <h2>הי, אני שלי 💜</h2>
+ <p>שנתיים הסברתי בטלוויזיה מה קורה בעולם ה‑AI, בפינה קבועה ובראיונות שבועיים בחדשות 13 ובכאן 11. עכשיו אני מביאה את זה אליכם, בגובה העיניים.</p>
+ <p>אני לא מלמדת תיאוריה. אני מראה מה אפשר לעשות כבר מחר בבוקר.</p>
+ <div class="creds">
+  <div><b>📺 חדשות 13 · כאן 11</b>פינת AI וראיונות שבועיים</div>
+  <div><b>22.6K חברים</b>בקבוצת הפרומפטים שלי בפייסבוק</div>
+  <div><b>Google Israel</b>סדנאות לצוות התקשורת</div>
+  <div><b>Head of AI</b>Gitam BBDO</div>
+ </div></div>
+</section>
+
+<section class="signup" id="signup">
+ <img class="ice" src="assets/icecream.png" alt="">
+ <div class="eyebrow">SHELLY OR GISSER · AI WORKSHOPS</div>
+ <h2>סוכנים מאפס עם Grok</h2>
+ <p style="font-size:21px">סדנה חיה בזום. יוצאים עם סוכן שעובד בשבילכם, לא עם עוד סיכום.</p>
+ <div class="dates">
+  <div><b>2.11</b>יום שני · 20:00–22:00<br>מפגש חי, שעתיים</div>
+  <div><b>9.11</b>יום שני · 20:00–21:00<br>מפגש המשך</div>
+ </div>
+ <a class="btn" href="https://shelly-agents-workshop.shellyog.chatgpt.site/" target="_blank" rel="noopener">שמרו לי מקום 💜</a>
+ <p class="note">שעון ישראל · הדוגמאות באתר הן להמחשה</p>
+</section>
+<footer><span>© שלי אור גיסר · AI Workshops</span><span><a href="mailto:shelly@aigosai.com">shelly@aigosai.com</a> · <a href="https://instagram.com/shelly_or_gisser" target="_blank" rel="noopener">@shelly_or_gisser</a></span></footer>
+</main></div>
+<script>
+const io=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+const links=[...document.querySelectorAll('nav a')];
+const so=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){links.forEach(l=>l.classList.toggle('on',l.getAttribute('href')==='#'+x.target.id));const a=links.find(l=>l.classList.contains('on'));if(a&&innerWidth<900)a.scrollIntoView({inline:'center',block:'nearest'})}}),{rootMargin:'-45% 0px -50% 0px'});
+document.querySelectorAll('section[id]').forEach(s=>so.observe(s));
+</script>
+</body></html>
