@@ -2,246 +2,310 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>שלי אור גיסר · סוכנים מאפס עם Grok</title>
-<meta name="description" content="תדמיינו סוכן שעובד בשבילכם כל בוקר. סדנת סוכנים מאפס עם Grok, עם שלי אור גיסר.">
-<meta name="theme-color" content="#DDF4FF"><link rel="preload" href="assets/bamberger-black.otf" as="font" type="font/otf" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+<title>סוכנים מאפס עם Grok · הסדנה של שלי אור גיסר</title>
+<meta name="description" content="קמים בבוקר, והעבודה כבר זזה. סדנת סוכנים מאפס עם Grok, חיה בזום, עם שלי אור גיסר. 2.11 ו-9.11.">
+<meta name="theme-color" content="#DDF4FF">
+<link rel="preload" href="assets/bamberger-black.otf" as="font" type="font/otf" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <style>
 @font-face{font-family:Bamberger;src:url('assets/bamberger-black.otf') format('opentype');font-display:swap;font-weight:900}
 @font-face{font-family:HeeboL;src:url('assets/heebo.ttf') format('truetype');font-display:swap}
 @font-face{font-family:Anton;src:url('assets/anton.ttf') format('truetype');font-display:swap}
-:root{--ink:#303039;--sky:#DDF4FF;--sky2:#e9f6fc;--pink:#F4B8CA;--mag:#B93372;--plum:#60445d;--cream:#F7F2ED;--lilac:#E8E0F2;--line:#adc8d2;--side:270px;
---chrome:linear-gradient(115deg,#fff 0%,#d8e1e8 35%,#a4b5c1 48%,#fdfcfa 70%,#e2b8d0 100%)}
+:root{--ink:#303039;--sky:#DDF4FF;--sky2:#e9f6fc;--pink:#F4B8CA;--mag:#B93372;--plum:#60445d;--cream:#F7F2ED;--lilac:#E8E0F2;--line:#b9d1db;--paper:#fffdfb;--side:264px;
+--goldg:linear-gradient(180deg,#fbeebb 0%,#efcf74 30%,#d4a23b 58%,#b07a20 100%)}
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;scroll-padding-top:20px}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
 body{font-family:Heebo,HeeboL,Arial,sans-serif;background:var(--sky);color:var(--ink);line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
-h1,h2,h3{font-family:Bamberger,Heebo,Arial,sans-serif;font-weight:900;line-height:1.1;color:var(--ink)}
-.shell{display:grid;grid-template-columns:var(--side) minmax(0,1fr);direction:ltr}
-.shell>*{direction:rtl}
-aside{position:sticky;top:0;height:100vh;background:var(--cream);border-right:1px solid var(--line);padding:28px 20px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;z-index:20}
-.logo{display:flex;flex-direction:column;line-height:1.3}
+h1,h2,h3{font-family:Bamberger,Heebo,Arial,sans-serif;font-weight:900;line-height:1.08;color:var(--ink)}
+.eyebrow{font-family:Anton,Arial,sans-serif;letter-spacing:1.8px;font-size:13px;line-height:1.4;color:var(--plum);text-transform:uppercase}
+.hl{box-decoration-break:clone;-webkit-box-decoration-break:clone;background:linear-gradient(transparent 55%,var(--pink) 55%,var(--pink) 94%,transparent 94%);padding:0 4px}
+.mag{color:var(--mag)}
+/* ===== Buttons ===== */
+.btn{--h:58px;position:relative;isolation:isolate;overflow:hidden;display:inline-flex;align-items:center;justify-content:space-between;gap:16px;min-height:var(--h);padding:7px 26px 7px 7px;border-radius:999px;font:800 17px/1.2 Heebo,HeeboL,sans-serif;letter-spacing:.1px;cursor:pointer;border:1px solid transparent;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,background .25s,color .25s;white-space:nowrap}
+.btn .ar{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:19px;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.btn:hover{transform:translateY(-3px)}.btn:hover .ar{transform:translateX(-6px)}
+.btn:active{transform:translateY(1px);transition-duration:.08s}
+.btn:focus-visible{outline:3px solid var(--mag);outline-offset:3px}
+.btn-gold{background:var(--goldg);color:#2a1c05;border-color:#9a6b19;text-shadow:0 1px 0 #fff7;box-shadow:inset 0 1px 0 #fffbe6,inset 0 -3px 6px #7a541040,0 2px 0 #7a5410,0 14px 30px -10px #a8741cb0}
+.btn-gold:hover{box-shadow:inset 0 1px 0 #fffbe6,inset 0 -3px 6px #7a541040,0 2px 0 #7a5410,0 22px 40px -12px #a8741cd0}
+.btn-gold .ar{background:#2a1c05;color:#f6dc8a;box-shadow:inset 0 0 0 1px #f6dc8a55}
+.btn-gold::after{content:'';position:absolute;inset:-20% auto -20% -40%;width:36%;background:linear-gradient(100deg,transparent,#fffbe8cc,transparent);transform:skewX(-20deg) translateX(-120%);animation:sheen 4.2s ease-in-out infinite;z-index:-1}
+@keyframes sheen{0%,55%{left:-40%}85%,100%{left:120%}}
+.btn-dark{background:var(--ink);color:#fff;border-color:var(--ink);box-shadow:0 14px 30px -12px #30303988}
+.btn-dark .ar{background:var(--goldg);color:#2a1c05}
+.btn-dark:hover{background:#45354a}
+.btn-ghost{background:#ffffff80;color:var(--ink);border-color:var(--ink);backdrop-filter:blur(6px)}
+.btn-ghost .ar{border:1px solid var(--ink);width:40px;height:40px}
+.btn-ghost:hover{background:#fff}
+.btn-sm{--h:46px;font-size:15px;padding:5px 18px 5px 5px}.btn-sm .ar{width:34px;height:34px;font-size:16px}
+.btn-lg{--h:68px;font-size:20px;padding:8px 32px 8px 8px}.btn-lg .ar{width:52px;height:52px}
+.tlink{display:inline-flex;gap:8px;align-items:center;font-weight:800;font-size:17px;border-bottom:2px solid var(--mag);padding-bottom:2px;transition:gap .3s,color .2s}
+.tlink:hover{gap:16px;color:var(--mag)}
+/* ===== Layout: sidebar on RIGHT ===== */
+.shell{display:grid;grid-template-columns:var(--side) minmax(0,1fr)}
+aside{position:sticky;top:0;height:100vh;background:var(--cream);border-left:1px solid var(--line);padding:30px 22px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;z-index:20}
+.logo{display:flex;flex-direction:column;line-height:1.25}
 .logo strong{font-family:Bamberger;font-size:26px}.logo strong span{color:var(--mag)}
-.logo small{font-family:Anton;font-size:10px;letter-spacing:1.4px;margin-top:6px;color:var(--plum);direction:ltr;text-align:right}
-.navt{font-family:Anton;letter-spacing:1.6px;font-size:12px;color:var(--plum);border-top:1px solid var(--line);padding-top:14px}
-nav ol{list-style:none;display:flex;flex-direction:column;gap:2px;counter-reset:n}
-nav a{display:flex;gap:12px;align-items:center;padding:9px 12px;border-radius:7px;font-weight:700;font-size:15px;transition:.2s;border:1px solid transparent}
-nav a::before{counter-increment:n;content:counter(n,decimal-leading-zero);font-family:Anton;font-size:14px;color:#657e8b}
-nav a:hover{background:#fff}
-nav a.on{background:var(--pink);border-color:#d5a5b8}nav a.on::before{color:var(--mag)}
-.side-cta{margin-top:auto}
-main{min-width:0}
-.eyebrow{font-family:Anton,Arial,sans-serif;letter-spacing:1.6px;font-size:14px;line-height:1.4;color:var(--plum);direction:ltr;unicode-bidi:plaintext}
-.hl{position:relative;z-index:0;box-decoration-break:clone;-webkit-box-decoration-break:clone;background:linear-gradient(transparent 52%,var(--pink) 52%,var(--pink) 96%,transparent 96%);padding:0 4px}
-.btn{display:inline-flex;align-items:center;justify-content:space-between;gap:26px;padding:15px 23px;border:1px solid var(--ink);border-radius:7px;font-weight:700;min-height:52px;font-size:17px;background:var(--ink);color:#fff;transition:background .18s,transform .18s,box-shadow .18s;box-shadow:0 5px 0 #cfb9c45c}
-.btn:hover{transform:translateY(-2px);background:#4c3150}
-.btn.chrome,.side-cta.btn{background:var(--chrome);color:var(--ink);background-size:200% 100%;animation:shine 6s ease-in-out infinite}
-.btn.chrome:hover{background-position:100% 0}
-@keyframes shine{50%{background-position:100% 0}}
-.btn.gold,.side-cta.btn,.sg-cta{background:linear-gradient(110deg,#7a5410 0%,#c9962e 18%,#f6e08f 38%,#fff6cf 48%,#e7bf55 60%,#a8741c 80%,#d9ad48 100%)!important;background-size:220% 100%!important;color:#2a1c05!important;border:1px solid #8a6216!important;box-shadow:0 1px 0 #fff8 inset,0 8px 22px #a8741c55,0 2px 0 #6b4a0e!important;text-shadow:0 1px 0 #fff6;font-weight:900;animation:gshine 4.5s ease-in-out infinite;transition:transform .2s,box-shadow .2s}
-.btn.gold:hover,.side-cta.btn:hover,.sg-cta:hover{transform:translateY(-3px);box-shadow:0 1px 0 #fff8 inset,0 14px 30px #a8741c77,0 2px 0 #6b4a0e!important}
-@keyframes gshine{0%,100%{background-position:0 0}50%{background-position:100% 0}}
-.btn.ghost{background:transparent;color:var(--ink);box-shadow:none}
-.btn.ghost:hover{background:#fff}
-/* hero */
-.hero{padding:70px 5vw 80px;display:grid;grid-template-columns:1.15fr .85fr;align-items:center;gap:60px;position:relative;overflow:hidden}
-.hero h1{font-size:clamp(52px,6.2vw,96px);letter-spacing:-1.6px;margin:22px 0 24px}
-.hero p.lead{font-size:clamp(19px,1.7vw,25px);line-height:1.5;max-width:560px}
-.tv{display:inline-flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);padding:8px 16px;border-radius:7px;font-weight:700;font-size:14px;box-shadow:0 5px 0 #cfb9c42c}
-.facts{display:flex;flex-wrap:wrap;gap:10px;margin:26px 0 30px}
-.facts span{background:var(--cream);border:1px solid #d7d5db;padding:6px 14px;border-radius:5px;font-weight:700;font-size:14px}
-.hero .cta{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
-.hero-img{position:relative;justify-self:center;width:min(420px,100%);padding:10px 20px 40px;isolation:isolate}
-.polaroid{background:#fff;padding:7px 7px 0;border-radius:9px;box-shadow:0 22px 50px #3c526b2b;overflow:hidden}
-.polaroid img{width:100%;display:block;background:linear-gradient(160deg,var(--lilac),var(--pink));border-radius:4px;aspect-ratio:4/5;object-fit:cover;object-position:50% 15%}
-.polaroid figcaption{padding:12px 10px 14px;display:flex;flex-direction:column;font-size:14px}
-.polaroid figcaption span{font-family:Anton;letter-spacing:1.4px;font-size:12px;color:var(--plum);direction:ltr;text-align:right}
-
-@keyframes spin{to{transform:rotate(360deg)}}
-.sticker{position:absolute;top:26px;right:4px;background:#fff;padding:8px 14px;border-radius:6px;box-shadow:0 9px 24px #30303926;font-family:Anton;letter-spacing:1px;font-size:14px;direction:ltr}
-
-/* ribbon */
-.marq{background:var(--pink);border-block:1px solid #d5a5b8;overflow:hidden;white-space:nowrap;padding:18px 0;font-family:Anton;letter-spacing:1px;text-transform:uppercase;font-size:26px;direction:ltr}
-.marq div{display:inline-block;animation:mq 34s linear infinite}
-.marq i{font-family:Anton;font-style:normal;color:#876376;margin:0 18px}
+.logo small{font-family:Anton;font-size:10px;letter-spacing:1.6px;margin-top:6px;color:var(--plum)}
+.navt{font-family:Anton;letter-spacing:1.6px;font-size:12px;color:var(--plum);border-top:1px solid var(--line);padding-top:16px}
+.tnav ol{list-style:none;display:flex;flex-direction:column;gap:2px;counter-reset:n}
+.tnav a{display:flex;gap:12px;align-items:center;padding:9px 12px;border-radius:999px;font-weight:700;font-size:15px;transition:background .2s,padding .25s}
+.tnav a::before{counter-increment:n;content:counter(n,decimal-leading-zero);font-family:Anton;font-size:13px;color:#7d93a0;min-width:18px}
+.tnav a:hover{background:#fff;padding-inline-start:16px}
+.tnav a.on{background:var(--ink);color:#fff}.tnav a.on::before{color:#efcf74}
+aside .btn{margin-top:auto;width:100%}
+main{min-width:0;overflow-x:clip}
+.mbar,.mmenu{display:none}
+/* ===== Hero ===== */
+.hero{position:relative;padding:64px 5vw 70px;display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;min-height:min(100vh,860px);overflow:hidden}
+.mesh{position:absolute;inset:-20%;z-index:-1;background:radial-gradient(40% 40% at 20% 30%,#f4b8ca88,transparent 70%),radial-gradient(35% 40% at 80% 70%,#e8e0f2,transparent 70%),radial-gradient(30% 30% at 60% 10%,#ffffffaa,transparent 70%);animation:drift 18s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate(4%,-3%) rotate(6deg) scale(1.08)}}
+.pill{display:inline-flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);padding:7px 16px 7px 12px;border-radius:999px;font-weight:700;font-size:14px}
+.live{width:9px;height:9px;border-radius:50%;background:var(--mag);box-shadow:0 0 0 0 #b9337288;animation:ping 1.8s infinite}
+@keyframes ping{70%{box-shadow:0 0 0 10px #b9337200}100%{box-shadow:0 0 0 0 #b9337200}}
+.hero h1{font-size:clamp(50px,6vw,94px);letter-spacing:-1.5px;margin:22px 0 22px}
+.kin{display:inline-grid;vertical-align:bottom;color:var(--mag);overflow:hidden;height:1.12em}
+.kin span{grid-area:1/1;animation:kin 12s infinite;opacity:0;transform:translateY(100%)}
+.kin span:nth-child(2){animation-delay:3s}.kin span:nth-child(3){animation-delay:6s}.kin span:nth-child(4){animation-delay:9s}
+@keyframes kin{0%{opacity:0;transform:translateY(100%)}4%,22%{opacity:1;transform:none}26%,100%{opacity:0;transform:translateY(-100%)}}
+.lead{font-size:clamp(19px,1.6vw,23px);line-height:1.55;max-width:560px}
+.facts{display:flex;flex-wrap:wrap;gap:8px 18px;margin:24px 0 30px;font-weight:700;font-size:15px}
+.facts span{display:inline-flex;align-items:center;gap:8px}.facts span::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--mag)}
+.cta{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.micro{font-size:13px;color:#525562;margin-top:16px}
+/* agent flow animation */
+.flow{position:relative;aspect-ratio:1;width:min(520px,100%);justify-self:center}
+.flow svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.flow .wire{fill:none;stroke:#8fb0c0;stroke-width:1.4;vector-effect:non-scaling-stroke}
+.flow .pulse{fill:none;stroke:var(--mag);stroke-width:2.6;stroke-linecap:round;stroke-dasharray:6 94;vector-effect:non-scaling-stroke;animation:flowd 3.6s linear infinite}
+@keyframes flowd{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+.flow .ring{fill:none;stroke:#b9337240;stroke-width:1;vector-effect:non-scaling-stroke;transform-origin:50% 50%;animation:ringr 4s ease-out infinite}
+@keyframes ringr{from{transform:scale(.3);opacity:1}to{transform:scale(1.6);opacity:0}}
+.core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:30%;aspect-ratio:1;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;text-align:center;font-family:Bamberger;font-size:clamp(15px,1.6vw,20px);line-height:1.15;box-shadow:0 0 0 8px #fff,0 0 0 9px var(--line),0 24px 50px #3c526b55}
+.core small{display:block;font-family:Anton;font-size:10px;letter-spacing:1.5px;color:#efcf74;margin-top:4px}
+.node{position:absolute;transform:translate(-50%,-50%);background:var(--paper);border:1px solid #d7d5db;border-radius:999px;padding:6px 14px;font-weight:700;font-size:13px;white-space:nowrap;box-shadow:0 8px 20px #3c526b22;animation:bob 6s ease-in-out infinite}
+.node:nth-of-type(2n){animation-delay:-3s}
+@keyframes bob{50%{transform:translate(-50%,calc(-50% - 6px))}}
+.toast{position:absolute;inset-inline-end:-4%;width:62%;background:#fff;border:1px solid #d7d5db;border-radius:12px;padding:10px 14px;box-shadow:0 18px 40px #3c526b2e;font-size:13px;opacity:0;animation:toast 12s infinite}
+.toast b{display:block;font-size:14px}.toast i{font-style:normal;font-family:Anton;letter-spacing:1px;font-size:11px;color:var(--mag)}
+.toast.t1{bottom:2%}.toast.t2{bottom:2%;animation-delay:4s}.toast.t3{bottom:2%;animation-delay:8s}
+@keyframes toast{0%{opacity:0;transform:translateY(16px)}4%,28%{opacity:1;transform:none}33%,100%{opacity:0;transform:translateY(-10px)}}
+/* marquee */
+.marq{background:var(--ink);color:#fff;overflow:hidden;white-space:nowrap;padding:16px 0;font-family:Anton;letter-spacing:1.5px;font-size:22px;direction:ltr}
+.marq div{display:inline-block;animation:mq 36s linear infinite}
+.marq i{font-style:normal;color:#efcf74;margin:0 20px}
 @keyframes mq{to{transform:translateX(-50%)}}
-.imagine{padding:86px 5vw;text-align:center}
-.imagine h2{font-size:clamp(38px,4.4vw,62px);margin:16px auto 22px;max-width:900px}
-.imagine p{font-size:20px;max-width:680px;margin:0 auto}
+/* morning timeline */
+.morning{padding:96px 5vw;display:grid;grid-template-columns:1fr 1.1fr;gap:64px;align-items:center;max-width:1240px;margin:0 auto}
+.morning h2{font-size:clamp(38px,4.4vw,62px);margin:16px 0 20px}
+.morning p{font-size:19px;max-width:520px}
+.tl{position:relative;background:var(--paper);border:1px solid #d7d5db;border-radius:16px;padding:28px 28px 20px;box-shadow:0 24px 60px #3c526b22}
+.tl::before{content:'';position:absolute;right:62px;top:32px;bottom:32px;width:2px;background:#e1e6ea}
+.tl::after{content:'';position:absolute;right:62px;top:32px;width:2px;height:0;background:var(--mag);animation:grow 10s ease-in-out infinite}
+@keyframes grow{0%{height:0}80%,100%{height:calc(100% - 64px)}}
+.tl .st{position:relative;display:grid;grid-template-columns:52px 1fr;gap:22px;align-items:center;padding:12px 0;opacity:.35;animation:light 10s infinite}
+.tl .st:nth-child(2){animation-delay:2s}.tl .st:nth-child(3){animation-delay:4s}.tl .st:nth-child(4){animation-delay:6s}
+@keyframes light{0%,4%{opacity:.35}10%,90%{opacity:1}100%{opacity:.35}}
+.tl .st time{font-family:Anton;font-size:15px;letter-spacing:1px;color:var(--plum)}
+.tl .st div{background:var(--sky2);border-radius:10px;padding:12px 16px;font-weight:700;position:relative}
+.tl .st div::before{content:'';position:absolute;right:-20px;top:50%;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--mag);transform:translateY(-50%)}
+.tl .st small{display:block;font-weight:400;font-size:13px;color:#5b5e6b}
+.tl .cap{font-size:12px;color:#6c6a73;margin-top:8px}
 /* topics */
-.topic{padding:88px 6vw;display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;max-width:1240px;margin:0 auto;border-top:1px solid var(--line)}
-.topic{border-top:0;position:relative}.topic::before{content:"";position:absolute;inset:0 -100vw;border-top:1px solid var(--line);z-index:-1}.topic:nth-of-type(even)::before{background:var(--cream)}main{overflow-x:clip;position:relative;z-index:0}
-.topic .num{font-family:Anton;font-size:15px;letter-spacing:2px;line-height:1;color:var(--mag);display:inline-block;border:1px solid #d5a5b8;border-radius:4px;padding:5px 9px;margin-bottom:16px}.topic .num::before{content:"NO. "}
+.topic{position:relative;padding:92px 5vw;display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;max-width:1240px;margin:0 auto}
+.topic::before{content:'';position:absolute;inset:0 -100vw;border-top:1px solid var(--line);z-index:-1}
+.topic:nth-of-type(even)::before{background:var(--cream)}
+.topic .num{font-family:Anton;font-size:14px;letter-spacing:2px;line-height:1;color:var(--mag);display:inline-block;border:1px solid #d5a5b8;border-radius:999px;padding:6px 12px;margin-bottom:16px}
 .topic h2{font-size:clamp(34px,3.6vw,54px);margin:14px 0 18px}
-.topic .benefit{font-size:18px;margin-bottom:26px}
-.topic .benefit b{color:var(--mag)}
-.card{background:#fffdfb;border:1px solid #d7d5db;border-radius:10px;padding:26px;position:relative;box-shadow:0 5px 0 #cfb9c42c,0 22px 50px #3c526b1a;transition:transform .3s}
-.card:hover{transform:translateY(-3px)}
-
-.card .tag{position:absolute;top:-14px;right:22px;background:var(--ink);color:#fff;font-size:13px;font-weight:700;padding:4px 14px;border-radius:5px}
+.benefit{font-size:18px;margin-bottom:26px;max-width:520px}.benefit b{color:var(--mag)}
+.card{background:var(--paper);border:1px solid #d7d5db;border-radius:16px;padding:30px 26px 26px;position:relative;box-shadow:0 24px 60px #3c526b1f;transition:transform .35s}
+.card:hover{transform:translateY(-4px)}
+.card .tag{position:absolute;top:-13px;right:24px;background:var(--ink);color:#fff;font-size:12px;font-weight:700;padding:4px 14px;border-radius:999px}
 .card ul{list-style:none;display:flex;flex-direction:column;gap:12px}
-.card li{background:var(--sky2);border-right:3px solid #a9c9da;border-radius:5px;padding:14px 16px;font-weight:700;font-size:16px;display:flex;gap:12px;align-items:flex-start}
-.card li i{font-style:normal;font-family:Anton;font-size:13px;letter-spacing:.6px;color:var(--plum);background:#fff;border-radius:4px;padding:2px 8px;white-space:nowrap;margin-top:2px}
-.c2 li,.c4 li{background:#f4e4ef;border-color:#d6b3c6}.c3 li{background:var(--lilac);border-color:#c9b8e0}
-.link{font-weight:700;text-decoration:underline;text-underline-offset:6px;text-decoration-color:var(--mag);text-decoration-thickness:2px;font-size:18px}
-.link:hover{color:var(--mag)}
-/* newsroom */
-.newsroom::before,.newsroom:nth-of-type(even)::before{background:var(--lilac)}
-.newsroom .num{color:var(--mag)}
-.screen{background:#fffdfb;border:7px solid #fff;outline:1px solid #d7d5db;border-radius:10px;padding:22px;box-shadow:0 22px 50px #3c526b2b}
-.screen .bar{display:flex;gap:6px;margin-bottom:12px}.screen .bar s{width:11px;height:11px;border-radius:50%;background:var(--pink)}
-.screen .bar s:nth-child(2){background:#a4b5c1}.screen .bar s:nth-child(3){background:var(--sky)}
-.row{display:flex;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid #e3e1e6;font-weight:700}
-.row em{font-style:normal;color:var(--mag);font-family:Anton;letter-spacing:.6px;white-space:nowrap}
+.card li{background:var(--sky2);border-radius:10px;padding:14px 16px;font-weight:700;font-size:16px;display:flex;gap:12px;align-items:flex-start}
+.reveal.in .card li{animation:liin .6s both}.reveal.in .card li:nth-child(2){animation-delay:.18s}.reveal.in .card li:nth-child(3){animation-delay:.36s}
+@keyframes liin{from{opacity:0;transform:translateY(12px)}}
+.card li i{font-style:normal;font-family:Anton;font-size:12px;letter-spacing:.8px;color:var(--plum);background:#fff;border-radius:999px;padding:2px 10px;white-space:nowrap;margin-top:2px}
+.c2 li,.c4 li{background:#f7e8f0}.c3 li{background:var(--lilac)}
+.newsroom::before{background:var(--lilac)!important}
+.screen{background:var(--paper);border:1px solid #d7d5db;border-radius:16px;padding:22px 24px;box-shadow:0 24px 60px #3c526b2b}
+.screen .bar{display:flex;gap:6px;margin-bottom:12px}.screen .bar s{width:10px;height:10px;border-radius:50%;background:var(--pink)}
+.screen .bar s:nth-child(2){background:#efcf74}.screen .bar s:nth-child(3){background:#a9c9da}
+.row{display:flex;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid #e9e7ec;font-weight:700}
+.reveal.in .row{animation:liin .5s both}.reveal.in .row:nth-child(3){animation-delay:.4s}.reveal.in .row:nth-child(4){animation-delay:.8s}.reveal.in .row:nth-child(5){animation-delay:1.2s}
+.row em{font-style:normal;color:var(--mag);font-family:Anton;letter-spacing:.8px;white-space:nowrap}
 .blur{filter:blur(5px);user-select:none}
+.note{font-size:12px;color:#5b5e6b;margin-top:14px}
 /* about */
-.about{padding:86px 5vw;display:grid;grid-template-columns:.8fr 1.2fr;gap:56px;align-items:center;border-top:1px solid var(--line)}
-.about figure{background:#fff;padding:7px;border-radius:9px;box-shadow:0 22px 50px #3c526b2b}
-.about img{width:100%;border-radius:4px;display:block}
+.about{position:relative;padding:96px 5vw;display:grid;grid-template-columns:.9fr 1.1fr;gap:64px;align-items:center;max-width:1240px;margin:0 auto}
+.about::before{content:'';position:absolute;inset:0 -100vw;border-top:1px solid var(--line);z-index:-1}
+.kinetic{position:relative;aspect-ratio:4/5;border-radius:18px;overflow:hidden;background:var(--ink);color:#fff;padding:30px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 30px 70px #3c526b44;isolation:isolate}
+.kinetic::before{content:'';position:absolute;inset:-30%;z-index:-1;background:radial-gradient(35% 35% at 30% 30%,#b93372aa,transparent 70%),radial-gradient(40% 40% at 75% 70%,#6b7fd6aa,transparent 70%),radial-gradient(30% 30% at 70% 20%,#efcf7466,transparent 70%);animation:drift 14s ease-in-out infinite alternate;filter:blur(10px)}
+.kinetic .k-top{font-family:Anton;letter-spacing:2px;font-size:12px;color:#efcf74}
+.kinetic .words{font-family:Bamberger;font-size:clamp(34px,3.6vw,52px);line-height:1.05}
+.kinetic .words span{display:block;opacity:.25;animation:wl 8s infinite}
+.kinetic .words span:nth-child(2){animation-delay:2s}.kinetic .words span:nth-child(3){animation-delay:4s}.kinetic .words span:nth-child(4){animation-delay:6s}
+@keyframes wl{0%,30%{opacity:1}35%,100%{opacity:.25}}
+.kinetic .k-bot{display:flex;justify-content:space-between;font-family:Anton;letter-spacing:1.5px;font-size:12px;opacity:.8;direction:ltr}
 .about h2{font-size:clamp(38px,4vw,58px);margin:12px 0 18px}
-.about p{font-size:18px;margin-bottom:14px}
-.creds{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}
-.creds div{background:#fffdfb;border:1px solid #d7d5db;border-radius:10px;padding:14px 16px;font-size:15px}
+.about p{font-size:18px;margin-bottom:12px}
+.creds{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}
+.creds div{background:var(--paper);border:1px solid #d7d5db;border-radius:14px;padding:14px 16px;font-size:15px}
 .creds div b{display:block;font-family:Bamberger;font-size:19px}
-.creds .low{opacity:.75}
 /* signup */
-.signup{padding:90px 5vw;background:var(--pink);border-top:1px solid #cea4b7;text-align:center;position:relative;overflow:hidden}
-.signup h2{font-size:clamp(44px,5.6vw,84px);margin:14px 0}
-.dates{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin:34px 0}
-.dates div{background:#fffdfb;border:1px solid #d7d5db;border-radius:10px;padding:18px 28px;min-width:230px;box-shadow:0 5px 0 #cfb9c44c}
-
+.signup{position:relative;padding:100px 5vw;background:linear-gradient(180deg,#f4b8ca,#f1c6d6);text-align:center;overflow:hidden;isolation:isolate}
+.signup::before{content:'';position:absolute;inset:-30%;z-index:-1;background:radial-gradient(30% 40% at 20% 30%,#fff8,transparent 70%),radial-gradient(30% 40% at 80% 80%,#e8e0f2,transparent 70%);animation:drift 16s ease-in-out infinite alternate}
+.signup h2{font-size:clamp(44px,5.6vw,86px);margin:14px 0}
+.signup .sub{font-size:21px;max-width:640px;margin:0 auto}
+.count{display:inline-flex;gap:10px;margin:28px 0 6px;direction:rtl}
+.count div{background:var(--ink);color:#fff;border-radius:12px;padding:10px 14px;min-width:78px}
+.count b{display:block;font-family:Anton;font-size:34px;line-height:1.1;color:#efcf74}
+.count small{font-size:12px}
+.dates{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin:26px 0 34px}
+.dates div{background:var(--paper);border:1px solid #d7d5db;border-radius:16px;padding:18px 28px;min-width:240px;box-shadow:0 14px 34px #a3577a22}
 .dates b{display:block;font-family:Anton;font-size:44px;line-height:1.15;color:var(--mag)}
-.signup .btn{font-size:20px;padding:18px 34px}
-.signup .ice{position:absolute;width:180px;left:4%;bottom:20px;background:#fff;padding:6px;border-radius:6px;box-shadow:0 9px 24px #30303926}
+.steps3{display:flex;justify-content:center;gap:10px 28px;flex-wrap:wrap;margin-top:22px;font-weight:700;font-size:15px}
+.steps3 span b{font-family:Anton;color:var(--mag);margin-inline-end:6px}
 footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:32px 5vw;font-size:14px;border-top:1px solid var(--line)}
 footer a{font-weight:700;text-decoration:underline;text-underline-offset:4px}
-.note{font-size:12px;color:#525562;margin-top:16px}
-.reveal{opacity:0;transform:translateY(30px);transition:opacity .8s ease,transform .8s ease}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s ease}
 .reveal.in{opacity:1;transform:none}
-a:focus-visible{outline:3px solid #a02b6a;outline-offset:4px}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}.kin span{opacity:0}.kin span:first-child{opacity:1;transform:none}.toast.t1{opacity:1}.tl .st{opacity:1}.kinetic .words span{opacity:1}}
 @media (max-width:900px){
- .shell{grid-template-columns:minmax(0,1fr)}aside,nav,main{min-width:0}
- aside{position:sticky;top:0;height:auto;flex-direction:row;align-items:center;padding:10px 12px;gap:10px;overflow:visible;border-right:0;border-bottom:1px solid var(--line)}
- .logo strong{font-size:19px}.logo small,.navt,.side-cta{display:none}
- nav{overflow-x:auto;flex:1;scrollbar-width:none}nav::-webkit-scrollbar{display:none}
- nav ol{flex-direction:row;width:max-content;gap:6px}
- nav a{padding:6px 12px;font-size:13px;white-space:nowrap;background:#fff;border-color:#d7d5db}nav a::before{display:none}
- .hero,.topic,.about{grid-template-columns:minmax(0,1fr)}
- .hero{padding:32px 22px 50px;gap:30px}
- .hero h1{font-size:52px}
- .hero-img{order:-1;width:260px}
- .topic{padding:56px 22px;gap:34px}
- .about{padding:56px 22px}.about figure{max-width:320px;margin:0 auto}
- .imagine,.signup{padding:64px 22px}.signup .ice{display:none}
- .creds{grid-template-columns:1fr}.marq{font-size:20px}
- .dates div{min-width:0;width:100%}
+ .shell{grid-template-columns:minmax(0,1fr)}aside{display:none}
+ .mbar{display:flex;position:sticky;top:0;z-index:40;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:#ddf4fff7;border-bottom:1px solid var(--line)}
+ .mbar .logo strong{font-size:20px}.mbar .logo small{display:none}
+ .burger{width:46px;height:46px;border-radius:50%;border:1px solid var(--ink);background:#fff;display:grid;place-items:center;cursor:pointer}
+ .burger span,.burger span::before,.burger span::after{display:block;width:18px;height:2px;background:var(--ink);border-radius:2px;position:relative;transition:.3s}
+ .burger span::before,.burger span::after{content:'';position:absolute;right:0}.burger span::before{top:-6px}.burger span::after{top:6px}
+ .open .burger span{background:transparent}.open .burger span::before{top:0;transform:rotate(45deg)}.open .burger span::after{top:0;transform:rotate(-45deg)}
+ .mmenu{display:flex;position:fixed;inset:67px 0 0 0;z-index:39;background:var(--cream);flex-direction:column;padding:20px 20px 28px;gap:14px;transform:translateX(100%);transition:transform .4s cubic-bezier(.2,.8,.2,1);overflow-y:auto}
+ .open .mmenu{transform:none}
+ .mmenu .tnav a{font-size:18px;padding:12px 14px;border-bottom:1px solid #e6e1dc;border-radius:0}
+ .mmenu .btn{width:100%;margin-top:10px}
+ .hero,.topic,.about,.morning{grid-template-columns:minmax(0,1fr)}
+ .hero{padding:36px 20px 56px;gap:28px;min-height:0}.hero h1{font-size:50px}
+ .flow{width:100%;max-width:400px}.node{font-size:12px;padding:5px 10px}
+ .cta .btn{width:100%}
+ .topic,.about,.morning{padding:64px 20px;gap:36px}
+ .signup{padding:72px 20px}.dates div{min-width:0;width:100%}
+ .creds{grid-template-columns:1fr}.marq{font-size:18px}
+ .kinetic{aspect-ratio:5/4}
+ .count div{min-width:66px;padding:8px 10px}.count b{font-size:28px}
 }
 </style>
 </head>
 <body>
+<header class="mbar" id="mbar"><button class="burger" aria-label="תפריט" aria-expanded="false" aria-controls="mmenu"><span></span></button><a href="#top" class="logo"><strong>שלי אור גיסר<span>.</span></strong><small>SHELLY OR GISSER / AGENT WORKSHOP</small></a>
+ <div class="mmenu" id="mmenu"><div class="eyebrow">TOPICS / במה זה עוזר</div><nav class="tnav" aria-label="נושאים"><ol>
+  <li><a href="#t1">סוכן שמכיר את העסק</a></li><li><a href="#t2">סוכן סושיאל</a></li><li><a href="#t3">ניוזלטר</a></li><li><a href="#t4">חשבוניות ואדמין</a></li><li><a href="#t5">ארגון משפחתי</a></li><li><a href="#t6">מטרנד לטיוטה</a></li><li><a href="#t7">רוטינות בזמן שאתם ישנים</a></li><li><a href="#t8">מערכת חדשות של אישה אחת</a></li><li><a href="#about">מי זאת שלי?</a></li><li><a href="#signup">תאריכים והרשמה</a></li>
+ </ol></nav><a class="btn btn-gold " href="https://shelly-agents-workshop.shellyog.chatgpt.site/" target="_blank" rel="noopener"><span>שמרו לי מקום</span><span class="ar">←</span></a></div></header>
 <div class="shell">
-<aside>
- <a href="#top" class="logo"><strong>שלי אור גיסר<span>.</span></strong><small>SHELLY OR GISSER / AGENT WORKSHOP</small></a>
- <div class="navt">TOPICS / במה זה עוזר</div>
- <nav><ol>
-  <li><a href="#t1">סוכן שמכיר את העסק</a></li>
-  <li><a href="#t2">סוכן סושיאל</a></li>
-  <li><a href="#t3">ניוזלטר</a></li>
-  <li><a href="#t4">חשבוניות ואדמין</a></li>
-  <li><a href="#t5">ארגון משפחתי</a></li>
-  <li><a href="#t6">מטרנד לטיוטה</a></li>
-  <li><a href="#t7">רוטינות בזמן שאתם ישנים</a></li>
-  <li><a href="#t8">מערכת חדשות של אישה אחת</a></li>
-  <li><a href="#about">מי זאת שלי?</a></li>
- </ol></nav>
- <a class="side-cta btn gold" href="https://shelly-agents-workshop.shellyog.chatgpt.site/" target="_blank" rel="noopener">שמרו לי מקום </a>
-</aside>
+<aside><a href="#top" class="logo"><strong>שלי אור גיסר<span>.</span></strong><small>SHELLY OR GISSER / AGENT WORKSHOP</small></a><div class="navt">TOPICS / במה זה עוזר</div><nav class="tnav" aria-label="נושאים"><ol>
+  <li><a href="#t1">סוכן שמכיר את העסק</a></li><li><a href="#t2">סוכן סושיאל</a></li><li><a href="#t3">ניוזלטר</a></li><li><a href="#t4">חשבוניות ואדמין</a></li><li><a href="#t5">ארגון משפחתי</a></li><li><a href="#t6">מטרנד לטיוטה</a></li><li><a href="#t7">רוטינות בזמן שאתם ישנים</a></li><li><a href="#t8">מערכת חדשות של אישה אחת</a></li><li><a href="#about">מי זאת שלי?</a></li><li><a href="#signup">תאריכים והרשמה</a></li>
+ </ol></nav><a class="btn btn-gold btn-sm" href="https://shelly-agents-workshop.shellyog.chatgpt.site/" target="_blank" rel="noopener"><span>שמרו לי מקום</span><span class="ar">←</span></a></aside>
 <main id="top">
 <section class="hero">
+ <div class="mesh" aria-hidden="true"></div>
  <div>
-  <span class="tv">הפנים מפינת ה‑AI בחדשות 13 ובכאן 11</span>
-  <h1>תדמיינו סוכן<br><span class="hl">שעובד בשבילכם</span><br>כל בוקר.</h1>
-  <p class="lead">לא עוד צ׳אט שמחכה שתשאלו. סוכן אישי שמכיר אתכם, את העסק ואת הבית, ועושה את העבודה עוד לפני שהקפה מוכן.</p>
-  <div class="facts"><span>Zoom חי</span><span>⏱ שעתיים + שעת המשך</span><span>מתחילים מאפס</span></div>
-  <div class="cta"><a class="btn gold" href="https://shelly-agents-workshop.shellyog.chatgpt.site/" target="_blank" rel="noopener">אני רוצה את זה ←</a><a class="btn ghost" href="#t1">מה הוא יכול לעשות?</a></div>
+  <span class="pill"><span class="live"></span>סדנה חיה בזום · יוצאים לדרך ב‑2.11</span>
+  <h1>קמים בבוקר.<br>הסוכן שלכם כבר<br><span class="kin" aria-label="ענה ללידים"><span>ענה ללידים.</span><span>כתב את הפוסט.</span><span>סידר את היומן.</span><span>הכין ניוזלטר.</span></span></h1>
+  <p class="lead">לא עוד צ׳אט שמחכה שתשאלו. <b>סוכן אישי שמכיר אתכם, את העסק ואת הבית</b>, ועושה את העבודה עוד לפני שהקפה מוכן. בשני ערבים, מאפס, בלי קוד.</p>
+  <div class="facts"><span>Zoom חי עם שלי</span><span>שעתיים + מפגש המשך</span><span>מתחילים מאפס</span><span>יוצאים עם סוכן משלכם</span></div>
+  <div class="cta"><a class="btn btn-gold btn-lg" href="https://shelly-agents-workshop.shellyog.chatgpt.site/" target="_blank" rel="noopener"><span>אני רוצה סוכן כזה</span><span class="ar">←</span></a><a class="btn btn-ghost" href="#t1"><span>מה הוא יכול לעשות?</span><span class="ar">↓</span></a></div>
+  <p class="micro">מפגשים ב‑2.11 וב‑9.11 · 20:00 שעון ישראל</p>
  </div>
- <div class="hero-img"><figure class="polaroid"><img src="assets/shelly.png" alt="שלי אור גיסר"><figcaption><span>THE AGENT ERA / 2026</span><b>הסוכן שלכם כבר מחכה.</b></figcaption></figure><div class="sticker">FRESH THINKING</div></div>
+ <div class="flow" aria-hidden="true">
+  <svg viewBox="0 0 100 100" preserveAspectRatio="none"><circle class="ring" cx="50" cy="50" r="18"/><circle class="ring" cx="50" cy="50" r="18" style="animation-delay:-2s"/><path class="wire" d="M50 50 L50 8"/><path class="pulse" pathLength="100" style="animation-delay:-0.0s" d="M50 50 L50 8"/><path class="wire" d="M50 50 L88 28"/><path class="pulse" pathLength="100" style="animation-delay:-0.6s" d="M50 50 L88 28"/><path class="wire" d="M50 50 L90 64"/><path class="pulse" pathLength="100" style="animation-delay:-1.2s" d="M50 50 L90 64"/><path class="wire" d="M50 50 L10 64"/><path class="pulse" pathLength="100" style="animation-delay:-1.7999999999999998s" d="M50 50 L10 64"/><path class="wire" d="M50 50 L12 28"/><path class="pulse" pathLength="100" style="animation-delay:-2.4s" d="M50 50 L12 28"/><path class="wire" d="M50 50 L50 80"/><path class="pulse" pathLength="100" style="animation-delay:-3.0s" d="M50 50 L50 80"/></svg>
+  <span class="node" style="left:50%;top:8%">מיילים</span><span class="node" style="left:88%;top:28%">יומן</span><span class="node" style="left:90%;top:64%">סושיאל</span><span class="node" style="left:10%;top:64%">לקוחות</span><span class="node" style="left:12%;top:28%">ניוזלטר</span><span class="node" style="left:50%;top:80%">הבית</span>
+  <div class="core"><div>הסוכן<br>שלכם<small>ALWAYS ON</small></div></div>
+  <div class="toast t1"><i>07:58 · DONE</i><b>תשובה לליד מוכנה</b>בקול שלכם, מחכה לאישור</div>
+  <div class="toast t2"><i>08:02 · READY</i><b>3 טיוטות פוסטים</b>לפי מה שחם היום בתחום</div>
+  <div class="toast t3"><i>08:05 · SENT</i><b>תדריך בוקר אישי</b>יומן, מיילים חשובים, מה חדש</div>
+ </div>
 </section>
-<div class="marq" aria-hidden="true"><div>Social<i></i>Newsletter<i></i>Invoices<i></i>Family<i></i>Trends<i></i>Routines<i></i>Newsroom<i></i>Your Business<i></i>Social<i></i>Newsletter<i></i>Invoices<i></i>Family<i></i>Trends<i></i>Routines<i></i>Newsroom<i></i>Your Business<i></i></div></div>
-<section class="imagine reveal">
- <div class="eyebrow">סוכנים מאפס עם Grok</div>
- <h2>יש לכם רשימת מטלות. <span class="hl">לסוכן שלכם יש אתכם.</span></h2>
- <p>הנה טעימה ממה שבונים בסדנה. איך? את זה שומרים לזום </p>
+<div class="marq" aria-hidden="true"><div>Your Business<i>/</i>Social<i>/</i>Newsletter<i>/</i>Invoices<i>/</i>Family<i>/</i>Trends<i>/</i>Routines<i>/</i>Newsroom<i>/</i>Your Business<i>/</i>Social<i>/</i>Newsletter<i>/</i>Invoices<i>/</i>Family<i>/</i>Trends<i>/</i>Routines<i>/</i>Newsroom<i>/</i></div></div>
+<section class="morning reveal">
+ <div><div class="eyebrow">A MORNING WITH YOUR AGENT</div>
+ <h2>יש לכם רשימת מטלות.<br><span class="hl">לסוכן שלכם יש אתכם.</span></h2>
+ <p>זה ההבדל בין צ׳אט לסוכן: אתם לא צריכים לזכור לבקש. הנה טעימה ממה שבונים בסדנה. איך? את זה שומרים לזום.</p></div>
+ <div class="tl" aria-label="בוקר לדוגמה">
+  <div class="st"><time>06:00</time><div>תדריך בוקר מחכה בטלפון<small>יומן, מיילים חשובים, מה חדש</small></div></div>
+  <div class="st"><time>06:30</time><div>הליד מאתמול בלילה קיבל תשובה<small>בטון שלכם, ממתינה לאישור</small></div></div>
+  <div class="st"><time>07:15</time><div>טיוטה לפוסט על הטרנד של היום<small>זווית אישית, מוכנה לפרסום</small></div></div>
+  <div class="st"><time>07:45</time><div>תזכורת: מתנה ליום ההולדת ביום חמישי<small>הבית מאורגן, הראש פנוי</small></div></div>
+  <p class="cap">* הדמיה להמחשה</p>
+ </div>
 </section>
-
-<section class="topic reveal" id="t1"><div><div class="num">01</div><div class="eyebrow">YOUR BUSINESS BRAIN</div>
+<section class="topic reveal" id="t1"><div><div class="num">NO. 01</div><div class="eyebrow">YOUR BUSINESS BRAIN</div>
  <h2>סוכן שמכיר את העסק שלכם <span class="hl">יותר טוב מכם.</span></h2>
  <p class="benefit">הלקוחות, השירותים, הטון. הוא יודע הכל, אז <b>אתם מפסיקים להסביר מחדש</b> כל פעם.</p>
- <a class="link" href="#signup">אני רוצה סוכן כזה ←</a></div>
+ <a class="tlink" href="#signup">אני רוצה סוכן כזה ←</a></div>
  <div class="card c1"><span class="tag">לדוגמה</span><ul>
   <li><i>08:00</i>מחכה לכם תשובה מוכנה לליד שנכנס בלילה, בדיוק בקול שלכם.</li>
   <li><i>לפני פגישה</i>תקציר על הלקוח ומה כדאי להציע לו.</li>
   <li><i>כל רגע</i>שאלה על העסק? תשובה, בלי לחפש בעשרה קבצים.</li></ul></div></section>
 
-<section class="topic reveal" id="t2"><div><div class="num">02</div><div class="eyebrow">SOCIAL MEDIA AGENT</div>
+<section class="topic reveal" id="t2"><div><div class="num">NO. 02</div><div class="eyebrow">SOCIAL MEDIA AGENT</div>
  <h2>הסושיאל ממשיך לרוץ <span class="hl">גם כשאתם בחופש.</span></h2>
  <p class="benefit">נגמר הבוקר של ״מה אני מעלה היום?״. <b>מגיעים עם רעיונות, לא עם דף ריק.</b></p>
- <a class="link" href="#signup">בא לי סושיאל בלי לחץ ←</a></div>
+ <a class="tlink" href="#signup">בא לי סושיאל בלי לחץ ←</a></div>
  <div class="card c2"><span class="tag">לדוגמה</span><ul>
   <li><i>ראשון</i>תוכנית תוכן לשבוע שלם, מחכה לאישור שלכם.</li>
   <li><i>כל יום</i>טיוטות פוסטים שנשמעות כמוכם, לא כמו רובוט.</li>
   <li><i>אחרי</i>מה עבד השבוע ומה כדאי לנסות עכשיו.</li></ul></div></section>
 
-<section class="topic reveal" id="t3"><div><div class="num">03</div><div class="eyebrow">NEWSLETTER</div>
+<section class="topic reveal" id="t3"><div><div class="num">NO. 03</div><div class="eyebrow">NEWSLETTER</div>
  <h2>ניוזלטר שכותב את עצמו. <span class="hl">כמעט.</span></h2>
  <p class="benefit">אתם מוסיפים את הנגיעה האישית. <b>הוא עושה את כל השאר.</b></p>
- <a class="link" href="#signup">תראו לי איך ←</a></div>
+ <a class="tlink" href="#signup">תראו לי איך ←</a></div>
  <div class="card c3"><span class="tag">לדוגמה</span><ul>
   <li><i>שישי</i>טיוטת ניוזלטר מוכנה מכל מה שקרה השבוע.</li>
   <li><i>תמיד</i>כותרות שמתחשק לפתוח.</li>
   <li><i>בונוס</i>אותו תוכן, גם כפוסט וגם כסטורי.</li></ul></div></section>
 
-<section class="topic reveal" id="t4"><div><div class="num">04</div><div class="eyebrow">INVOICES & ADMIN</div>
+<section class="topic reveal" id="t4"><div><div class="num">NO. 04</div><div class="eyebrow">INVOICES & ADMIN</div>
  <h2>האדמין נעלם. <span class="hl">אתם נשארים.</span></h2>
  <p class="benefit">החלק שאף אחד לא אוהב בעסק, <b>סוף סוף לא יושב עליכם.</b></p>
- <a class="link" href="#signup">שחררו אותי מזה ←</a></div>
+ <a class="tlink" href="#signup">שחררו אותי מזה ←</a></div>
  <div class="card c4"><span class="tag">לדוגמה</span><ul>
   <li><i>סוף חודש</i>תזכורת למי עוד לא שילם, עם נוסח מנומס מוכן.</li>
   <li><i>מיילים</i>סיכום של מה באמת דורש תשובה ממכם היום.</li>
   <li><i>שקט</i>פחות דברים נופלים בין הכיסאות.</li></ul></div></section>
 
-<section class="topic reveal" id="t5"><div><div class="num">05</div><div class="eyebrow">FAMILY OPS</div>
+<section class="topic reveal" id="t5"><div><div class="num">NO. 05</div><div class="eyebrow">FAMILY OPS</div>
  <h2>הבית מאורגן. <span class="hl">בלי שתהיו המזכירה.</span></h2>
  <p class="benefit">חוגים, אסיפות, ימי הולדת. <b>הראש שלכם פנוי לדברים שחשובים.</b></p>
- <a class="link" href="#signup">אני צריכה את זה אתמול ←</a></div>
+ <a class="tlink" href="#signup">אני צריכה את זה אתמול ←</a></div>
  <div class="card c2"><span class="tag">לדוגמה</span><ul>
   <li><i>ערב</i>מה מחכה למשפחה מחר, בהודעה אחת קצרה.</li>
   <li><i>שבועי</i>רשימת קניות ותפריט שמתאים לשבוע שלכם.</li>
   <li><i>מראש</i>תזכורת למתנה לפני יום ההולדת, לא אחריו.</li></ul></div></section>
 
-<section class="topic reveal" id="t6"><div><div class="num">06</div><div class="eyebrow">TRENDS → DRAFTS</div>
+<section class="topic reveal" id="t6"><div><div class="num">NO. 06</div><div class="eyebrow">TRENDS → DRAFTS</div>
  <h2>הטרנד עלה בבוקר. <span class="hl">הטיוטה שלכם כבר מוכנה.</span></h2>
  <p class="benefit">להיות הראשונים לדבר על זה, <b>בלי לגלול שעות.</b></p>
- <a class="link" href="#signup">אני רוצה להקדים את כולם ←</a></div>
+ <a class="tlink" href="#signup">אני רוצה להקדים את כולם ←</a></div>
  <div class="card c1"><span class="tag">לדוגמה</span><ul>
   <li><i>07:30</i>מה מדברים עליו היום בתחום שלכם, בחמש שורות.</li>
   <li><i>מיד</i>זווית אישית שמתאימה רק לכם.</li>
   <li><i>מוכן</i>טיוטה לפוסט שמחכה לאישור.</li></ul></div></section>
 
-<section class="topic reveal" id="t7"><div><div class="num">07</div><div class="eyebrow">WHILE YOU SLEEP</div>
+<section class="topic reveal" id="t7"><div><div class="num">NO. 07</div><div class="eyebrow">WHILE YOU SLEEP</div>
  <h2>רוטינות שרצות <span class="hl">בזמן שאתם ישנים.</span></h2>
  <p class="benefit">אתם קמים, ו<b>העבודה כבר זזה.</b> זה ההבדל בין צ׳אט לסוכן.</p>
- <a class="link" href="#signup">תנו לי בוקר כזה ←</a></div>
+ <a class="tlink" href="#signup">תנו לי בוקר כזה ←</a></div>
  <div class="card c3"><span class="tag">לדוגמה</span><ul>
   <li><i>06:00</i>תדריך בוקר אישי: יומן, מיילים חשובים, מה חדש.</li>
   <li><i>כל שעה</i>עדכון רק כשיש משהו שבאמת שווה לדעת.</li>
   <li><i>ראשון</i>סיכום השבוע שעבר ותוכנית לשבוע הבא.</li></ul></div></section>
 
-<section class="topic newsroom reveal" id="t8"><div><div class="num">08</div><div class="eyebrow">DEMO TEASER · ONE‑PERSON NEWSROOM</div>
+<section class="topic newsroom reveal" id="t8"><div><div class="num">NO. 08</div><div class="eyebrow">DEMO TEASER · ONE‑PERSON NEWSROOM</div>
  <h2>מערכת חדשות שלמה. <span class="hl">אישה אחת.</span></h2>
- <p class="benefit">אחרי שנים של סיקור AI בטלוויזיה, שלי תראה בלייב איך נראית מערכת חדשות של אדם אחד. <b>את המתכון? רק בסדנה.</b></p>
- <a class="link" href="#signup">אני רוצה לראות את הדמו ←</a></div>
+ <p class="benefit">אחרי שנתיים של פינת AI קבועה בטלוויזיה, שלי תראה בלייב איך נראית מערכת חדשות של אדם אחד. <b>את המתכון? רק בסדנה.</b></p>
+ <a class="tlink" href="#signup">אני רוצה לראות את הדמו ←</a></div>
  <div class="screen"><div class="bar"><s></s><s></s><s></s></div>
   <div class="row">סריקת מקורות בוקר <em>DONE</em></div>
   <div class="row">סינון: מה באמת חשוב היום <em>DONE</em></div>
@@ -250,28 +314,31 @@ a:focus-visible{outline:3px solid #a02b6a;outline-offset:4px}
   <p class="note">* הדמיה להמחשה בלבד</p></div></section>
 
 <section class="about reveal" id="about">
- <figure><img src="assets/car.jpg" alt="שלי אור גיסר"></figure>
+ <div class="kinetic" aria-hidden="true"><div class="k-top">MEET SHELLY</div><div class="words"><span>טלוויזיה.</span><span>טכניון.</span><span style="font-family:Anton;letter-spacing:1px">BBDO.</span><span>ועכשיו, אתכם.</span></div><div class="k-bot"><span>SHELLY OR GISSER</span><span>CREATIVE AI</span></div></div>
  <div><div class="eyebrow">MEET SHELLY</div>
- <h2>הי, אני שלי </h2>
- <p>שנתיים הסברתי בטלוויזיה מה קורה בעולם ה‑AI, בפינה קבועה ובראיונות שבועיים בחדשות 13 ובכאן 11. עכשיו אני מביאה את זה אליכם, בגובה העיניים.</p>
+ <h2>הי, אני שלי.<br><span class="hl">ואני מסבירה AI בגובה העיניים.</span></h2>
+ <p>שנתיים הייתה לי פינת AI קבועה בטלוויזיה, לצד ראיונות טלוויזיה קבועים על מה שקורה בעולם ה‑AI. היום אני מרצה בטכניון ו‑Head of AI ב‑Gitam BBDO.</p>
  <p>אני לא מלמדת תיאוריה. אני מראה מה אפשר לעשות כבר מחר בבוקר.</p>
  <div class="creds">
-  <div><b>חדשות 13 · כאן 11</b>פינת AI וראיונות שבועיים</div>
-  <div><b>22.6K חברים</b>בקבוצת הפרומפטים שלי בפייסבוק</div>
+  <div><b>טלוויזיה</b>פינת AI קבועה, שנתיים, וראיונות קבועים</div>
+  <div><b>מרצה בטכניון</b>מלמדת AI מעשי</div>
+  <div><b>Head of AI</b>Gitam BBDO</div>
   <div><b>Google Israel</b>סדנאות לצוות התקשורת</div>
-  <div class="low"><b>Head of AI</b>Gitam BBDO</div>
+  <div><b>22.6K חברים</b>בקבוצת הפרומפטים שלי בפייסבוק</div>
  </div></div>
 </section>
-
 <section class="signup" id="signup">
  <div class="eyebrow">THE AGENTS-FROM-ZERO WORKSHOP</div>
- <h2>סוכנים מאפס עם Grok</h2>
- <p style="font-size:21px">סדנה חיה בזום. יוצאים עם סוכן שעובד בשבילכם, לא עם עוד סיכום.</p>
+ <h2>הבוקר הראשון עם<br>הסוכן שלכם מתחיל כאן.</h2>
+ <p class="sub">סוכנים מאפס עם Grok. סדנה חיה בזום, שיוצאים ממנה עם סוכן שעובד בשבילכם, לא עם עוד סיכום.</p>
+ <div class="count" id="count" aria-live="off"><div><b data-k="d">--</b><small>ימים</small></div><div><b data-k="h">--</b><small>שעות</small></div><div><b data-k="m">--</b><small>דקות</small></div></div>
+ <p class="micro" id="countlbl">עד המפגש הראשון</p>
  <div class="dates">
   <div><b>2.11</b>יום שני · 20:00–22:00<br>מפגש חי, שעתיים</div>
   <div><b>9.11</b>יום שני · 20:00–21:00<br>מפגש המשך</div>
  </div>
- <a class="btn gold" href="https://shelly-agents-workshop.shellyog.chatgpt.site/" target="_blank" rel="noopener">שמרו לי מקום </a>
+ <a class="btn btn-gold btn-lg" href="https://shelly-agents-workshop.shellyog.chatgpt.site/" target="_blank" rel="noopener"><span>שמרו לי מקום בסדנה</span><span class="ar">←</span></a>
+ <div class="steps3"><span><b>01</b>נרשמים</span><span><b>02</b>מגיעים לזום</span><span><b>03</b>יוצאים עם סוכן</span></div>
  <p class="note">שעון ישראל · הדוגמאות באתר הן להמחשה</p>
 </section>
 <footer><span>© שלי אור גיסר · AI Workshops</span><span><a href="mailto:shelly@aigosai.com">shelly@aigosai.com</a> · <a href="https://instagram.com/shelly_or_gisser" target="_blank" rel="noopener">@shelly_or_gisser</a></span></footer>
@@ -279,16 +346,22 @@ a:focus-visible{outline:3px solid #a02b6a;outline-offset:4px}
 <script>
 const io=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}}),{threshold:.12});
 document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
-const links=[...document.querySelectorAll('nav a')];
-const so=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){links.forEach(l=>l.classList.toggle('on',l.getAttribute('href')==='#'+x.target.id));const a=links.find(l=>l.classList.contains('on'));if(a&&innerWidth<900)a.scrollIntoView({inline:'center',block:'nearest'})}}),{rootMargin:'-45% 0px -50% 0px'});
+const links=[...document.querySelectorAll('aside .tnav a')];
+const so=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting)links.forEach(l=>l.classList.toggle('on',l.getAttribute('href')==='#'+x.target.id))}),{rootMargin:'-45% 0px -50% 0px'});
 document.querySelectorAll('section[id]').forEach(s=>so.observe(s));
+const mb=document.getElementById('mbar'),bg=mb.querySelector('.burger');
+bg.onclick=()=>{const o=mb.classList.toggle('open');bg.setAttribute('aria-expanded',o);document.body.style.overflow=o?'hidden':''};
+mb.querySelectorAll('.mmenu a').forEach(a=>a.addEventListener('click',()=>{mb.classList.remove('open');bg.setAttribute('aria-expanded',false);document.body.style.overflow=''}));
+(function(){const S=[new Date('2026-11-02T20:00:00+02:00'),new Date('2026-11-09T20:00:00+02:00')];const c=document.getElementById('count'),l=document.getElementById('countlbl');
+function t(){const n=Date.now();const i=S.findIndex(d=>d>n);if(i<0){c.style.display='none';l.textContent='';return}let s=Math.floor((S[i]-n)/1000);const v={d:Math.floor(s/86400),h:Math.floor(s%86400/3600),m:Math.floor(s%3600/60)};
+for(const k in v)c.querySelector('[data-k='+k+']').textContent=String(v[k]).padStart(2,'0');l.textContent=i?'עד מפגש ההמשך':'עד המפגש הראשון · 2.11, 20:00'}t();setInterval(t,30000)})();
 </script>
 <!-- ===== Chat agent widget (DEMO: local knowledge base; backend-ready) ===== -->
 <style>
-#sg-chat-btn{position:fixed;bottom:22px;right:22px;z-index:60;display:flex;align-items:center;gap:10px;padding:12px 18px 12px 14px;border:1px solid var(--ink);border-radius:999px;background:var(--chrome);background-size:200% 100%;animation:shine 6s ease-in-out infinite;font:700 15px Heebo,sans-serif;color:var(--ink);cursor:pointer;box-shadow:0 12px 30px #3c526b40}
-#sg-chat-btn .dot{width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:17px}
+#sg-chat-btn{position:fixed;bottom:22px;left:22px;z-index:60;display:flex;align-items:center;gap:10px;padding:8px 18px 8px 8px;border:1px solid #303039;border-radius:999px;background:#303039;color:#fff;font:700 15px Heebo,sans-serif;cursor:pointer;box-shadow:0 14px 34px #3c526b55;transition:transform .2s}
+#sg-chat-btn .dot{width:36px;height:36px;border-radius:50%;background:var(--goldg);color:#2a1c05;font-family:Bamberger;display:grid;place-items:center;font-size:17px}
 #sg-chat-btn:hover{transform:translateY(-2px)}
-#sg-chat{position:fixed;bottom:88px;right:22px;z-index:61;width:min(380px,calc(100vw - 24px));height:min(560px,calc(100vh - 120px));background:#fffdfb;border:1px solid #d7d5db;border-radius:12px;box-shadow:0 22px 60px #3c526b4d;display:none;flex-direction:column;overflow:hidden;direction:rtl}
+#sg-chat{position:fixed;bottom:88px;left:22px;z-index:61;width:min(380px,calc(100vw - 24px));height:min(560px,calc(100vh - 120px));background:#fffdfb;border:1px solid #d7d5db;border-radius:12px;box-shadow:0 22px 60px #3c526b4d;display:none;flex-direction:column;overflow:hidden;direction:rtl}
 #sg-chat.open{display:flex;animation:pop .25s ease}
 @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.97)}}
 .sg-head{background:var(--pink);border-bottom:1px solid #d5a5b8;padding:14px 16px;display:flex;align-items:center;gap:10px}
@@ -301,17 +374,17 @@ document.querySelectorAll('section[id]').forEach(s=>so.observe(s));
 .sg-bot{background:#fff;border:1px solid #d7d5db;align-self:flex-start;border-top-right-radius:3px}
 .sg-me{background:var(--ink);color:#fff;align-self:flex-end;border-top-left-radius:3px}
 .sg-m a{color:var(--mag);font-weight:700;text-decoration:underline}
-.sg-cta{display:inline-block;margin-top:8px;text-decoration:none!important;padding:7px 14px;border-radius:6px;font-size:13px}
+.sg-cta{margin-top:8px;font-size:13px!important;min-height:38px!important;padding:6px 6px 6px 14px!important;text-decoration:none!important}.sg-m a.sg-cta{color:#2a1c05;text-decoration:none}.sg-cta .ar{width:26px!important;height:26px!important}
 .sg-chips{display:flex;gap:6px;flex-wrap:wrap;padding:10px 12px 0;background:#fffdfb}
 .sg-chips button{border:1px solid #d7d5db;background:var(--cream);border-radius:999px;padding:5px 11px;font:700 12.5px Heebo,sans-serif;cursor:pointer;color:var(--ink)}
 .sg-chips button:hover{background:var(--pink)}
 .sg-form{display:flex;gap:8px;padding:10px 12px 12px;background:#fffdfb}
 .sg-form input{flex:1;min-width:0;border:1px solid #d7d5db;border-radius:7px;padding:10px 12px;font:15px Heebo,sans-serif;background:#fff}
-.sg-form button{border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:7px;padding:0 14px;font:700 14px Heebo;cursor:pointer}
+.sg-form button{border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:999px;padding:0 14px;font:700 14px Heebo;cursor:pointer}
 .sg-typing{opacity:.6;font-style:italic}
-@media(max-width:900px){#sg-chat-btn{bottom:14px;right:14px;padding:8px 14px 8px 8px;font-size:14px}#sg-chat{right:12px;bottom:74px}}
+@media(max-width:900px){#sg-chat-btn{bottom:14px;left:14px;font-size:14px;padding:6px 14px 6px 6px}#sg-chat{left:12px;bottom:74px}}
 </style>
-<button id="sg-chat-btn" aria-controls="sg-chat" aria-expanded="false"><span class="dot">S</span>שאלו את הסוכן של שלי</button>
+<button id="sg-chat-btn" aria-controls="sg-chat" aria-expanded="false"><span class="dot"><span class="pulse"></span>ש</span>שאלו את הסוכן של שלי</button>
 <section id="sg-chat" role="dialog" aria-label="צ׳אט עם הסוכן של שלי">
  <div class="sg-head"><div><b>הסוכן של שלי </b><small>ASK ME ANYTHING</small><span class="sg-demo">דמו</span></div><button class="sg-x" aria-label="סגירה">×</button></div>
  <div class="sg-log" aria-live="polite"></div>
@@ -323,14 +396,14 @@ document.querySelectorAll('section[id]').forEach(s=>so.observe(s));
 const SIGNUP='https://shelly-agents-workshop.shellyog.chatgpt.site/';
 const PRICING='https://grok.com/plans';
 const MAIL='shelly@aigosai.com';
-const CTA=`<a class="sg-cta" href="${SIGNUP}" target="_blank" rel="noopener">שמרו לי מקום בסדנה ←</a>`;
+const CTA=`<a class="btn btn-gold sg-cta" href="${SIGNUP}" target="_blank" rel="noopener"><span>שמרו לי מקום בסדנה</span><span class="ar">←</span></a>`;
 /* Backend hook: set window.SHELLY_CHAT_BACKEND = async (message, history) => replyHtml
    (e.g. a server proxy to xAI with a teaser-rules system prompt). Never put an API key in this page. */
 const KB=[
  {label:'מה זו הסדנה?',kw:['מה זו','מה זה','מה לומדים','סוכן','סוכנים','grok','גרוק','לומדים'],a:'<b>סוכנים מאפס עם Grok</b>: סדנה חיה בזום, שבה כל אחד יוצא עם סוכן אישי משלו שעובד בשבילו, לא עם עוד סיכום.\nהעסק, הסושיאל, הניוזלטר, האדמין, הבית. איך בדיוק? את זה שומרים לזום '},
  {label:'מתי זה?',kw:['מתי','תאריך','תאריכים','שעה','זום','zoom','מפגש','הקלטה','2.11','9.11'],a:'שני מפגשים חיים בזום (שעון ישראל):\n<b>2.11</b> יום שני · 20:00–22:00 (שעתיים)\n<b>9.11</b> יום שני · 20:00–21:00 (מפגש המשך)'},
  {label:'למי זה מתאים?',kw:['למי','מתאים','מתחיל','מתחילה','ניסיון','טכני','קוד','מתכנת','בעלי עסק','אמא'],a:'לכל מי שרוצה שה‑AI יעבוד בשבילו: בעלי עסקים, יוצרות תוכן, פרילנסרים, הורים עמוסים.\nמתחילים מאפס, בלי קוד ובלי ידע טכני.'},
- {label:'מי זאת שלי?',kw:['שלי','מי את','מי זאת','חדשות','טלוויזיה','כאן','ערוץ','גיסר','מנחה'],a:'שלי אור גיסר: הפנים מפינת ה‑AI בחדשות 13 ובכאן 11, שנתיים של פינה קבועה וראיונות שבועיים. מעבירה סדנאות, בין היתר לצוות התקשורת של Google Israel, ומנהלת קהילת פרומפטים גדולה בפייסבוק.\nבסדנה היא מראה מה אפשר לעשות כבר מחר בבוקר.'},
+ {label:'מי זאת שלי?',kw:['שלי','מי את','מי זאת','טלוויזיה','טכניון','גיסר','מנחה','מרצה','bbdo','גיתם'],a:'שלי אור גיסר: שנתיים של פינת AI קבועה בטלוויזיה וראיונות טלוויזיה קבועים. מרצה בטכניון, Head of AI ב‑Gitam BBDO, העבירה סדנאות לצוות התקשורת של Google Israel ומנהלת קבוצת פרומפטים בפייסבוק עם 22.6K חברים.\nבסדנה היא מראה מה אפשר לעשות כבר מחר בבוקר.'},
  {label:'צריך מנוי?',kw:['מנוי','מחיר','עולה','כמה','תשלום','supergrok','סופרגרוק','premium','להתקין','התקנה','לפני'],a:`כדי לבנות סוכן תצטרכו מנוי Grok מתאים. המחירים והמסלולים העדכניים מופיעים <a href="${PRICING}" target="_blank" rel="noopener">בדף המחירים הרשמי</a>, כדאי לבדוק שם גם זמינות בישראל.\nאת כל השאר (איזה מסלול ומה מכינים מראש) עושים יחד בסדנה.`},
  {kw:['יוצאים','מקבלים','בסוף','תוצאה','מה אקבל'],a:'יוצאים עם סוכן אישי שמכיר אתכם ועובד בשבילכם, ועם הביטחון להמשיך לבנות לבד. רוטינות שרצות בזמן שאתם ישנים, טיוטות שמחכות לאישור.'},
  {kw:['איך','פרומפט','prompt','שלב','צעד','מדריך','תסביר','תלמד','הוראות','כרטיס','מתכון'],a:'זו בדיוק השאלה הנכונה אבל את ה"איך" אני לא מגלה כאן. בונים את זה יחד, בלייב, בסדנה.'},
