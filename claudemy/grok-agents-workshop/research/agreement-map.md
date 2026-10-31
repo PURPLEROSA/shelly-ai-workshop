@@ -87,6 +87,18 @@
 ## TH17 Reliability: stuck computers, failed responses, fast quota burn
 - Source: https://cellcog.ai/blog/grok-bot-problems/ (single third-party blog, anecdotal), plus the critics from round 1 (https://www.abqjournal.com/opinion/opinion-counterpoint-meet-the-ai-agents-of-2026-ambitious-overhyped-and-still-in-training/2947407)
 
+## TH18 Each kind of information has its own place (first-hand, from Shelly's own use of the app, 31.10)
+- Source: the user's walkthrough of Grok Bot, typed into this conversation. First-hand use, the strongest source in this map.
+- Instructions (description): the Bot's role and standing rules; it sees them on every message.
+- Bot memory: facts it learned in conversations; survives clearing the chat; "remember that...".
+- **Shared memory**: facts about the user that every Bot sees (name, style, general rules). Corrects TH05, which described memory as per Bot only.
+- Skills: recipes for a fixed multi-step task; any Bot can use a saved skill.
+- Routines: run on their own by time or event; shown in the **Details** tab.
+- The Bots' computer: one computer shared by all Bots; saved files, tools and site logins are available to all (agrees with TH13).
+- Vault: passwords, credit cards and contact details, stored securely.
+- Drive and Library: files and pages the Bots make, plus templates such as designs.
+- Rule of thumb: rules in instructions, facts worth remembering in memory, files in Drive.
+
 ## The big splits
 1. **Autonomy vs approval:** "works 24/7" marketing (including YUV.AI's) vs official docs that default to drafts, Ask first and test-before-schedule. Room resolution: it prepares at night, you approve in the morning.
 2. **Unofficial channels:** WhatsApp Web convenience vs account-ban risk.
