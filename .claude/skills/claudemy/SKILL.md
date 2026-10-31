@@ -36,6 +36,8 @@ Scripts live next to this file in `scripts/`. Call them by absolute path.
 ## Before starting
 Check what's available and say what's missing in one line: `python3`, the `beautifulsoup4` package (`pip install beautifulsoup4`), `ffmpeg`. Audio uses ElevenLabs when `ELEVENLABS_API_KEY` is set (the plugin's configuration prompt sets it for you) (the natural two-voice sound) and the free macOS voices otherwise. If the user keeps the key in a file, source it in the same shell command as the render; never print it or copy it into the workspace. On Linux (including Claude Code cloud sessions) there are no macOS voices: without `ELEVENLABS_API_KEY`, say once that audio needs the key (in the cloud, an environment secret) and carry on making the scripts and cards.
 
+**Costs and connected tools:** rendering audio spends ElevenLabs credits. Before any render, and before any step that costs money or uses a connected tool (Drive, Gmail, Canva and the like), say what it will cost or read and wait for the user's explicit yes. One approval covers that one step only.
+
 ## Step 1. Map the topic
 Write `research/topics.md`: 12 to 18 sub-topic ids (T01 to T18) that together cover what a learner at this level gets from a good course. Search first to see how the topic is usually taught; don't guess the syllabus from memory. Every reader files notes under these ids, so sources can be compared.
 

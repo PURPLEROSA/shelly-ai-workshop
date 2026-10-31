@@ -6,9 +6,10 @@
 **המשפט שפותח:** "מנהלת המשרד מקבלת עכשיו גישה למייל. קודם קובעים מה אסור לה, ורק אחר כך מה מותר."
 
 ## דמו חי (7')
-1. **כלל Ask first:** Settings ← General ← Bot ← כלל חדש:
-   `לפני כל שליחת מייל, הודעה או תשלום: לבקש אישור.`
-   מהתיעוד: Ask first תמיד מייצר כרטיס אישור, ומנצח בכל התנגשות. **[לאמת]** הנתיב.
+1. **כללי Ask first:** Settings ← General ← **Custom Rules** (מתחת למתג של Auto Review). שני כללים:
+   `Ask first before sending any email, message or payment.`
+   `Ask first before anything that costs money or credits, and before using any connected app.`
+   כלל Ask first תמיד עוצר ומציג כרטיס אישור עם 3 כפתורים: Allow once, Always allow, Deny. **לא לוחצים Always allow על דברים שעולים כסף.**
 2. **Gmail connector:** מחברים בהרשאה לקריאה ולטיוטות, בלי שליחה. Gmail ו-Calendar מתחברים בנפרד, וכל אחד מקבל הרשאות משלו. **[לאמת]** איפה מוסיפים connector ב-Grok Bot.
 3. אצל מנהלת המשרד:
 
