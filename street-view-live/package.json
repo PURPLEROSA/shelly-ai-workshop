@@ -1,0 +1,6 @@
+{
+  "name": "street-view-magic8-live",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" }
+}
