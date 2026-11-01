@@ -1,2 +1,4 @@
 # Claudemy workspaces: pages saved for private study, never commit them
 claudemy/*/raw/
+node_modules/
+claudemy/grok-agents-workshop/pptx/assets/crop/
