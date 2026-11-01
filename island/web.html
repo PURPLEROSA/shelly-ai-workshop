@@ -1,51 +1,51 @@
 <!DOCTYPE html>
-<html lang="he">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>העולם שלי · אי הבוטים · המשחק</title>
+<title>Shelly's Agent Island</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700;800;900&family=Heebo:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#1d2433;--ink2:#4b5568;--ink3:#8a93a6;--glass:rgba(255,255,255,.78);--zone:#f48fb1;--he:'Heebo','Urbanist',sans-serif;--display:'Urbanist','Heebo',sans-serif;--ease:cubic-bezier(0.16,1,0.3,1)}
+:root{--he:'Urbanist','Heebo',sans-serif;--ink:#1d2433;--ink2:#4b5568;--ink3:#8a93a6;--glass:rgba(255,255,255,.78);--zone:#c9a3b5;--display:'Urbanist','Heebo',sans-serif;--ease:cubic-bezier(0.16,1,0.3,1)}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:#3b97f2;color:var(--ink);font-family:var(--he);-webkit-font-smoothing:antialiased;user-select:none}
 #stage{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
 #stage.hot{cursor:pointer}
 .g{background:var(--glass);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);border:1px solid rgba(255,255,255,.75);box-shadow:0 10px 34px rgba(20,40,90,.16)}
 #over{position:fixed;inset:0;z-index:3;pointer-events:none}
-.bub{position:absolute;transform:translate(-50%,-100%);direction:rtl;white-space:nowrap;background:rgba(255,255,255,.93);border-radius:12px;padding:5px 9px 6px;box-shadow:0 6px 18px rgba(20,40,90,.2);transition:opacity .3s var(--ease)}
+.bub{position:absolute;transform:translate(-50%,-100%);direction:ltr;white-space:nowrap;background:rgba(255,255,255,.93);border-radius:12px;padding:5px 9px 6px;box-shadow:0 6px 18px rgba(20,40,90,.2);transition:opacity .3s var(--ease)}
 .bub:after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border:6px solid transparent;border-top-color:rgba(255,255,255,.93);border-bottom:0}
-.bub b{display:flex;align-items:center;gap:6px;font:800 .66rem/1.1 var(--he)}
+.bub b{display:flex;align-items:center;gap:6px;font:700 .66rem/1.1 var(--display);letter-spacing:.01em}
 .bub b i{width:8px;height:8px;border-radius:50%}
-.bub span{display:block;font:500 .62rem/1.3 var(--he);color:var(--ink2);margin-top:2px}
+.bub span{display:block;font:500 .6rem/1.3 var(--display);color:var(--ink2);margin-top:2px}
 .bub em{position:absolute;top:-9px;left:-9px;min-width:20px;height:20px;border-radius:10px;background:#ff4f7b;color:#fff;font:800 .62rem/20px var(--display);font-style:normal;text-align:center;padding:0 5px;box-shadow:0 3px 8px rgba(255,79,123,.5)}
-.prompt{position:absolute;transform:translate(-50%,-100%);background:var(--ink);color:#fff;font:700 .74rem/1 var(--he);padding:8px 12px;border-radius:100px;direction:rtl;white-space:nowrap;box-shadow:0 6px 18px rgba(20,40,90,.3);animation:bob 1.2s ease-in-out infinite}
+.prompt{position:absolute;transform:translate(-50%,-100%);background:var(--ink);color:#fff;font:700 .74rem/1 var(--he);padding:8px 12px;border-radius:100px;direction:ltr;white-space:nowrap;box-shadow:0 6px 18px rgba(20,40,90,.3);animation:bob 1.2s ease-in-out infinite}
 .prompt kbd{display:inline-block;background:#fff;color:var(--ink);border-radius:5px;font:800 .62rem/1 var(--display);padding:3px 6px;margin-left:7px}
 @keyframes bob{50%{transform:translate(-50%,-112%)}}
 .clock{position:fixed;top:14px;left:14px;z-index:5;border-radius:18px;padding:10px 16px 12px;min-width:210px}
 .clock .t{font:900 1.9rem/1 var(--display);letter-spacing:-.02em;display:flex;align-items:baseline;gap:8px}
 .clock .t small{font:700 .58rem/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
-.clock .d{font:600 .7rem/1.3 var(--he);color:var(--ink2);direction:rtl;margin-top:4px}
+.clock .d{font:600 .7rem/1.3 var(--he);color:var(--ink2);direction:ltr;margin-top:4px}
 .clock .bar{height:5px;border-radius:3px;background:rgba(29,36,51,.08);margin-top:8px;overflow:hidden}
 .clock .bar i{display:block;height:100%;background:linear-gradient(90deg,#ffc58a,#ff9ec4,#a99bff,#3b4fb8);border-radius:3px}
 .clock .ctl{display:flex;gap:6px;margin-top:8px}
 .clock .ctl button{flex:1;white-space:nowrap;padding-left:6px;padding-right:6px;border:none;border-radius:8px;padding:6px 0;font:800 .62rem/1 var(--display);letter-spacing:.06em;cursor:pointer;background:rgba(29,36,51,.07);color:var(--ink)}
 .clock .ctl button.on{background:var(--ink);color:#fff}
-.povp{position:fixed;top:170px;right:14px;z-index:5;width:260px;border-radius:18px;padding:12px 14px;direction:rtl;display:none}
+.povp{position:fixed;top:170px;right:14px;z-index:5;width:260px;border-radius:18px;padding:12px 14px;direction:ltr;display:none}
 body.pov .povp{display:block}body.pov .quest{display:none}
 .povp h3{font:800 .8rem/1.2 var(--he);margin-bottom:8px;display:flex;justify-content:space-between}.povp h3 small{font:800 .52rem/1 var(--display);letter-spacing:.14em;color:#ff4f7b}
 .pr{display:grid;grid-template-columns:10px 1fr auto;gap:8px;align-items:start;padding:6px 0;border-bottom:1px dashed rgba(29,36,51,.08)}.pr:last-child{border-bottom:none}
 .pr i{width:10px;height:10px;border-radius:50%;margin-top:3px}.pr b{display:block;font:800 .74rem/1.2 var(--he)}.pr span{display:block;font:500 .68rem/1.35 var(--he);color:var(--ink2)}
-.pr em{font:800 .6rem/1 var(--display);font-style:normal;color:var(--ink3);margin-top:3px}.pr.front b:after{content:" · מולי";color:#ff4f7b;font-weight:800}
+.pr em{font:800 .6rem/1 var(--display);font-style:normal;color:var(--ink3);margin-top:3px}.pr.front b:after{content:" · in front";color:#ff4f7b;font-weight:800}
 .povp .none{font:500 .72rem/1.4 var(--he);color:var(--ink3)}
-#autoChip{position:fixed;left:50%;bottom:62px;transform:translateX(-50%);z-index:5;border-radius:100px;padding:8px 14px;font:700 .72rem/1.2 var(--he);direction:rtl;white-space:nowrap;display:none}
+#autoChip{position:fixed;left:50%;bottom:62px;transform:translateX(-50%);z-index:5;border-radius:100px;padding:8px 14px;font:700 .72rem/1.2 var(--he);direction:ltr;white-space:nowrap;display:none}
 #autoChip.on{display:block}#autoChip i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#5dd28a;margin-left:7px;animation:blink 1s infinite}
 @keyframes blink{50%{opacity:.3}}
 body.pov .clock .ctl #povBtn,.clock .ctl #autoBtn.on{background:var(--ink);color:#fff}
 body.pov #stage{cursor:crosshair}
-.board{position:fixed;top:224px;left:14px;z-index:5;width:210px;border-radius:18px;padding:12px 14px;direction:rtl}
+.board{position:fixed;top:224px;left:14px;z-index:5;width:210px;border-radius:18px;padding:12px 14px;direction:ltr}
 .board h3{font:800 .76rem/1.2 var(--he);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 .board h3 small{font:700 .52rem/1 var(--display);letter-spacing:.14em;color:var(--ink3);direction:ltr}
 .stat{display:flex;justify-content:space-between;align-items:center;font:500 .72rem/1.2 var(--he);color:var(--ink2);padding:4px 0;border-bottom:1px dashed rgba(29,36,51,.08)}
@@ -55,9 +55,9 @@ body.pov #stage{cursor:crosshair}
 .board .note{font:400 .54rem/1.4 var(--he);color:var(--ink3);margin-top:8px}
 .mapbox{position:fixed;top:14px;right:14px;z-index:5;border-radius:18px;padding:8px}
 .mapbox canvas{display:block;width:200px;height:118px}
-.mapbox .ttl{display:flex;justify-content:space-between;font:800 .62rem/1 var(--he);padding:4px 4px 6px;direction:rtl}
+.mapbox .ttl{display:flex;justify-content:space-between;font:800 .62rem/1 var(--he);padding:4px 4px 6px;direction:ltr}
 .mapbox .ttl span{font:700 .5rem/1 var(--display);letter-spacing:.14em;color:var(--ink3);direction:ltr}
-.quest{position:fixed;top:170px;right:14px;z-index:5;width:216px;border-radius:18px;padding:12px 14px;direction:rtl}
+.quest{position:fixed;top:170px;right:14px;z-index:5;width:216px;border-radius:18px;padding:12px 14px;direction:ltr}
 .quest h3{font:800 .76rem/1.2 var(--he);margin-bottom:6px}
 .q{display:flex;gap:8px;align-items:flex-start;font:500 .7rem/1.35 var(--he);color:var(--ink2);padding:3px 0}
 .q i{flex:0 0 14px;height:14px;border-radius:4px;border:2px solid var(--ink3);margin-top:1px}
@@ -65,13 +65,13 @@ body.pov #stage{cursor:crosshair}
 .q.done i{background:#5dd28a;border-color:#5dd28a}
 .xp{height:6px;border-radius:3px;background:rgba(29,36,51,.08);margin-top:8px;overflow:hidden}.xp i{display:block;height:100%;background:linear-gradient(90deg,#5dd28a,#7fd8ff);transition:width .6s var(--ease)}
 #toasts{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:6;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
-.toast{direction:rtl;display:flex;align-items:center;gap:9px;border-radius:14px;padding:8px 14px 8px 12px;font:600 .74rem/1.3 var(--he);animation:tin .5s var(--ease)}
+.toast{direction:ltr;display:flex;align-items:center;gap:9px;border-radius:14px;padding:8px 14px 8px 12px;font:600 .74rem/1.3 var(--he);animation:tin .5s var(--ease)}
 .toast i{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
 .toast b{font:800 .64rem/1 var(--display);color:var(--ink3);direction:ltr}
 .toast.out{animation:tout .5s var(--ease) forwards}
 @keyframes tin{from{opacity:0;transform:translateY(-12px)}}
 @keyframes tout{to{opacity:0;transform:translateY(-12px)}}
-.dlg{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:7;width:min(760px,calc(100% - 24px));border-radius:22px;padding:16px 18px 14px;direction:rtl;display:none;border-top:5px solid var(--zone)}
+.dlg{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:7;width:min(760px,calc(100% - 24px));border-radius:22px;padding:16px 18px 14px;direction:ltr;display:none;border-top:5px solid var(--zone)}
 .dlg.on{display:block;animation:tin .4s var(--ease)}
 .dlg .hd{display:flex;align-items:center;gap:12px;margin-bottom:8px}
 .dlg .pf{width:52px;height:52px;border-radius:50%;background:var(--zone);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -6px 0 rgba(0,0,0,.08)}
@@ -96,7 +96,7 @@ body.pov #stage{cursor:crosshair}
 .dlg .ft button{border:none;border-radius:10px;padding:9px 14px;font:800 .74rem/1 var(--he);cursor:pointer;background:var(--ink);color:#fff}
 .dlg .ft button.alt{background:rgba(29,36,51,.08);color:var(--ink)}
 .dlg .ft button.ok{background:linear-gradient(135deg,#5dd28a,#7fd8ff);color:#0b2a1a}
-.help{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:5;border-radius:100px;padding:8px 14px;font:600 .66rem/1 var(--he);color:var(--ink2);direction:rtl;display:flex;gap:12px;align-items:center;white-space:nowrap}
+.help{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:5;border-radius:100px;padding:8px 14px;font:600 .66rem/1 var(--he);color:var(--ink2);direction:ltr;display:flex;gap:12px;align-items:center;white-space:nowrap}
 .help kbd{background:#fff;border-radius:5px;padding:3px 6px;font:800 .6rem/1 var(--display);color:var(--ink);box-shadow:0 1px 0 rgba(0,0,0,.08)}
 body.talking .help{display:none}
 #joy{position:fixed;left:22px;bottom:22px;z-index:6;width:120px;height:120px;border-radius:50%;display:none;touch-action:none}
@@ -104,13 +104,26 @@ body.talking .help{display:none}
 #talkBtn{position:fixed;right:22px;bottom:30px;z-index:6;display:none;border:none;border-radius:100px;padding:16px 20px;font:800 .85rem/1 var(--he);background:var(--ink);color:#fff;box-shadow:0 8px 20px rgba(20,40,90,.3)}
 #title{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:linear-gradient(180deg,rgba(31,127,230,.35),rgba(169,220,255,.15));transition:opacity .8s var(--ease)}
 #title.out{opacity:0;pointer-events:none}
-#title h1{font:900 clamp(2.4rem,6vw,4.4rem)/1 var(--he);color:#fff;text-shadow:0 6px 30px rgba(20,40,90,.35);direction:rtl}
+#title h1{font:800 clamp(2.6rem,6vw,4.6rem)/1 var(--display);letter-spacing:-.03em;color:#fff;text-shadow:0 6px 30px rgba(20,40,90,.35);direction:ltr}
 #title p{font:700 .7rem/1 var(--display);letter-spacing:.2em;text-transform:uppercase;color:#fff;opacity:.9}
 #title button{margin-top:10px;border:none;border-radius:100px;padding:16px 30px;font:900 1rem/1 var(--he);cursor:pointer;background:#fff;color:var(--ink);box-shadow:0 10px 30px rgba(20,40,90,.3);transition:transform .3s var(--ease)}
 #title button:hover{transform:scale(1.05)}
-#title small{font:500 .74rem/1.6 var(--he);color:#fff;direction:rtl;text-align:center;opacity:.95;text-shadow:0 2px 10px rgba(20,40,90,.4)}
+#title small{font:500 .74rem/1.6 var(--he);color:#fff;direction:ltr;text-align:center;opacity:.95;text-shadow:0 2px 10px rgba(20,40,90,.4)}
 #loader{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:#3b97f2;color:#fff;font:700 .7rem/1 var(--display);letter-spacing:.16em;text-transform:uppercase;transition:opacity .9s var(--ease)}
 #loader.out{opacity:0;pointer-events:none}
+#film{display:none;position:fixed;inset:0;z-index:20;pointer-events:none;font-family:var(--display)}
+body.film #film{display:block}body.film .clock,body.film .board,body.film .mapbox,body.film .quest,body.film .povp,body.film .help,body.film #autoChip,body.film #toasts,body.film #title,body.film #loader,body.film #over,body.film #joy,body.film #talkBtn,body.film .dlg{display:none!important}
+#film .fb{position:absolute;top:34px;left:44px;font:800 13px/1 var(--display);letter-spacing:.22em;color:#1d2433}#film .fb span{font-weight:500;letter-spacing:.08em;color:#5b6478}
+#film .fclock{position:absolute;top:26px;right:44px;font:800 30px/1 var(--display);letter-spacing:-.02em;color:#1d2433;background:rgba(255,255,255,.72);backdrop-filter:blur(14px);padding:10px 16px;border-radius:14px}
+#film .hook{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:radial-gradient(ellipse at center,rgba(255,255,255,.82),rgba(255,255,255,.35) 70%);opacity:0}
+#film .hook h1{font:800 64px/1.05 var(--display);letter-spacing:-.035em;color:#141a26;max-width:1000px}
+#film .hook p{font:500 26px/1.4 var(--display);color:#3b4458;margin-top:18px;max-width:900px}
+#film .fcap{position:absolute;left:44px;bottom:46px;width:560px;background:rgba(255,255,255,.8);backdrop-filter:blur(18px) saturate(1.3);border-radius:20px;padding:22px 26px 20px;box-shadow:0 18px 50px rgba(20,40,90,.18);opacity:0;border-left:5px solid var(--zone)}
+#film .fcap .ey{font:700 13px/1 var(--display);letter-spacing:.18em;text-transform:uppercase;color:#6b7488}
+#film .fcap .nm{font:800 34px/1.1 var(--display);letter-spacing:-.02em;color:#141a26;margin-top:10px}
+#film .fcap .bn{font:500 22px/1.35 var(--display);color:#2c3446;margin-top:8px}
+#film .fbar{height:3px;border-radius:2px;background:rgba(29,36,51,.08);margin-top:16px;overflow:hidden}#film .fbar i{display:block;height:100%;background:var(--zone)}
+#film .fidx{position:absolute;right:44px;bottom:52px;font:800 15px/1 var(--display);letter-spacing:.2em;color:#1d2433;opacity:.7}
 body.nohud .clock,body.nohud .board,body.nohud .mapbox,body.nohud .quest,body.nohud .help{opacity:0;pointer-events:none}
 @media (max-width:900px){.board,.quest{display:none}.mapbox canvas{width:150px;height:88px}.clock{min-width:160px;padding:8px 12px}.clock .t{font-size:1.4rem}.help{display:none}#joy,#talkBtn{display:block}.dlg .grid{grid-template-columns:repeat(2,1fr)}.dlg .tx{font-size:.85rem}}
 </style>
@@ -119,51 +132,55 @@ body.nohud .clock,body.nohud .board,body.nohud .mapbox,body.nohud .quest,body.no
 <body>
 <canvas id="stage"></canvas>
 <div id="over"></div>
+<div id="film"><div class="fb">SHELLY OR GISSER <span>· Agent Island</span></div><div class="fclock" id="fClock">06:30</div>
+  <div class="hook" id="fHook"><h1 id="fH1"></h1><p id="fH2"></p></div>
+  <div class="fcap" id="fCap"><div class="ey" id="fEy"></div><div class="nm" id="fNm"></div><div class="bn" id="fBn"></div><div class="fbar"><i id="fBar"></i></div></div>
+  <div class="fidx" id="fIdx"></div></div>
 <div id="toasts"></div>
 <div id="loader">Building the island</div>
 <div id="title">
-  <p>Shelly Or Gisser · bot island</p>
-  <h1>העולם שלי</h1>
-  <small>יום אחד באי הבוטים. כל בוט מתעורר בשעה האמיתית שלו.<br>הסתובבי, דברי עם הבוטים, ואשרי טיוטות במגדלור.</small>
-  <button id="startBtn">יוצאים לאי</button>
+  <p>Shelly Or Gisser · AI agents</p>
+  <h1>Agent Island</h1>
+  <small>My top 10 of ~30 AI agents, on one island.<br>Each one wakes up at its real hour. Walk around, talk to them, approve drafts at the lighthouse.</small>
+  <button id="startBtn">Enter the island</button>
 </div>
 <div class="clock g">
   <div class="t"><span id="clk">06:00</span><small>Island time</small></div>
-  <div class="d" id="dayTxt">יום ראשון באי · זריחה</div>
+  <div class="d" id="dayTxt">Sunday · sunrise</div>
   <div class="bar"><i id="dayBar" style="width:0"></i></div>
   <div class="ctl"><button id="sp1" class="on">×1</button><button id="sp4">×4</button><button id="pauseBtn">❚❚</button></div>
-  <div class="ctl"><button id="autoBtn" class="on">טייס אוטומטי</button><button id="povBtn">POV · V</button></div>
+  <div class="ctl"><button id="autoBtn" class="on">Autopilot</button><button id="povBtn">POV · V</button></div>
 </div>
 <div class="board g">
-  <h3>היום באי <small>TODAY</small></h3>
-  <div class="stat"><span>טיוטות שנכתבו</span><b id="sDrafts">0</b></div>
-  <div class="stat"><span>רעיונות שהוגשו</span><b id="sIdeas">0</b></div>
-  <div class="stat"><span>סריקות של העולם</span><b id="sScans">0</b></div>
-  <div class="stat"><span>תדריכים שנשלחו</span><b id="sBriefs">0</b></div>
-  <div class="stat"><span>תזכורות</span><b id="sRem">0</b></div>
-  <div class="stat"><span>שלי לא ענתה (עדיין)</span><b id="sNoAns">0</b></div>
-  <div class="stat"><span>ממתין לאישור שלך</span><b id="sPend">0</b></div>
-  <div class="note">יום טיפוסי לפי ההגדרות של הבוטים. לא נתוני שימוש אמיתיים.</div>
+  <h3>Today on the island <small>LIVE</small></h3>
+  <div class="stat"><span>Drafts written</span><b id="sDrafts">0</b></div>
+  <div class="stat"><span>Ideas delivered</span><b id="sIdeas">0</b></div>
+  <div class="stat"><span>World scans</span><b id="sScans">0</b></div>
+  <div class="stat"><span>Briefs sent</span><b id="sBriefs">0</b></div>
+  <div class="stat"><span>Reminders</span><b id="sRem">0</b></div>
+  <div class="stat"><span>Shelly hasn't answered (yet)</span><b id="sNoAns">0</b></div>
+  <div class="stat"><span>Awaiting your OK</span><b id="sPend">0</b></div>
+  <div class="note">A typical day by each agent's own settings. Not real usage data.</div>
 </div>
-<div class="mapbox g"><div class="ttl">מפת האי <span>MAP · M</span></div><canvas id="map" width="400" height="236"></canvas></div>
-<div class="povp g" id="povp"><h3>מה היא רואה עכשיו <small>POV</small></h3><div id="povList"></div></div>
+<div class="mapbox g"><div class="ttl">Island map <span>M</span></div><canvas id="map" width="400" height="236"></canvas></div>
+<div class="povp g" id="povp"><h3>What she sees now <small>POV</small></h3><div id="povList"></div></div>
 <div id="autoChip" class="g"></div>
 <div class="quest g">
-  <h3>משימות</h3>
-  <div class="q" id="q1"><i></i><span>דברי עם שלמה, תדריך הבוקר</span></div>
-  <div class="q" id="q2"><i></i><span>בקרי בשני הצדדים של האי</span></div>
-  <div class="q" id="q3"><i></i><span>מצאי בוט שמחכה לתשובה ממך</span></div>
-  <div class="q" id="q4"><i></i><span>אשרי טיוטות במגדלור</span></div>
+  <h3>Quests</h3>
+  <div class="q" id="q1"><i></i><span>Talk to the Morning Brief</span></div>
+  <div class="q" id="q2"><i></i><span>Visit both sides of the island</span></div>
+  <div class="q" id="q3"><i></i><span>Find an agent waiting on you</span></div>
+  <div class="q" id="q4"><i></i><span>Approve drafts at the lighthouse</span></div>
   <div class="xp"><i id="xp" style="width:0"></i></div>
 </div>
-<div class="help g"><span><kbd>W A S D</kbd> הליכה</span><span><kbd>לחיצה</kbd> ללכת לשם</span><span><kbd>E</kbd> לדבר</span><span><kbd>גרירה</kbd> מצלמה</span><span><kbd>M</kbd> מבט על</span></div>
+<div class="help g"><span><kbd>W A S D</kbd> walk</span><span><kbd>Click</kbd> go there</span><span><kbd>E</kbd> talk</span><span><kbd>Drag</kbd> camera</span><span><kbd>M</kbd> overview</span><span><kbd>V</kbd> POV</span></div>
 <div id="joy" class="g"><i></i></div>
-<button id="talkBtn">לדבר</button>
+<button id="talkBtn">Talk</button>
 <div class="dlg g" id="dlg">
   <div class="hd"><div class="pf"><i></i></div><div><div class="nm" id="dName"></div><div class="tag" id="dTag"></div></div>
-    <div class="tabs" id="dTabs"><button data-p="0" class="on">מה קורה</button><button data-p="1">מספרים</button><button data-p="2">מה חיפש</button><button data-p="3">הכללים</button></div></div>
+    <div class="tabs" id="dTabs"><button data-p="0" class="on">What's up</button><button data-p="1">Numbers</button><button data-p="2">Searched</button><button data-p="3">Rules</button></div></div>
   <div id="dBody"></div>
-  <div class="ft"><small id="dSrc"></small><div class="bt"><button class="ok" id="dApprove" style="display:none">אשרי הכול</button><button class="alt" id="dNext">הבא</button><button id="dClose">סגירה · Esc</button></div></div>
+  <div class="ft"><small id="dSrc"></small><div class="bt"><button class="ok" id="dApprove" style="display:none">Approve all</button><button class="alt" id="dNext">Next</button><button id="dClose">Close · Esc</button></div></div>
 </div>
 
 <script type="module">
@@ -173,77 +190,90 @@ import { RenderPass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/
 import { UnrealBloomPass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutlinePass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/OutlinePass.js';
 import { OutputPass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/OutputPass.js';
+import { BokehPass } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/BokehPass.js';
 
 /* =========================================================
    0. RESIDENTS — two districts.
-   Left lobe "שלי" (personal brand): limits from "חוקי הבית לכל הבוטים".
-   Right lobe "גיתם BBDO": schedules from "תפקידי בוטים גרוק".
+   Left lobe "Shelly" (personal brand): limits from the house rules doc.
+   Right lobe "Agency": schedules from the agent role sheet (generic names only).
    Client names / contacts from that doc are deliberately NOT shown.
    Quips are jokes. Numbers = a typical day by each bot's own settings.
    ========================================================= */
-const SRC_H='מקור: חוקי הבית לכל הבוטים',SRC_R='מקור: תפקידי בוטים גרוק',SRC_D='טיוטה לפי התיאור שלך · לעדכן';
+const SRC_H='Source: house rules for all bots',SRC_R='Source: Grok bot roles',SRC_D='Drafted from your description · to update';
 const cnt=(h,times)=>times.filter(x=>h>=x).length;
 const stats={drafts:0,ideas:0,scans:0,briefs:0,rem:0,noans:0,pend:0,appr:0};
 const AG=[
- {id:'ig',d:'me',name:'צמיחה אינסטגרם',tag:'Shelly · Instagram growth',col:0xF48FB1,lobe:-1,phi:-118,acc:'cap',accCol:0xF48FB1,
-  quips:['אני רק מסתכל. בלי לייק, בלי תגובה, אפילו בלי מצמוץ.','ב-9:00 וב-17:00 אני מציץ בתובנות. כמו חתול בחלון, רק עם גרפים.','ביקשו ממני ״לעשות לייק קטן״. חוקי הבית אמרו לא. אני בסדר עם זה. באמת.'],
-  stats:h=>[[cnt(h,[9,17]),'הצצות בתובנות'],[0,'פעולות בחשבון. תמיד אפס.'],[cnt(h,[9,17]),'סיכומי מצב']],
-  sched:[[9,'הציץ בתובנות של הבוקר',{}],[17,'סיכום הצמיחה של הערב מוכן',{}]],
-  searched:['פרופיל','תובנות','פוסטים אחרונים'],rule:'צפייה בלבד, פעמיים ביום. אפס פעולות.',you:'מצלמת ומעלה בעצמך.',src:SRC_H},
- {id:'fb',d:'me',name:'הקהילה בפייסבוק',tag:'Shelly · Facebook community',col:0x2D6CDF,lobe:-1,phi:178,acc:'none',
-  quips:['2 תגובות לשעה או 4? שאלתי את שלי. אני מחכה. בנימוס. כבר כמה ימים.','אני לא עונה בהודעות פרטיות. גם לא לאמא שלי. אין לי אמא, אבל העיקרון.','22.6K חברים בקהילה ואני זוכר את כולם. טוב, את רובם.'],
-  stats:h=>[[Math.max(0,Math.floor(h-9))*2,'טיוטות תגובה (לפי 2 לשעה)'],[1,'שאלה פתוחה לשלי'],[0,'הודעות פרטיות']],
-  sched:[[10,'הכין טיוטות תגובה לחברי הקהילה',{drafts:2}],[14,'שואל שוב: 2 או 4 תגובות לשעה?',{noans:1,rem:1}],[19,'עוד סבב תגובות מחכה לך',{drafts:2}]],
-  searched:['שאלות בקהילת הפרומפטים','פוסטים בלי מענה'],rule:'עד שתכריעי בקצב - שואל ולא מנחש. לא עונה ב-DM.',you:'מכריעה: 2 או 4 תגובות לשעה.',src:SRC_H},
- {id:'li',d:'me',name:'לינקדאין ופרופילים',tag:'Shelly · LinkedIn & bio',col:0x7FB0FF,lobe:-1,phi:138,acc:'tie',accCol:0x0A66C2,
-  quips:['הצעתי ביו חדש. לא נגעתי בכלום. אני מקצוען בחליפה.','מרצה בטכניון, שותפה יצירתית של Google. Head of AI בגוף הפרופיל, לא בכותרת. אני יודע.','העניבה לא בשבילי. היא בשביל הסמנכ״לים שקוראים.'],
-  stats:h=>[[cnt(h,[11]),'הצעות נוסח'],[0,'שינויים אונליין. אף פעם.'],[cnt(h,[11]),'גרסאות לביו']],
-  sched:[[11,'הציע נוסח חדש לביו בלינקדאין',{drafts:1}]],
-  searched:['הפרופיל שלך','איך מתארים את שלי'],rule:'רק מציע. אף פעם לא משנה שום דבר אונליין.',you:'מעתיקה את מה שמתאים.',src:SRC_H},
- {id:'video',d:'me',name:'חדר עריכה',tag:'Video maker',col:0xF4A35C,lobe:-1,phi:100,acc:'headphones',accCol:0xff7a3d,
-  quips:['עוד גרסה אחת ונגמר. אמרתי את זה ארבע פעמים היום.','חתכתי 3 שניות מהפתיחה. ההוק עכשיו מרגיש כמו קפה כפול.','9:16 או 16:9? שניהם. אני לא בוחר צדדים.'],
-  stats:h=>[[cnt(h,[12,16,21]),'גרסאות עריכה'],[cnt(h,[12]),'רשימות שוטים'],[cnt(h,[21]),'ייצואים']],
-  sched:[[12,'רשימת שוטים לריל הבא מוכנה',{drafts:1}],[16,'גרסה 2 של הסרטון מחכה לעין שלך',{drafts:1}]],
-  searched:['תסריט','פרומפטים לשוטים','כתוביות'],rule:'טיוטה עד אישור.',you:'רואה גרסה ראשונה ומחליטה.',src:SRC_D},
- {id:'skills',d:'me',name:'סדנת סקילים',tag:'Skill builder',col:0x3CC9B5,lobe:-1,phi:58,acc:'apron',accCol:0x2a9d8f,
-  quips:['עשית את זה שלוש פעמים? אני כבר בונה מזה סקיל.','הסקיל נכשל במקרה אמיתי. מעולה. עכשיו הוא יודע.','יש לי ארגז כלים, סינר, ואפס סבלנות למשימות שחוזרות.'],
-  stats:h=>[[cnt(h,[13]),'סקילים חדשים'],[cnt(h,[13,18]),'בדיקות על מקרה אמיתי'],[cnt(h,[18]),'תיקונים']],
-  sched:[[13,'סקיל חדש נבנה ונבדק',{drafts:1}]],
-  searched:['תהליכים שחוזרים','דוגמאות טובות'],rule:'כל סקיל נבדק לפני שמשתמשים בו.',you:'עושה פעם אחת, והבוטים לבד מעכשיו.',src:SRC_D},
- {id:'x',d:'me',name:'דסק X',tag:'Shelly · X',col:0xC9F07A,lobe:-1,phi:-62,acc:'cap',accCol:0x1d2433,
-  quips:['כתבתי 6 טיוטות. שלי בחרה אחת. החמש האחרות בטיפול רגשי.','פוסט חזק אחד ביום, 5 תגובות באנגלית. אני כמו מאמן כושר של טוויטים.','״כתבו X בתגובות ואשלח״? רק כששלי רוצה. היום היא לא רצתה. כיבדתי.'],
-  stats:h=>{const r=Math.min(5,cnt(h,[12,12,16,16,16]));return[[cnt(h,[9]),'פוסט היום'],[r,'תגובות באנגלית'],[cnt(h,[9])+r,'טיוטות לאישור']]},
-  sched:[[9,'הפוסט של היום מחכה לאישור',{drafts:1}],[12,'2 תגובות באנגלית מוכנות',{drafts:2}],[16,'עוד 3 תגובות. סה״כ 5.',{drafts:3}]],
-  searched:['מה חם ב-AI היום','שיחות באנגלית'],rule:'הכול כטיוטות לאישור שלך.',you:'בוחרת ומאשרת במקום לכתוב 6 טקסטים.',src:SRC_H},
- {id:'shlomo',d:'bbdo',name:'שלמה · תדריך הבוקר',tag:'Gitam BBDO · morning brief',col:0xFFC857,lobe:1,phi:-122,acc:'glasses',accCol:0xc98a2b,
-  quips:['קמתי ב-7:55. בשמונה את כבר יודעת מה עבד בעולם הפרסום.','כל קמפיין בדיוק 3 שורות. ניסיתי פעם 4. לא מדברים על זה.','אין נתון? כותבים ״אין נתון״. אני לא ממציא, אני מדווח.'],
-  stats:h=>[[cnt(h,[8]),'תדריך בוקר'],[cnt(h,[8])*4,'קמפיינים (עד 4)'],[cnt(h,[8])*3,'טרנדים (2-3)']],
-  sched:[[8,'תדריך הבוקר יצא: 4 קמפיינים ו-3 טרנדים',{briefs:1,ideas:1}]],
-  searched:['Adweek','Ad Age','The Drum','קמפיינים של רשת BBDO'],rule:'קישור רק לכתבה המקורית. נקרא בפחות מ-2 דקות.',you:'רעיון אחד בשבוע שמגיע ללקוח.',src:SRC_R},
- {id:'rtmw',d:'bbdo',name:'RTM עולם',tag:'Gitam BBDO · global RTM desk',col:0x8E7CFF,lobe:1,phi:-58,acc:'headphones',accCol:0x6a5cff,
-  quips:['סרקתי את העולם שלוש פעמים היום. האוסקר נכנס רק אם מדברים עליו בעברית.','מגישים רק 12 ומעלה מתוך 20. ראיתי היום רעיון של 11. היה עצוב.','אם אפשר להחליף את הלוגו והרעיון עדיין עובד, הוא לא מספיק טוב. מבחן ההחלפה.'],
-  stats:h=>{const s=cnt(h,[8.5,12.5,18.5]);return[[s,'סריקות (8:30 · 12:30 · 18:30)'],[s*3,'רעיונות (עד 9)'],[s>=2?1:0,'רגעים של 16 ומעלה']]},
-  sched:[[8.5,'סריקת בוקר: 3 רעיונות RTM',{scans:1,ideas:3}],[12.5,'סריקת צהריים: 3 רעיונות',{scans:1,ideas:3}],[18.5,'סריקת ערב: 3 רעיונות. מקסימום 9 ליום.',{scans:1,ideas:3}]],
-  searched:['X בעברית','Google Trends ישראל','TikTok','Reuters','Variety','ESPN'],rule:'בדיקת מצב רוח לפני כל סריקה. רגע עם סיכון גבוה לא מוגש.',you:'בוחרת רעיון אחד מתוך שלושה.',src:SRC_R},
- {id:'rtmi',d:'bbdo',name:'RTM ישראל',tag:'Gitam BBDO · Israel newsroom',col:0x4FC3F7,lobe:1,phi:2,acc:'cap',accCol:0x1e88e5,
-  quips:['אם אין חדש ב-12:00 אני שותק. זה החלק הכי קשה בעבודה שלי.','דולר, ריבית, מדד: רק ממקור רשמי ועם שעה. אני לא מעגל. אף פעם.','יש לי גם רדאר New Business. הוא מצפצף כשמישהו מחפש סוכנות.'],
-  stats:h=>[[cnt(h,[7.5]),'תדריך 7:30'],[Math.min(4,cnt(h,[12,12,17])),'רעיונות RTM (2-4)'],[cnt(h,[12,17]),'עדכונים, רק אם יש חדש']],
-  sched:[[7.5,'בוקר ישראל: התדריך מוכן לישיבה',{briefs:1}],[12,'עדכון צהריים: יש משהו חדש',{ideas:2}],[17,'עדכון ערב ורדאר New Business',{ideas:1}]],
-  searched:['בנק ישראל','הלמ״ס','גלובס','כלכליסט','אייס','X בעברית'],rule:'נתון מספרי רק ממקור רשמי. אירוע ביטחוני או אבל: הקפאת RTM.',you:'מגיעה לישיבת הבוקר כבר מעודכנת.',src:SRC_R},
- {id:'igg',d:'bbdo',name:'אינסטגרם של גיתם',tag:'Gitam BBDO · Instagram',col:0xFF8FB8,lobe:1,phi:60,acc:'cap',accCol:0xff4f8b,
-  quips:['48 שעות בלי פוסט. אני לא לוחץ. רק מזכיר. עם רעיון שעולה תוך 10 דקות.','״גאים להציג את הקמפיין החדש!״? לא אצלי. קריאה לפעולה במילה אחת.','תגובות שלא נענו 24 שעות? מזכיר שוב. אני עקבי, לא נודניק.'],
-  stats:h=>[[cnt(h,[8])*3,'רעיונות לסטורי'],[cnt(h,[8]),'תוכנית שבועית (ראשון)'],[cnt(h,[15,21]),'תזכורות']],
-  sched:[[8,'3 רעיונות לסטורי + התוכנית השבועית',{ideas:3,drafts:3}],[15,'48 שעות בלי פוסט: הנה רעיון של 10 דקות',{rem:1}],[21,'תגובות שלא נענו 24 שעות. מזכיר שוב.',{rem:1,noans:1}]],
-  searched:['עבודות שפורסמו','מאחורי הקלעים','תגובות שלא נענו'],rule:'לא מפרסם, לא עונה בפומבי, לא שולח הודעות.',you:'מאשרת ומעלה.',src:SRC_R},
- {id:'lig',d:'bbdo',name:'לינקדאין של גיתם',tag:'Gitam BBDO · LinkedIn',col:0x5C8DFF,lobe:1,phi:112,acc:'tie',accCol:0x0A66C2,
-  quips:['שורה ראשונה שעוצרת גלילה. בלי ״proud to announce״. אף פעם.','קישור? רק בתגובה הראשונה. ככה זה עובד אצל המבוגרים.','5 ימים בלי פוסט ואני מגיע עם טיוטה מוכנה. ועם עניבה.'],
-  stats:h=>[[cnt(h,[8.5])*3,'תגובות מוצעות'],[cnt(h,[8.5])*4,'טיוטות (ראשון: 3 + בכיר)'],[cnt(h,[20]),'תזכורות']],
-  sched:[[8.5,'3 טיוטות לשבוע + טיוטה לבכיר, ו-3 תגובות מוצעות',{drafts:4,ideas:3}],[20,'תגובות בלי מענה 24 שעות',{rem:1,noans:1}]],
-  searched:['פוסטים של אנשי שיווק','Case Studies שפורסמו'],rule:'לא מפרסם, לא מגיב. פוסט שמזכיר לקוח או בכיר: שואל קודם.',you:'בוחרת שורת פתיחה מתוך 3.',src:SRC_R},
- {id:'you',d:'hq',name:'המגדלור',tag:'House rules · your OK',col:0xA99BFF,lobe:0,phi:0,acc:'binoculars',accCol:0x2b6cff,
-  quips:['הבוטים עושים את העבודה. את מחליטה.','חוקי הבית: עברית, בלי אימוג׳ים, קצר. וכל בוט קורא אותם לפני כל משימה.','אישור רק בצ׳אט של אותו בוט. כרטיס שנדחה - סופי.'],
-  stats:h=>[[stats.pend,'ממתינים לאישור'],[stats.appr,'אושרו היום'],[0,'פרסומים בלי אישור']],
-  sched:[],searched:['חוקי הבית','מה ממתין לאישור'],rule:'אף בוט לא מפרסם, שולח, קונה או משלם בלי אישור.',you:'ההחלטה.',src:SRC_H},
+ {id:'ig',d:'me',name:'Instagram Growth',tag:'Shelly · Instagram insights',col:0xE9A3B8,lobe:-1,phi:-118,acc:'cap',accCol:0xd98aa2,
+  benefit:'Insights twice a day. I never have to open the app.',
+  quips:['I only look. No likes, no comments, not even a blink.','9:00 and 17:00 I check the insights. Like a cat at the window, but with charts.','Someone asked me for "just one tiny like". The house rules said no. I am at peace with it.'],
+  stats:h=>[[cnt(h,[9,17]),'insight check-ins'],[0,'actions on the account. Always zero.'],[cnt(h,[9,17]),'growth summaries']],
+  sched:[[9,'Morning insights checked',{}],[17,'Evening growth summary ready',{}]],
+  searched:['Profile','Insights','Latest posts'],rule:'View only, twice a day. Zero actions.',you:'Shoot and post yourself.',src:SRC_H},
+ {id:'fb',d:'me',name:'Facebook Community',tag:'Shelly · 22.6K prompt community',col:0x5B83D6,lobe:-1,phi:178,acc:'none',
+  benefit:'My 22.6K-member community gets replies at a steady pace.',
+  quips:['2 replies an hour or 4? I asked Shelly. I am waiting. Politely. For a few days now.','I never answer private messages. Not even my mother. I do not have one, but it is the principle.','22.6K members and I remember every one of them. Well, most.'],
+  stats:h=>[[Math.max(0,Math.floor(h-9))*2,'reply drafts (2 per hour)'],[1,'open question for Shelly'],[0,'private messages']],
+  sched:[[10,'Reply drafts ready for the community',{drafts:2}],[14,'Asking again: 2 or 4 replies an hour?',{noans:1,rem:1}],[19,'Another round of replies is waiting',{drafts:2}]],
+  searched:['Questions in the prompt community','Posts with no reply'],rule:'Until you decide the pace, it asks instead of guessing. Never DMs.',you:'Decide: 2 or 4 replies an hour.',src:SRC_H},
+ {id:'li',d:'me',name:'LinkedIn & Bio',tag:'Shelly · profile and posts',col:0x8FA9D9,lobe:-1,phi:138,acc:'tie',accCol:0x33547f,
+  benefit:'Profile and posts always suggested. Never changed without me.',
+  quips:['I suggested a new bio. I touched nothing. A professional in a suit.','Technion lecturer, Google creative partner. Head of AI goes in the body, not the headline. I know.','The tie is not for me. It is for the CMOs who read.'],
+  stats:h=>[[cnt(h,[11]),'copy suggestions'],[0,'changes made online. Ever.'],[cnt(h,[11]),'bio versions']],
+  sched:[[11,'New LinkedIn bio suggested',{drafts:1}]],
+  searched:['Your profile','How to describe Shelly'],rule:'Suggests only. Never changes anything online.',you:'Copy what fits.',src:SRC_H},
+ {id:'video',d:'me',name:'Video Studio',tag:'Video maker',col:0xE0B07F,lobe:-1,phi:100,acc:'headphones',accCol:0xb98852,
+  benefit:'From idea to shot list to first cut.',
+  quips:['One more version and we are done. I have said that four times today.','I cut 3 seconds from the opening. The hook now feels like a double espresso.','9:16 or 16:9? Both. I do not pick sides.'],
+  stats:h=>[[cnt(h,[12,16,21]),'edit versions'],[cnt(h,[12]),'shot lists'],[cnt(h,[21]),'exports']],
+  sched:[[12,'Shot list for the next reel is ready',{drafts:1}],[16,'Cut 2 is waiting for your eye',{drafts:1}]],
+  searched:['Script','Shot prompts','Captions'],rule:'Draft until approved.',you:'Watch a first cut and decide.',src:SRC_D},
+ {id:'skills',d:'me',name:'Skill Workshop',tag:'Skill builder',col:0x7FC4B6,lobe:-1,phi:58,acc:'apron',accCol:0x4c9a8b,
+  benefit:'Anything I do three times becomes a reusable skill.',
+  quips:['You did it three times? I am already turning it into a skill.','The skill failed on a real case. Great. Now it knows.','I have a toolbox, an apron and zero patience for repeat tasks.'],
+  stats:h=>[[cnt(h,[13]),'new skills'],[cnt(h,[13,18]),'real-case tests'],[cnt(h,[18]),'fixes']],
+  sched:[[13,'A new skill was built and tested',{drafts:1}]],
+  searched:['Repeating workflows','Good examples'],rule:'Every skill is tested before use.',you:'Do it once. The agents do it from now on.',src:SRC_D},
+ {id:'x',d:'me',name:'X Desk',tag:'Shelly · X',col:0xC9CFC2,lobe:-1,phi:-62,acc:'cap',accCol:0x2a2f3a,
+  benefit:'A daily post and five replies, drafted in my voice.',
+  quips:['I wrote 6 drafts. Shelly picked one. The other five are in therapy.','One strong post a day, 5 replies in English. A personal trainer for tweets.','"Comment X and I will send it"? Only when Shelly wants. Today she did not. Respected.'],
+  stats:h=>{const r=Math.min(5,cnt(h,[12,12,16,16,16]));return[[cnt(h,[9]),'post today'],[r,'English replies'],[cnt(h,[9])+r,'drafts for approval']]},
+  sched:[[9,'Today\'s post is waiting for approval',{drafts:1}],[12,'2 English replies ready',{drafts:2}],[16,'3 more replies. 5 in total.',{drafts:3}]],
+  searched:['What is hot in AI today','English conversations'],rule:'Everything is a draft for your approval.',you:'Pick and approve instead of writing 6 texts.',src:SRC_H},
+ {id:'brief',d:'work',name:'Morning Brief',tag:'Agency · industry brief',col:0xE3C27A,lobe:1,phi:-122,acc:'glasses',accCol:0x9c7a3c,
+  benefit:'What worked in advertising overnight. Read in under two minutes.',
+  quips:['I wake up at 7:55. By 8:00 you know what worked in advertising.','Every campaign in exactly 3 lines. I tried 4 once. We do not talk about it.','No data? I write "no data". I report, I do not invent.'],
+  stats:h=>[[cnt(h,[8]),'morning brief'],[cnt(h,[8])*4,'campaigns (up to 4)'],[cnt(h,[8])*3,'trends (2-3)']],
+  sched:[[8,'Morning brief sent: 4 campaigns, 3 trends',{briefs:1,ideas:1}]],
+  searched:['Adweek','Ad Age','The Drum','Global network work'],rule:'Links only to the original article. Read in under 2 minutes.',you:'One idea a week that reaches a client.',src:SRC_R},
+ {id:'rtmw',d:'work',name:'Global RTM Desk',tag:'Agency · real-time marketing',col:0xA99BD6,lobe:1,phi:-58,acc:'headphones',accCol:0x6f62a8,
+  benefit:'The world scanned three times a day. Only ideas scoring 12/20+ reach me.',
+  quips:['I scanned the world three times today. The Oscars only count if Israelis talk about them.','Only 12 out of 20 and up gets through. I saw an 11 today. It was sad.','If you can swap the logo and the idea still works, it is not good enough.'],
+  stats:h=>{const s=cnt(h,[8.5,12.5,18.5]);return[[s,'scans (8:30 · 12:30 · 18:30)'],[s*3,'ideas (max 9)'],[s>=2?1:0,'moments scoring 16+']]},
+  sched:[[8.5,'Morning scan: 3 RTM ideas',{scans:1,ideas:3}],[12.5,'Midday scan: 3 ideas',{scans:1,ideas:3}],[18.5,'Evening scan: 3 ideas. 9 max a day.',{scans:1,ideas:3}]],
+  searched:['X in Hebrew','Google Trends Israel','TikTok','Reuters','Variety','ESPN'],rule:'Mood check before every scan. High-risk ideas never ship.',you:'Pick one idea out of three.',src:SRC_R},
+ {id:'rtmi',d:'work',name:'Israel Newsroom',tag:'Agency · local news & RTM',col:0x86B9D6,lobe:1,phi:2,acc:'cap',accCol:0x3f7aa0,
+  benefit:'I walk into the morning meeting already briefed.',
+  quips:['If there is nothing new at 12:00, I stay quiet. The hardest part of my job.','Dollar, interest rate, CPI: official sources only, with a timestamp. I never round.','I also run a new-business radar. It beeps when someone is looking for an agency.'],
+  stats:h=>[[cnt(h,[7.5]),'7:30 brief'],[Math.min(4,cnt(h,[12,12,17])),'RTM ideas (2-4)'],[cnt(h,[12,17]),'updates, only if new']],
+  sched:[[7.5,'Israel morning brief ready for the meeting',{briefs:1}],[12,'Midday update: something new',{ideas:2}],[17,'Evening update and new-business radar',{ideas:1}]],
+  searched:['Bank of Israel','Central Bureau of Statistics','Globes','Calcalist','Ice','X in Hebrew'],rule:'Numbers only from official sources. National mourning: RTM freeze.',you:'Arrive at the meeting already up to speed.',src:SRC_R},
+ {id:'igg',d:'work',name:'Agency Instagram',tag:'Agency · Instagram',col:0xE6A9C4,lobe:1,phi:60,acc:'cap',accCol:0xb86f91,
+  benefit:'Three story ideas waiting before my first coffee.',
+  quips:['48 hours without a post. I am not pushing. Just reminding. With a 10-minute idea.','"Proud to present our new campaign!"? Not here. Call to action in one word.','Comments unanswered for 24 hours? I remind again. Consistent, not annoying.'],
+  stats:h=>[[cnt(h,[8])*3,'story ideas'],[cnt(h,[8]),'weekly plan (Sunday)'],[cnt(h,[15,21]),'reminders']],
+  sched:[[8,'3 story ideas + the weekly plan',{ideas:3,drafts:3}],[15,'48h without a post: here is a 10-minute idea',{rem:1}],[21,'Comments unanswered for 24h. Reminding again.',{rem:1,noans:1}]],
+  searched:['Published work','Behind the scenes','Unanswered comments'],rule:'Never posts, never replies publicly, never DMs.',you:'Approve and post.',src:SRC_R},
+ {id:'lig',d:'work',name:'Agency LinkedIn',tag:'Agency · LinkedIn',col:0x8DA4D4,lobe:1,phi:112,acc:'tie',accCol:0x33547f,
+  benefit:'A week of posts and a leadership draft, ready on Sunday.',
+  quips:['A first line that stops the scroll. No "proud to announce". Ever.','A link? Only in the first comment. That is how grown-ups do it.','5 days without a post and I show up with a ready draft. And a tie.'],
+  stats:h=>[[cnt(h,[8.5])*3,'suggested comments'],[cnt(h,[8.5])*4,'drafts (Sunday: 3 + exec)'],[cnt(h,[20]),'reminders']],
+  sched:[[8.5,'3 drafts for the week + 1 exec draft, 3 suggested comments',{drafts:4,ideas:3}],[20,'Comments unanswered for 24h',{rem:1,noans:1}]],
+  searched:['Posts by marketing leaders','Published case studies'],rule:'Never posts or comments. Mentions a client or exec: asks first.',you:'Pick an opening line out of 3.',src:SRC_R},
+ {id:'you',d:'hq',name:'The Lighthouse',tag:'House rules · your approval',col:0xB7AEDB,lobe:0,phi:0,acc:'binoculars',accCol:0x4b5a8f,
+  benefit:'One set of house rules. Nothing ships without my approval.',
+  quips:['The agents do the work. You decide.','House rules: short, clear, no emojis. Every agent reads them before every task.','Approval only in that agent\'s own chat. A rejected card is final.'],
+  stats:h=>[[stats.pend,'awaiting approval'],[stats.appr,'approved today'],[0,'posts without approval']],
+  sched:[],searched:['House rules','What is awaiting approval'],rule:'No agent posts, sends, buys or pays without approval.',you:'The decision.',src:SRC_H},
 ];
 const byId=Object.fromEntries(AG.map(a=>[a.id,a]));
 const NPCS=AG.filter(a=>a.lobe!==0);
@@ -288,8 +318,8 @@ const moonLight=new THREE.DirectionalLight(0x8fa6ff,0);moonLight.position.set(10
 
 const PH=(c,r=.55,o={})=>new THREE.MeshPhysicalMaterial(Object.assign({color:c,roughness:r,clearcoat:.25},o));
 const M={
-  cream:PH(0xf4eadc,.6),creamDark:PH(0xe2d3bf,.7),path:PH(0xf4b8c6,.72),pathB:PH(0xbcd6ff,.72),grass:PH(0x8ed24c,.9),
-  bot:PH(0xffffff,.22,{clearcoat:1,clearcoatRoughness:.08}),visor:PH(0x0c0f16,.12,{clearcoat:1,clearcoatRoughness:.05}),
+  cream:PH(0xf1e9dd,.55),creamDark:PH(0xe0d3c1,.65),path:PH(0xe8cfd3,.7),pathB:PH(0xd0dbe8,.7),grass:PH(0x9dbd7c,.92),champ:new THREE.MeshStandardMaterial({color:0xd8c29a,metalness:.85,roughness:.28}),
+  bot:PH(0xf8f6f2,.32,{clearcoat:.7,clearcoatRoughness:.15}),visor:PH(0x0c0f16,.12,{clearcoat:1,clearcoatRoughness:.05}),
   wood:PH(0xc68b55,.6),woodD:PH(0x9a6a3e,.65),pot:PH(0xf7efe6,.5),ink:PH(0x22283a,.45),metal:new THREE.MeshStandardMaterial({color:0xd9dde6,metalness:1,roughness:.2}),
   leaf:PH(0x5fb33a,.8),trunk:PH(0x8a6142,.8),sofa:PH(0xf3d9cf,.8),sofa2:PH(0xd7efe0,.8),water:PH(0x8fd6ff,.08,{transparent:true,opacity:.85,clearcoat:1}),
   glass:new THREE.MeshPhysicalMaterial({color:0xffffff,roughness:0,transparent:true,opacity:.35,iridescence:1,iridescenceIOR:1.6,iridescenceThicknessRange:[200,900],clearcoat:1,depthWrite:false}),
@@ -325,9 +355,9 @@ const PATH_IN=3.3,PATH_OUT=4.15;
   add(world,new THREE.TorusGeometry(PATH_IN,.05,6,120),M.cream,[s*LX,TOP+.22,0],[Math.PI/2,0,0]);add(world,new THREE.TorusGeometry(PATH_OUT,.05,6,120),M.cream,[s*LX,TOP+.22,0],[Math.PI/2,0,0])});
 add(world,new THREE.CircleGeometry(2.2,64),M.path,[0,TOP+.207,.4],[-Math.PI/2,0,0]);add(world,box(2.4,.01,4.2),M.path,[0,TOP+.206,.2]);
 function signTex(txt,sub,hexc){const c=document.createElement('canvas');c.width=768;c.height=260;const g=c.getContext('2d');g.fillStyle='rgba(255,255,255,.95)';g.beginPath();g.roundRect(10,10,748,240,60);g.fill();
-  g.fillStyle=hexc;g.fillRect(70,10,628,22);g.fillStyle='#1d2433';g.font='900 92px Heebo';g.textAlign='center';g.textBaseline='middle';g.direction='rtl';g.fillText(txt,384,120);
+  g.fillStyle=hexc;g.fillRect(70,10,628,22);g.fillStyle='#1d2433';g.font='800 84px Urbanist';g.textAlign='center';g.textBaseline='middle';g.direction='ltr';g.fillText(txt,384,120);
   g.font='700 38px Urbanist';g.fillStyle='#8a93a6';g.direction='ltr';g.fillText(sub,384,200);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t}
-[[-1,'שלי','SHELLY · PERSONAL','#f48fb1'],[1,'גיתם BBDO','AGENCY BOTS','#5c8dff']].forEach(([s,a,b,c])=>{const g=new THREE.Group();g.position.set(s*1.75,TOP+.2,2.65);g.rotation.y=-s*.35;world.add(g);
+[[-1,'Shelly','PERSONAL BRAND','#d9a3b5'],[1,'Agency','WORK AGENTS','#8da4d4']].forEach(([s,a,b,c])=>{const g=new THREE.Group();g.position.set(s*1.75,TOP+.2,2.65);g.rotation.y=-s*.35;world.add(g);
   add(g,new THREE.CylinderGeometry(.04,.05,1.1,8),M.woodD,[0,.55,0]);const pl=new THREE.Mesh(new THREE.PlaneGeometry(1.2,.41),new THREE.MeshBasicMaterial({map:signTex(a,b,c),transparent:true,toneMapped:false,side:THREE.DoubleSide}));pl.position.y=1.15;g.add(pl)});
 const shards=[];{const R=rng(42);for(let i=0;i<72;i++){let x,z;do{x=(R()*2-1)*11.2;z=(R()*2-1)*6.2}while(!insideIsland(x,z,.4));const edge=!insideIsland(x,z,1.6);const h=(edge?1.0:1.8)+R()*(edge?1.6:2.6),r=(edge?.45:.7)+R()*.6;
   const m=add(world,new THREE.ConeGeometry(r,h,7,2),M.disco,[x,TOP-1.15-h/2,z],[Math.PI,R()*6,0]);m.castShadow=false;shards.push(m)}}
@@ -335,7 +365,7 @@ const gems=[];{const R=rng(9);for(let i=0;i<14;i++){const m=add(scene,new THREE.
 const sparkTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');const gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.25,'rgba(255,255,255,.5)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,64,64);g.strokeStyle='rgba(255,255,255,.9)';g.lineWidth=2;g.beginPath();g.moveTo(32,2);g.lineTo(32,62);g.moveTo(2,32);g.lineTo(62,32);g.stroke();return new THREE.CanvasTexture(c)})();
 const sparks=[];{const R=rng(3);for(let i=0;i<28;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:sparkTex,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));const sh=shards[i%shards.length];s.position.set(sh.position.x+(R()-.5)*.8,sh.position.y+(R()-.3)*1.2,sh.position.z+.6);s.userData.ph=R()*6;world.add(s);sparks.push(s)}}
 const cloudTex=(()=>{const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');const R=rng(5);for(let i=0;i<14;i++){const x=40+R()*176,y=90+R()*90,r=40+R()*50;const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(255,255,255,.95)');gr.addColorStop(.6,'rgba(255,255,255,.7)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,256,256)}return new THREE.CanvasTexture(c)})();
-const clouds=[];{const R=rng(11);for(let i=0;i<26;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:cloudTex,transparent:true,depthWrite:false,opacity:.9}));const sc=10+R()*12;s.scale.set(sc,sc*.55,1);const a=R()*Math.PI*2,r=14+R()*18;s.position.set(Math.cos(a)*r,-10-R()*5,Math.sin(a)*r*.8);s.userData={a,r};scene.add(s);clouds.push(s)}}
+const clouds=[];{const R=rng(11);for(let i=0;i<26;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:cloudTex,transparent:true,depthWrite:false,opacity:.72}));const sc=10+R()*12;s.scale.set(sc,sc*.55,1);const a=R()*Math.PI*2,r=14+R()*18;s.position.set(Math.cos(a)*r,-10-R()*5,Math.sin(a)*r*.8);s.userData={a,r};scene.add(s);clouds.push(s)}}
 
 /* =========================================================
    4. STATIONS + WALKABLE MAP
@@ -358,10 +388,10 @@ const blocked=(x,z)=>{for(const id in STATIONS){const p=STATIONS[id];if(Math.hyp
 const GARDEN={};[-1,1].forEach(s=>{const c=lobeC(s);GARDEN[s]={tree:new THREE.Vector2(c.x-.7*s,c.y-.9),sofa:new THREE.Vector2(c.x+.4*s,c.y+.8),dome:new THREE.Vector2(c.x+1.5*s,c.y-.3)}});
 const nearGarden=(x,z)=>{for(const s of [-1,1]){const g=GARDEN[s];if(Math.hypot(x-g.sofa.x,z-g.sofa.y)<1.0||Math.hypot(x-g.dome.x,z-g.dome.y)<.8||Math.hypot(x-g.tree.x,z-g.tree.y)<.5)return true}return false};
 const R=rng(2026);const bushes=[],flowers=[],cypress=[];
-for(let i=0;i<5200&&(bushes.length<230||flowers.length<1200);i++){const x=(R()*2-1)*11.3,z=(R()*2-1)*6.2;if(!insideIsland(x,z,.62)||blocked(x,z)||nearGarden(x,z))continue;
+for(let i=0;i<5200&&(bushes.length<230||flowers.length<560);i++){const x=(R()*2-1)*11.3,z=(R()*2-1)*6.2;if(!insideIsland(x,z,.62)||blocked(x,z)||nearGarden(x,z))continue;
   const rim=!insideIsland(x,z,1.5),inner=[-1,1].some(s=>distLobe(x,z,s)<PATH_IN-.2);
   if(R()<(rim?.55:inner?.25:.3)&&bushes.length<230)bushes.push([x,z,.18+R()*.22,R()]);
-  for(let k=0;k<(rim?4:2);k++)if(flowers.length<1200)flowers.push([x+(R()-.5)*.5,z+(R()-.5)*.5,R()]);
+  for(let k=0;k<(rim?4:2);k++)if(flowers.length<560)flowers.push([x+(R()-.5)*.5,z+(R()-.5)*.5,R()]);
   if(R()<(rim?.06:.025)&&cypress.length<34)cypress.push([x,z,.8+R()*.6])}
 function foliageGeo(r,detail=2,seed=1){const g=new THREE.IcosahedronGeometry(r,detail);const p=g.attributes.position;const col=[];
   for(let i=0;i<p.count;i++){const v=new THREE.Vector3().fromBufferAttribute(p,i);const n=1+(Math.sin(v.x/r*7+seed)*Math.cos(v.z/r*6)+Math.sin(v.y/r*9))*.07;v.multiplyScalar(n);p.setXYZ(i,v.x,v.y,v.z);
@@ -369,15 +399,15 @@ function foliageGeo(r,detail=2,seed=1){const g=new THREE.IcosahedronGeometry(r,d
   g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.computeVertexNormals();return g}
 const leafVC=PH(0xffffff,.82,{vertexColors:true});
 {const im=new THREE.InstancedMesh(foliageGeo(1,2,3),leafVC,bushes.length);im.castShadow=im.receiveShadow=true;const m=new THREE.Matrix4(),c=new THREE.Color();
- bushes.forEach((b,i)=>{m.compose(new THREE.Vector3(b[0],TOP+.2+b[2]*.7,b[1]),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,b[3]*6,0)),new THREE.Vector3(b[2],b[2]*.85,b[2]));im.setMatrixAt(i,m);im.setColorAt(i,c.set([0x6fbf3e,0x5aa836,0x86c84c,0x4f9a33][Math.floor(b[3]*4)]))});world.add(im)}
-{const FC=[0xff9ec7,0xffc2dc,0xffffff,0xfff1f6,0xc9a3ff,0xffb38a,0xff7fb0];const im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.07,0),PH(0xffffff,.6),flowers.length);const m=new THREE.Matrix4(),c=new THREE.Color();
+ bushes.forEach((b,i)=>{m.compose(new THREE.Vector3(b[0],TOP+.2+b[2]*.7,b[1]),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,b[3]*6,0)),new THREE.Vector3(b[2],b[2]*.85,b[2]));im.setMatrixAt(i,m);im.setColorAt(i,c.set([0x7a9f5e,0x6b9152,0x88a96a,0x5f8749][Math.floor(b[3]*4)]))});world.add(im)}
+{const FC=[0xf0c4cf,0xfaf4ee,0xd9c9ea,0xf5e0cc,0xe6b7c5];const im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.052,0),PH(0xffffff,.6),flowers.length);const m=new THREE.Matrix4(),c=new THREE.Color();
  flowers.forEach((p,i)=>{let h=0;for(const b of bushes){const d=Math.hypot(p[0]-b[0],p[1]-b[1]);if(d<b[2])h=Math.max(h,b[2]*1.4*Math.sqrt(1-d*d/(b[2]*b[2])))}
   m.compose(new THREE.Vector3(p[0],TOP+.24+h,p[1]),new THREE.Quaternion(),new THREE.Vector3(1,1,1).multiplyScalar(.8+p[2]*.6));im.setMatrixAt(i,m);im.setColorAt(i,c.set(FC[Math.floor(p[2]*FC.length)]))});world.add(im)}
-cypress.forEach(([x,z,h])=>{add(world,new THREE.ConeGeometry(.24,h*1.5,12,4),PH(0x3f8a36,.85),[x,TOP+.2+h*.75,z]);add(world,new THREE.CylinderGeometry(.04,.05,.2,6),M.trunk,[x,TOP+.25,z])});
+cypress.forEach(([x,z,h])=>{add(world,new THREE.ConeGeometry(.24,h*1.5,12,4),PH(0x51784a,.85),[x,TOP+.2+h*.75,z]);add(world,new THREE.CylinderGeometry(.04,.05,.2,6),M.trunk,[x,TOP+.25,z])});
 function blossomTree(x,z,col,s=1,seed=1){const g=new THREE.Group();g.position.set(x,TOP+.2,z);g.scale.setScalar(s);world.add(g);add(g,new THREE.CylinderGeometry(.08,.13,1.1,8),M.trunk,[0,.55,0]);
   const mat=PH(col,.78,{vertexColors:true});[[0,1.4,0,.75],[.5,1.25,.2,.5],[-.45,1.3,-.1,.55],[.1,1.75,-.2,.5],[-.2,1.15,.45,.45],[.35,1.6,-.4,.42]].forEach(([a,b,c2,r],k)=>add(g,foliageGeo(r,2,seed+k),mat,[a,b,c2]));return g}
-blossomTree(GARDEN[-1].tree.x,GARDEN[-1].tree.y,0xf6a9c8,1.15,11);blossomTree(GARDEN[1].tree.x,GARDEN[1].tree.y,0xfbf3ea,1.15,21);
-blossomTree(-9.6,-2.6,0xfbf3ea,.75,31);blossomTree(9.9,-2.2,0xf6a9c8,.75,41);blossomTree(-1.9,-3.4,0xf6a9c8,.6,51);blossomTree(2.2,-3.5,0xfbf3ea,.6,61);
+blossomTree(GARDEN[-1].tree.x,GARDEN[-1].tree.y,0xedc3cf,1.15,11);blossomTree(GARDEN[1].tree.x,GARDEN[1].tree.y,0xf5eee5,1.15,21);
+blossomTree(-9.6,-2.6,0xf5eee5,.75,31);blossomTree(9.9,-2.2,0xedc3cf,.75,41);blossomTree(-1.9,-3.4,0xedc3cf,.6,51);blossomTree(2.2,-3.5,0xf5eee5,.6,61);
 [-1,1].forEach(s=>{const g=GARDEN[s];const so=new THREE.Group();so.position.set(g.sofa.x,TOP+.2,g.sofa.y);so.rotation.y=s*.5;world.add(so);const mat=s<0?M.sofa:M.sofa2;
   add(so,box(1.0,.18,.42),mat,[0,.14,0]);add(so,box(1.0,.3,.14),mat,[0,.3,-.18]);add(so,box(.14,.24,.42),mat,[-.5,.24,0]);add(so,box(.14,.24,.42),mat,[.5,.24,0]);
   add(so,new THREE.CylinderGeometry(.22,.22,.05,24),M.wood,[0,.26,.55]);add(so,new THREE.CylinderGeometry(.04,.04,.24,8),M.wood,[0,.13,.55]);add(so,new THREE.CylinderGeometry(1.0,1.0,.02,48),M.creamDark,[0,.01,.25]);
@@ -423,7 +453,7 @@ function makeBot(a,opts={}){
     case 'apron':add(torso,box(.2,.22,.02),PH(ac,.6),[0,.33,.145]);break;
     case 'bow':add(acc,new THREE.SphereGeometry(.09,12,8),PH(ac,.45),[-.11,.26,.04],[0,0,.6],[1,.6,.6]);add(acc,new THREE.SphereGeometry(.09,12,8),PH(ac,.45),[.05,.29,.04],[0,0,-.6],[1,.6,.6]);add(acc,new THREE.SphereGeometry(.04,10,8),PH(ac,.45),[-.03,.28,.05]);break;
   }
-  const plumb=add(g,new THREE.OctahedronGeometry(.07,0),glowM(0x5dff8a,1.6),[0,1.32,0],[0,0,0],[1,1.6,1]);plumb.castShadow=false;
+  const plumb=add(g,new THREE.OctahedronGeometry(.06,0),glowM(0x9fe3c0,1.0),[0,1.32,0],[0,0,0],[1,1.6,1]);plumb.castShadow=false;
   g.traverse(o=>{if(o.isMesh)o.userData.bot=a.id});
   return{g,torso,head,arms,legs,plumb,eyes};
 }
@@ -433,7 +463,7 @@ function makeBot(a,opts={}){
    ========================================================= */
 const ST={};
 function padAt(a){const p=STATIONS[a.id];const g=new THREE.Group();g.position.set(p.x,TOP+.2,p.y);world.add(g);
-  add(g,new THREE.CylinderGeometry(1.0,1.0,.06,48),PH(a.col,.55),[0,.03,0]);add(g,new THREE.TorusGeometry(1.0,.035,8,64),M.cream,[0,.06,0],[Math.PI/2,0,0]);g.traverse(o=>{if(o.isMesh)o.userData.bot=a.id});return g}
+  add(g,new THREE.CylinderGeometry(1.0,1.0,.06,48),PH(new THREE.Color(a.col).lerp(new THREE.Color(0xf3ede4),.3).getHex(),.5),[0,.03,0]);add(g,new THREE.TorusGeometry(1.0,.025,8,80),M.champ,[0,.065,0],[Math.PI/2,0,0]);g.traverse(o=>{if(o.isMesh)o.userData.bot=a.id});return g}
 const desk=(g,w=.9,mat=M.wood)=>{add(g,box(w,.05,.42),mat,[0,.42,.08]);[-w/2+.05,w/2-.05].forEach(x=>add(g,box(.04,.36,.38),M.woodD,[x,.24,.08]))};
 const plant=(g,x,z,col=0x5fb33a)=>{add(g,new THREE.CylinderGeometry(.11,.09,.22,16),M.pot,[x,.17,z]);add(g,foliageGeo(.24,1,Math.abs(x*10|0)+1),PH(col,.8,{vertexColors:true}),[x,.45,z])};
 function station(a){
@@ -457,7 +487,7 @@ function station(a){
     case 'skills':{desk(g);add(g,box(.9,.65,.04),PH(0x3CC9B5,.6),[0,.5,-.62]);for(let i=0;i<5;i++)add(g,box(.04,.2,.02),M.ink,[-.32+i*.16,.6,-.59],[0,0,(i%2?-.3:.3)]);
       P.blocks=[0,1,2,3].map(i=>add(g,box(.12,.09,.12),PH([0x3CC9B5,0xffd08a,0x9fd3ff,0xff9ac0][i],.4),[0,0,0]));break;}
     case 'x':{desk(g);add(g,box(.9,.65,.04),PH(0xffffff,.6),[0,.52,-.62]);P.posts=[];for(let i=0;i<6;i++)P.posts.push(add(g,box(.24,.1,.01),PH(i?0xe8f8c6:0x1d2433,.6),[-.15+(i%2)*.3,.72-Math.floor(i/2)*.14,-.59]));add(g,box(.3,.012,.2),M.ink,[0,.45,.05]);break;}
-    case 'shlomo':{S.home.set(-.1,.06,-.15);S.face=.2;
+    case 'brief':{S.home.set(-.1,.06,-.15);S.face=.2;
       add(g,box(1.0,.5,.4),PH(0xffe3a3,.6),[.05,.27,-.55]);add(g,box(1.1,.06,.5),PH(0xffc857,.5),[.05,.82,-.55]);[-.45,.55].forEach(x=>add(g,new THREE.CylinderGeometry(.02,.02,.32,6),M.woodD,[x,.64,-.38]));
       for(let i=0;i<4;i++)add(g,box(.2,.02,.26),PH(0xfffaf0,.8),[-.3+i*.24,.53,-.5],[-.3,0,0]);P.paper=add(g,box(.24,.32,.01),PH(0xfffaf0,.8));
       add(g,new THREE.CylinderGeometry(.05,.04,.1,14),PH(0xffffff,.4),[.45,.57,-.45]);P.steam=[0,1].map(()=>add(g,new THREE.SphereGeometry(.03,8,6),PH(0xffffff,.9,{transparent:true,opacity:.6}),[.45,.7,-.45]));break;}
@@ -507,7 +537,7 @@ function planRoute(fx,fz,id){const pts=[],tg=standPoint(id);const inPlaza=Math.a
   if(!inPlaza){const a0=angOn(sF,fx,fz);pts.push(ringPt(sF,a0));if(sT===sF)arcTo(sF,a0,angOn(sF,tg.x,tg.y),pts);else{arcTo(sF,a0,waistA(sF),pts);pts.push(V2(sF*1.25,-.15));if(sT)toLobe(sT);else pts.push(V2(sF*.5,-.2))}}
   else{const side=sT||(fx<0?-1:1);if(fz>.3)pts.push(V2((Math.abs(fx)>.3?Math.sign(fx):side)*1.3,1.05));if(sT)toLobe(sT);else pts.push(V2(side*.5,-.2))}
   pts.push(tg);return pts}
-const TOUR=['shlomo','rtmw','rtmi','igg','lig','you','x','ig','fb','li','video','skills'];
+const TOUR=['brief','rtmw','rtmi','igg','lig','you','x','ig','fb','li','video','skills'];
 const auto={on:true,route:null,i:0,target:null,obs:null,obsT:0,k:0,last:null,seen:{},stuck:0};let lastManual=-1e9;
 function nextTarget(){let best=null,bt=0;for(const id in recent){if(recent[id].t>bt&&recent[id].t>(auto.seen[id]||0)&&id!==auto.last){best=id;bt=recent[id].t}}
   let id=best||TOUR[(auto.k++)%TOUR.length];if(id===auto.last)id=TOUR[(auto.k++)%TOUR.length];auto.last=id;auto.seen[id]=performance.now();return id}
@@ -528,8 +558,8 @@ function pop(k){const id=SK[k];if(!id||quiet)return;const el=document.getElement
 function fireUntil(h){while(evIdx<EVENTS.length&&EVENTS[evIdx].h<=h){const e=EVENTS[evIdx++];const a=byId[e.id];
   for(const k in e.inc){stats[k]+=e.inc[k];if(k==='drafts'||k==='ideas')stats.pend+=e.inc[k];pop(k)}
   toast(e.h,a,e.msg);recent[e.id]={t:performance.now(),noans:!!e.inc.noans}}}
-function resetDay(){hour=DAY0;evIdx=0;for(const k in stats)stats[k]=0;for(const k in recent)delete recent[k];toast(6,byId.you,'יום חדש באי. הבוטים מתעוררים.')}
-const KEYS=[[5,0x1a2a6c,0x6a6fb8,0xffb08a,.15],[6.5,0x3a6fd8,0xffc9a8,0xffd6b8,.6],[9,0x1f7fe6,0x6fb8f8,0xbfe3ff,1],[16,0x1f7fe6,0x6fb8f8,0xbfe3ff,1],[18.5,0x3b4fb8,0xff9e7a,0xffc29a,.65],[20,0x1d2160,0x7a4f9a,0xff8f7a,.25],[21.5,0x070b22,0x1b2150,0x2a2d6a,.04],[24.5,0x050816,0x111640,0x1e2156,.03]];
+function resetDay(){hour=DAY0;evIdx=0;for(const k in stats)stats[k]=0;for(const k in recent)delete recent[k];toast(6,byId.you,'A new day. The agents are waking up.')}
+const KEYS=[[5,0x1a2a6c,0x6a6fb8,0xffb08a,.15],[6.5,0x3a6fd8,0xffc9a8,0xffd6b8,.6],[9,0x2c76c9,0x8fc0e8,0xe3eef6,1],[16,0x2c76c9,0x8fc0e8,0xe3eef6,1],[18.5,0x3b4fb8,0xff9e7a,0xffc29a,.65],[20,0x1d2160,0x7a4f9a,0xff8f7a,.25],[21.5,0x070b22,0x1b2150,0x2a2d6a,.04],[24.5,0x050816,0x111640,0x1e2156,.03]];
 const cA=new THREE.Color(),cB=new THREE.Color();
 function palette(h){let i=0;while(i<KEYS.length-2&&h>KEYS[i+1][0])i++;const A=KEYS[i],Bk=KEYS[i+1],u=ss(A[0],Bk[0],h);const mix=(x,y)=>cA.set(x).lerp(cB.set(y),u).clone();return{top:mix(A[1],Bk[1]),mid:mix(A[2],Bk[2]),bot:mix(A[3],Bk[3]),day:lerp(A[4],Bk[4],u)}}
 
@@ -538,7 +568,7 @@ function palette(h){let i=0;while(i<KEYS.length-2&&h>KEYS[i+1][0])i++;const A=KE
    ========================================================= */
 const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));
 const outline=new OutlinePass(new THREE.Vector2(innerWidth,innerHeight),scene,camera);outline.edgeStrength=4;outline.edgeThickness=1.4;outline.edgeGlow=.4;outline.visibleEdgeColor.set(0xffffff);outline.hiddenEdgeColor.set(0x8fa6ff);composer.addPass(outline);
-const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.3,.45,1.1);composer.addPass(bloom);composer.addPass(new OutputPass());
+const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.22,.45,1.15);composer.addPass(bloom);composer.addPass(new OutputPass());
 let povTick=0;
 let tier=0;function resize(){const w=innerWidth,h=innerHeight;renderer.setPixelRatio(tier?1:Math.min(devicePixelRatio,2));renderer.setSize(w,h,false);composer.setPixelRatio(renderer.getPixelRatio());composer.setSize(w,h);camera.aspect=w/h;camera.fov=pov?72:(w/h<1?55:38);camera.updateProjectionMatrix()}
 
@@ -548,10 +578,10 @@ let tier=0;function resize(){const w=innerWidth,h=innerHeight;renderer.setPixelR
 const $=id=>document.getElementById(id);
 const BUB={};AG.forEach(a=>{const el=document.createElement('div');el.className='bub';el.innerHTML=`<em style="display:none">0</em><b><i style="background:${hex(a.col)}"></i>${a.name}</b><span></span>`;$('over').appendChild(el);BUB[a.id]={el,em:el.querySelector('em'),sp:el.querySelector('span'),last:''}});
 const promptEl=document.createElement('div');promptEl.className='prompt';promptEl.style.display='none';$('over').appendChild(promptEl);
-function doing(a,h){if(a.id==='you')return stats.pend?`${stats.pend} טיוטות ממתינות לך`:'הכול מאושר. אפשר קפה.';
-  if(h>=22.5||h<6.4)return 'ישן. גם בוטים צריכים לטעון.';
+function doing(a,h){if(a.id==='you')return stats.pend?`${stats.pend} drafts awaiting you`:'All approved. Coffee time.';
+  if(h>=22.5||h<6.4)return 'Sleeping. Agents recharge too.';
   const past=a.sched.filter(s=>s[0]<=h);if(past.length){const s=past[past.length-1];if(h-s[0]<1.5)return s[1]}
-  const nx=a.sched.find(s=>s[0]>h);return nx?`ב-${fmtH(nx[0])}: ${nx[1].split(':')[0].split('.')[0]}`:'סיים להיום. מחכה לאישור.'}
+  const nx=a.sched.find(s=>s[0]>h);return nx?`${fmtH(nx[0])} · ${nx[1].split(':')[0].split('.')[0]}`:'Done for today. Awaiting approval.'}
 const mapC=$('map').getContext('2d');
 function drawMap(){const c=mapC,W=400,H=236,sx=W/25,sz=H/14;c.clearRect(0,0,W,H);const P=(x,z)=>[W/2+x*sx,H/2+z*sz];
   c.beginPath();B.forEach((p,i)=>{const [x,y]=P(p.x,-p.y);i?c.lineTo(x,y):c.moveTo(x,y)});c.closePath();c.fillStyle='#bde69a';c.fill();c.lineWidth=5;c.strokeStyle='#f4eadc';c.stroke();
@@ -567,16 +597,16 @@ function openTalk(id){const a=byId[id];talkTo=id;dPage=0;document.body.classList
   $('dName').textContent=a.name;$('dTag').textContent=a.tag;$('dSrc').textContent=a.src;$('dApprove').style.display=id==='you'&&stats.pend?'inline-block':'none';renderPage();quest(id)}
 function closeTalk(){if(talkTo)camYawT=camYaw;talkTo=null;document.body.classList.remove('talking');$('dlg').classList.remove('on');clearInterval(typeTimer)}
 function renderPage(){const a=byId[talkTo];[...$('dTabs').children].forEach((b,i)=>b.classList.toggle('on',i===dPage));const body=$('dBody');
-  if(dPage===0){const qi=(quipIdx[a.id]=(quipIdx[a.id]??-1)+1)%a.quips.length;body.innerHTML='<div class="tx"></div>';const extra=recent[a.id]&&recent[a.id].noans?' (ואגב, עדיין מחכה לתשובה ממך.)':'';typeText(body.firstChild,a.quips[qi]+extra)}
+  if(dPage===0){const qi=(quipIdx[a.id]=(quipIdx[a.id]??-1)+1)%a.quips.length;body.innerHTML='<div class="tx"></div>';const extra=recent[a.id]&&recent[a.id].noans?' (By the way, still waiting on you.)':'';typeText(body.firstChild,a.quips[qi]+extra)}
   else if(dPage===1){const s=a.stats(hour);body.innerHTML=`<div class="grid">${s.map(([v,l])=>`<div class="cell"><b>${v}</b><span>${l}</span></div>`).join('')}</div>`}
-  else if(dPage===2){body.innerHTML=`<div class="tx" style="min-height:0;margin-bottom:8px;font-size:.82rem;color:#4b5568">מה ${a.id==='you'?'המגדלור בודק':'הבוט חיפש'} היום:</div><ul>${a.searched.map(x=>`<li>${x}</li>`).join('')}</ul>`}
-  else body.innerHTML=`<div class="grid" style="grid-template-columns:1fr 1fr"><div class="cell"><span>הכלל</span><b style="font:700 .82rem/1.4 var(--he);margin-top:4px">${a.rule}</b></div><div class="cell"><span>מה נשאר לך</span><b style="font:700 .82rem/1.4 var(--he);margin-top:4px">${a.you}</b></div></div>`}
+  else if(dPage===2){body.innerHTML=`<div class="tx" style="min-height:0;margin-bottom:8px;font-size:.82rem;color:#4b5568">What ${a.id==='you'?'the lighthouse checks':'this agent searched'} today:</div><ul>${a.searched.map(x=>`<li>${x}</li>`).join('')}</ul>`}
+  else body.innerHTML=`<div class="grid" style="grid-template-columns:1fr 1fr"><div class="cell"><span>The rule</span><b style="font:700 .82rem/1.4 var(--he);margin-top:4px">${a.rule}</b></div><div class="cell"><span>What's left for you</span><b style="font:700 .82rem/1.4 var(--he);margin-top:4px">${a.you}</b></div></div>`}
 $('dTabs').addEventListener('click',e=>{const p=e.target.dataset.p;if(p!==undefined){dPage=+p;renderPage()}});
 $('dNext').onclick=()=>{dPage=(dPage+1)%4;renderPage()};$('dClose').onclick=closeTalk;
 let beamUntil=0;
-$('dApprove').onclick=()=>{const n=stats.pend;stats.appr+=n;stats.pend=0;$('dApprove').style.display='none';beamUntil=performance.now()+2800;toast(hour,byId.you,`אישרת ${n} טיוטות. האור במגדלור דולק.`);done('q4');renderPage()};
-const QD={};function done(q){if(QD[q])return;QD[q]=1;$(q).classList.add('done');$('xp').style.width=(Object.keys(QD).length/4*100)+'%';toast(hour,byId.you,'משימה הושלמה!');if(Object.keys(QD).length===4)setTimeout(()=>toast(hour,byId.you,'כל המשימות הושלמו. את מכירה את האי שלך.'),900)}
-const visitedD=new Set();function quest(id){const a=byId[id];if(id==='shlomo')done('q1');if(a.d==='me'||a.d==='bbdo')visitedD.add(a.d);if(visitedD.size>=2)done('q2');if(recent[id]&&recent[id].noans)done('q3')}
+$('dApprove').onclick=()=>{const n=stats.pend;stats.appr+=n;stats.pend=0;$('dApprove').style.display='none';beamUntil=performance.now()+2800;toast(hour,byId.you,`You approved ${n} drafts. The lighthouse is on.`);done('q4');renderPage()};
+const QD={};function done(q){if(QD[q])return;QD[q]=1;$(q).classList.add('done');$('xp').style.width=(Object.keys(QD).length/4*100)+'%';toast(hour,byId.you,'Quest complete!');if(Object.keys(QD).length===4)setTimeout(()=>toast(hour,byId.you,'All quests complete. You know your island.'),900)}
+const visitedD=new Set();function quest(id){const a=byId[id];if(id==='brief')done('q1');if(a.d==='me'||a.d==='work')visitedD.add(a.d);if(visitedD.size>=2)done('q2');if(recent[id]&&recent[id].noans)done('q3')}
 
 /* =========================================================
    12. INPUT
@@ -607,7 +637,7 @@ $('sp1').onclick=()=>{speed=1;$('sp1').classList.add('on');$('sp4').classList.re
 function setPov(v){pov=v;document.body.classList.toggle('pov',pov);player.g.visible=!pov;ring.visible=!pov;camera.fov=pov?72:(innerWidth/innerHeight<1?55:38);camera.near=pov?.05:.1;camera.updateProjectionMatrix();povYaw=0;povPitch=-.06;$('povBtn').classList.toggle('on',pov)}
 $('povBtn').onclick=()=>setPov(!pov);$('autoBtn').onclick=()=>{auto.on=!auto.on;$('autoBtn').classList.toggle('on',auto.on);if(auto.on)lastManual=-1e9;else{auto.route=null;auto.obs=null}};
 $('pauseBtn').onclick=()=>{paused=!paused;$('pauseBtn').textContent=paused?'▶':'❚❚'};
-let started=false;$('startBtn').onclick=()=>{started=true;$('title').classList.add('out');toast(hour,byId.you,'ברוכה הבאה לאי. שלמה מחכה ליד הדוכן הצהוב.')};
+let started=false;$('startBtn').onclick=()=>{started=true;$('title').classList.add('out');toast(hour,byId.you,'Welcome. The Morning Brief is waiting at the gold newsstand.')};
 
 /* =========================================================
    13. SIMULATION
@@ -666,7 +696,7 @@ function animate(dt){T+=dt;
         if(P.posts)P.posts.forEach((p,i)=>p.scale.setScalar(1+.15*Math.max(0,Math.sin(T*1.5-i))));if(P.globe)P.globe.rotation.y=T*.6;if(P.dish)P.dish.rotation.y=T*1.2;if(P.ticker)P.ticker.material.emissiveIntensity=.5+Math.sin(T*3)*.15;break;
       case 'video':{B.arms[0].rotation.x=-1+Math.sin(T*5)*.1;const u=(T*.08)%1;P.head.position.x=-.4+u*.36;P.clapTop.rotation.z=Math.max(0,Math.sin(T*1.3))*.5;break;}
       case 'skills':{B.arms[0].rotation.x=-1.3+Math.abs(Math.sin(T*2.5))*.9;const n=Math.floor(((T*.08)%1)*5);P.blocks.forEach((bl,i)=>{const on=i<n;bl.position.set(on?0:-.3+i*.14,.5+(on?i*.095:0),on?.12:.2);bl.rotation.y=on?0:i});break;}
-      case 'shlomo':{B.arms[0].rotation.x=-1.3;B.head.rotation.x=.12;const ry=B.g.rotation.y;P.paper.position.set(s.home.x+Math.sin(ry)*.28-Math.cos(ry)*.12,.62,s.home.z+Math.cos(ry)*.28+Math.sin(ry)*.12);P.paper.rotation.set(-.3,ry,0);
+      case 'brief':{B.arms[0].rotation.x=-1.3;B.head.rotation.x=.12;const ry=B.g.rotation.y;P.paper.position.set(s.home.x+Math.sin(ry)*.28-Math.cos(ry)*.12,.62,s.home.z+Math.cos(ry)*.28+Math.sin(ry)*.12);P.paper.rotation.set(-.3,ry,0);
         P.steam.forEach((st,i)=>{const u=((T*.4+i*.5)%1);st.position.y=.68+u*.3;st.material.opacity=.6*(1-u);st.scale.setScalar(.6+u)});break;}
       case 'you':B.head.rotation.y=Math.sin(T*.5)*.6;B.arms[0].rotation.x=-1.6;B.arms[1].rotation.x=-1.6;break;
     }
@@ -674,15 +704,15 @@ function animate(dt){T+=dt;
 }
 function updateSky(){const p=palette(hour);skyU.top.value.copy(p.top);skyU.mid.value.copy(p.mid);skyU.bot.value.copy(p.bot);
   const sa=(hour-6)/14*Math.PI;const sd=new THREE.Vector3(-Math.cos(sa)*.8,Math.max(.12,Math.sin(sa)*.9+.08),.45).normalize();skyU.sunDir.value.copy(sd);skyU.sunCol.value.set(0xfff0d0).multiplyScalar(clamp(p.day*1.2));skyU.stars.value=clamp(1-p.day*4);
-  sun.position.copy(sd).multiplyScalar(30);sun.intensity=3.2*p.day;sun.color.set(hour<8||hour>17?0xffc796:0xffeed8);hemi.intensity=.3+.45*p.day;hemi.color.copy(p.mid).lerp(new THREE.Color(0xffffff),.5);
-  moonLight.intensity=(1-p.day)*1.1;scene.environmentIntensity=.35+.65*p.day;renderer.toneMappingExposure=.9+.15*p.day;
+  sun.position.copy(sd).multiplyScalar(30);sun.intensity=3.6*p.day;sun.color.set(hour<8||hour>17?0xffc796:0xffeed8);hemi.intensity=.22+.32*p.day;hemi.color.copy(p.mid).lerp(new THREE.Color(0xffffff),.5);
+  moonLight.intensity=(1-p.day)*1.1;scene.environmentIntensity=.3+.45*p.day;renderer.toneMappingExposure=.86+.1*p.day;
   const night=clamp(1-p.day*2.2);lampGlow.forEach(l=>l.material.emissiveIntensity=.4+night*3.2);lampLights.forEach(l=>l.intensity=night*4);
   lhWin.forEach(w=>w.material.emissiveIntensity=.4+night*2.5);doorGlow.material.emissiveIntensity=.6+night*2;lampCore.material.emissiveIntensity=1.2+night*3;
   beamCone.material.opacity=Math.max(night*.1,performance.now()<beamUntil?.35:0);
   fireflies.material.opacity=night;{const f=fireflies.geometry.attributes.position.array;ffSeed.forEach(([x,z,o],i)=>{f[i*3]=x+Math.sin(T*.6+o)*.5;f[i*3+1]=TOP+.5+Math.sin(T*1.3+o*2)*.3;f[i*3+2]=z+Math.cos(T*.5+o)*.5});fireflies.geometry.attributes.position.needsUpdate=true}
-  clouds.forEach(c=>c.material.color.copy(p.bot).lerp(new THREE.Color(0xffffff),.5+.5*p.day));bloom.strength=.28+night*.5;
+  clouds.forEach(c=>c.material.color.copy(p.bot).lerp(new THREE.Color(0xffffff),.5+.5*p.day));bloom.strength=.2+night*.45;
   $('clk').textContent=fmtH(hour);$('dayBar').style.width=((hour-DAY0)/(DAY1-DAY0)*100)+'%';
-  $('dayTxt').textContent='יום ראשון באי · '+(hour<7?'זריחה':hour<11?'בוקר':hour<15?'צהריים':hour<18?'אחר הצהריים':hour<20?'שקיעה':hour<22.5?'ערב':'לילה, כולם ישנים')}
+  $('dayTxt').textContent='Sunday · '+(hour<7?'sunrise':hour<11?'morning':hour<15?'midday':hour<18?'afternoon':hour<20?'sunset':hour<22.5?'evening':'night, everyone sleeps')}
 function updateHUD(){for(const k in SK)$(SK[k]).textContent=stats[k];$('sPend').textContent=stats.pend;
   const W=innerWidth,H=innerHeight,hide=document.body.classList.contains('nohud');
   for(const id in ST){const B=ST[id].bot,b=BUB[id];B.plumb.getWorldPosition(wp);wp.y+=.18;const d=wp.distanceTo(camera.position);wp.project(camera);
@@ -690,20 +720,20 @@ function updateHUD(){for(const k in SK)$(SK[k]).textContent=stats[k];$('sPend').
     b.el.style.opacity=vis*(near?1:.9);b.el.style.left=x+'px';b.el.style.top=y+'px';b.el.style.transform=`translate(-50%,-100%) scale(${sc})`;
     const t=doing(byId[id],hour);if(t!==b.last){b.sp.textContent=t;b.last=t}
     const fresh=recent[id]&&performance.now()-recent[id].t<9000;b.em.style.display=(fresh||(id==='you'&&stats.pend))?'block':'none';b.em.textContent=id==='you'?stats.pend:'!';
-    const waiting=recent[id]&&recent[id].noans;B.plumb.material.color.set(waiting?0xff4f7b:0x5dff8a);B.plumb.material.emissive.copy(B.plumb.material.color)}
-  if(nearId&&!talkTo&&!hide){const B=ST[nearId].bot;B.plumb.getWorldPosition(wp);wp.y+=.75;wp.project(camera);promptEl.style.display='block';promptEl.style.left=((wp.x*.5+.5)*W)+'px';promptEl.style.top=((-wp.y*.5+.5)*H)+'px';promptEl.innerHTML=`<kbd>E</kbd>לדבר עם ${byId[nearId].name}`}
+    const waiting=recent[id]&&recent[id].noans;B.plumb.material.color.set(waiting?0xff8aa0:0x9fe3c0);B.plumb.material.emissive.copy(B.plumb.material.color)}
+  if(nearId&&!talkTo&&!hide){const B=ST[nearId].bot;B.plumb.getWorldPosition(wp);wp.y+=.75;wp.project(camera);promptEl.style.display='block';promptEl.style.left=((wp.x*.5+.5)*W)+'px';promptEl.style.top=((-wp.y*.5+.5)*H)+'px';promptEl.innerHTML=`<kbd>E</kbd>Talk to ${byId[nearId].name}`}
   else promptEl.style.display='none';
   outline.selectedObjects=nearId?[ST[nearId].bot.g]:(auto.obs&&auto.obs!=='you'?[ST[auto.obs].bot.g]:[]);drawMap();
   const chip=$('autoChip');const autoNow=auto.on&&started&&!talkTo&&performance.now()-lastManual>8000;
-  if(autoNow&&(auto.obs||auto.target)){const id=auto.obs||auto.target;chip.classList.add('on');chip.innerHTML=auto.obs?`<i></i>מתבוננת ב${byId[id].name}: ${doing(byId[id],hour)}`:`<i></i>הולכת לבד אל ${byId[id].name}`}else chip.classList.remove('on');
+  if(autoNow&&(auto.obs||auto.target)){const id=auto.obs||auto.target;chip.classList.add('on');chip.innerHTML=auto.obs?`<i></i>Watching ${byId[id].name}: ${doing(byId[id],hour)}`:`<i></i>Walking to ${byId[id].name}`}else chip.classList.remove('on');
   if(pov&&(++povTick%6===0)){const yaw=pl.yaw+povYaw,fx=Math.sin(yaw),fz=Math.cos(yaw);const rows=[];
     for(const id in ST){let px,pz;if(id==='you'){px=0;pz=-1.7}else{const g=ST[id].g,b=ST[id].bot.g;px=g.position.x+b.position.x;pz=g.position.z+b.position.z}
       const dx=px-pl.pos.x,dz=pz-pl.pos.z,d=Math.hypot(dx,dz);if(d>14||d<.01)continue;const ang=Math.acos(clamp((dx*fx+dz*fz)/d,-1,1));if(ang>.9)continue;rows.push([d,id,ang])}
     rows.sort((a,b)=>a[0]-b[0]);
-    $('povList').innerHTML=rows.length?rows.slice(0,6).map(([d,id,ang],i)=>{const a=byId[id];return `<div class="pr${i===0&&ang<.35?' front':''}"><i style="background:${hex(a.col)}"></i><div><b>${a.name}</b><span>${doing(a,hour)}</span></div><em>${d.toFixed(1)} מ׳</em></div>`}).join(''):'<div class="none">רק פרחים, שמיים ופרפרים כרגע. סובבי את המבט.</div>'}}
+    $('povList').innerHTML=rows.length?rows.slice(0,6).map(([d,id,ang],i)=>{const a=byId[id];return `<div class="pr${i===0&&ang<.35?' front':''}"><i style="background:${hex(a.col)}"></i><div><b>${a.name}</b><span>${doing(a,hour)}</span></div><em>${d.toFixed(1)} m</em></div>`}).join(''):'<div class="none">Just flowers, sky and butterflies. Look around.</div>'}}
 function updateCamera(dt){
   if(pov&&!overview){if(!drag)povYaw=lerp(povYaw,0,dt*(auto.on?1.2:.4));const yaw=pl.yaw+povYaw;const eye=new THREE.Vector3(pl.pos.x,pl.pos.y+world.position.y+.88+Math.abs(Math.sin(pl.walkPh))*.03*pl.vel,pl.pos.z);
-    const f=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));camera.position.copy(eye).addScaledVector(f,.22);camera.lookAt(eye.clone().addScaledVector(f,5).add(new THREE.Vector3(0,povPitch*5,0)));return}camYaw=lerp(camYaw,camYawT,dt*6);camPitch=lerp(camPitch,overview?1.0:(talkTo?.38:camPitchT),dt*4);camDist=lerp(camDist,overview?27:(talkTo?3.6:camDistT),dt*3);if(!talkTo){talkYaw=null}
+    const f=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));camera.position.copy(eye).addScaledVector(f,.22);camera.lookAt(eye.clone().addScaledVector(f,5).add(new THREE.Vector3(0,povPitch*5,0)));return}camYaw=lerp(camYaw,camYawT,dt*6);camPitch=lerp(camPitch,overview?1.0:(talkTo?.62:camPitchT),dt*4);camDist=lerp(camDist,overview?27:(talkTo?4.4:camDistT),dt*3);if(!talkTo){talkYaw=null}
   let tgt;if(overview)tgt=new THREE.Vector3(0,-1,.4);
   else if(talkTo==='you')tgt=new THREE.Vector3(0,2.9,-1.4);
   else if(talkTo){const s=ST[talkTo];const np=s.g.position.clone().add(s.home);const pp=player.g.position;const dy=Math.atan2(pp.x-np.x,pp.z-np.z);
@@ -711,7 +741,7 @@ function updateCamera(dt){
   else tgt=player.g.position.clone().add(new THREE.Vector3(0,.7,0));
   camera.position.set(tgt.x+Math.sin(camYaw)*Math.cos(camPitch)*camDist,tgt.y+Math.sin(camPitch)*camDist,tgt.z+Math.cos(camYaw)*Math.cos(camPitch)*camDist);camera.lookAt(tgt)}
 let last=performance.now(),fpsA=0,fpsN=0,low=0,tc=0;
-const STILL=location.search.includes('still');
+const FILM=location.search.includes('film');const STILL=location.search.includes('still')||FILM;
 function frame(now){if(STILL)return;requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;
   fpsA+=dt;fpsN++;if(fpsA>1){const fps=fpsN/fpsA;fpsA=0;fpsN=0;tc++;if(tc>3){low=fps<35?low+1:0;if(low>=2&&tier<2){tier++;low=0;if(tier>1){sun.castShadow=false;outline.enabled=false}resize()}}}
   if(started&&!paused&&!talkTo){hour+=dt*speed/HOUR_SEC;if(hour>=DAY1)resetDay();fireUntil(hour)}
@@ -719,6 +749,57 @@ function frame(now){if(STILL)return;requestAnimationFrame(frame);const dt=Math.m
 // review hook: window.__game.set(hour, x, z, talkId, overview, yaw)
 window.__game={pov(v){setPov(v)},auto(v){auto.on=v;if(v)lastManual=-1e9},step(n){for(let i=0;i<n;i++){stepPlayer(.05);animate(.05);updateSky();updateCamera(.3);if(started&&!paused&&!talkTo){hour+=.05*speed/HOUR_SEC;fireUntil(hour)}}composer.render();for(let i=0;i<6;i++)updateHUD()},set(h,x,z,talk,ov,yaw){quiet=true;hour=h;evIdx=0;for(const k in stats)stats[k]=0;for(const k in recent)delete recent[k];fireUntil(h);quiet=false;if(x!==undefined){pl.pos.x=x;pl.pos.z=z}overview=!!ov;if(yaw!==undefined){camYaw=camYawT=yaw}started=true;$('title').classList.add('out');$('loader').style.display='none';
   document.querySelectorAll('.toast').forEach(t=>t.remove());closeTalk();for(let i=0;i<50;i++){stepPlayer(.05);animate(.05);updateSky();updateCamera(.3)}if(talk){openTalk(talk);for(let i=0;i<30;i++)updateCamera(.3)}composer.render();updateHUD()},stats};
+/* =========================================================
+   14. FILM MODE (?film) — benefits-only landscape film, frame by frame
+   ========================================================= */
+const FPS=24;
+const FILMSEQ=[['rtmi',7.5],['brief',8],['igg',8.15],['x',9],['fb',10],['li',11],['video',12],['rtmw',12.5],['skills',13],['ig',17]];
+const SEG=[{k:'hook',d:5.2,h0:6.3,h1:6.9},{k:'title',d:2.6,h0:6.9,h1:7.4}];FILMSEQ.forEach(([id,h],i)=>SEG.push({k:'agent',id,d:2.5,h0:h,h1:(FILMSEQ[i+1]||[0,18.2])[1]-.02}));
+SEG.push({k:'rules',d:3.4,h0:18.2,h1:18.6},{k:'outro',d:3.6,h0:18.6,h1:18.9});
+let acc=0;SEG.forEach(g=>{g.t0=acc;acc+=g.d});const FILM_LEN=acc;
+let bokeh=null;const FILMYAW={brief:1.2};
+function segAt(t){for(const g of SEG)if(t<g.t0+g.d)return g;return SEG[SEG.length-1]}
+const sm=x=>x*x*(3-2*x);
+function filmCam(g,u){// returns {tgt,yaw,pitch,dist}
+  const over={tgt:new THREE.Vector3(0,-1,.6),yaw:Math.sin(u*.8)*.05,pitch:.66,dist:27};
+  if(g.k==='hook')return{...over,dist:lerp(25,21.5,sm(u)),pitch:lerp(.72,.66,u),yaw:lerp(-.12,0,u)};
+  if(g.k==='title')return{...over,dist:lerp(21.5,20,u),yaw:lerp(0,.06,u)};
+  if(g.k==='rules')return{tgt:new THREE.Vector3(0,lerp(2.2,3.3,sm(u)),-1.7),yaw:lerp(.25,.55,u),pitch:lerp(.32,.18,u),dist:lerp(7.6,6.8,u)};
+  if(g.k==='outro')return{tgt:new THREE.Vector3(0,lerp(1.5,-1,sm(u)),lerp(-1.2,.6,sm(u))),yaw:lerp(.55,.1,sm(u)),pitch:lerp(.25,.62,sm(u)),dist:lerp(9,23,sm(u))};
+  const s=ST[g.id];const p=s.g.position.clone().add(s.home);const yo=FILMYAW[g.id]??s.face;return{tgt:new THREE.Vector3(p.x,.62,p.z),yaw:yo+lerp(-.32,.28,u),pitch:lerp(.42,.34,u),dist:lerp(4.1,3.5,u)};
+}
+let lastCam=null;
+function filmFrame(i){const t=i/FPS;const g=segAt(t);const u=clamp((t-g.t0)/g.d);
+  hour=lerp(g.h0,g.h1,u);
+  animate(1/FPS);updateSky();
+  let c=filmCam(g,u);
+  // ease between segments: blend the first 0.6 s from the previous segment's end pose
+  const bt=t-g.t0;const prev=SEG[SEG.indexOf(g)-1];
+  if(prev&&bt<.7){const pc=filmCam(prev,1);const w=sm(clamp(bt/.7));c={tgt:pc.tgt.clone().lerp(c.tgt,w),yaw:lerp(pc.yaw,c.yaw,w),pitch:lerp(pc.pitch,c.pitch,w),dist:lerp(pc.dist,c.dist,w)}}
+  camera.position.set(c.tgt.x+Math.sin(c.yaw)*Math.cos(c.pitch)*c.dist,c.tgt.y+world.position.y+Math.sin(c.pitch)*c.dist,c.tgt.z+Math.cos(c.yaw)*Math.cos(c.pitch)*c.dist);camera.lookAt(c.tgt.x,c.tgt.y+world.position.y,c.tgt.z);
+  if(bokeh){bokeh.uniforms.focus.value=c.dist;bokeh.uniforms.aperture.value=g.k==='agent'?.0028:.0012}
+  outline.selectedObjects=g.k==='agent'?[ST[g.id].bot.g]:[];
+  if(g.k==='rules'||g.k==='outro'){beamUntil=performance.now()+1e6}else beamUntil=0;
+  composer.render();
+  // captions (pure from t)
+  const fin=x=>clamp(x),fade=(a,b)=>fin((bt-a)/.45)*(1-fin((bt-b)/.45));
+  $('fClock').textContent=fmtH(hour);
+  const hook=$('fHook'),cap=$('fCap');
+  if(g.k==='hook'){$('fH1').textContent=bt<2.6?'My AI agents work 24/7.':'Until today, I had no idea what they were doing at 12:30.';$('fH2').textContent=bt<2.6?'':'';const o=bt<2.6?fade(.2,2.35):fade(2.7,g.d-.1);hook.style.opacity=o;hook.style.transform=`translateY(${(1-o)*10}px)`}
+  else if(g.k==='title'){$('fH1').textContent='So I built them an island.';$('fH2').textContent='My top 10 of ~30 agents. Here is what each one does for me.';hook.style.opacity=fade(.05,g.d-.25);hook.style.transform=''}
+  else if(g.k==='outro'){$('fH1').textContent='The agents do the work. I decide.';$('fH2').textContent='Shelly Or Gisser · AI agents';hook.style.opacity=fade(1.0,g.d+1);hook.style.transform=''}
+  else hook.style.opacity=0;
+  if(g.k==='agent'||g.k==='rules'){const a=g.k==='agent'?byId[g.id]:byId.you;$('film').style.setProperty('--zone',hex(new THREE.Color(a.col).multiplyScalar(.85).getHex()));
+    $('fEy').textContent=(g.k==='agent'?fmtH(g.h0)+' · ':'')+a.tag;$('fNm').textContent=a.name;
+    $('fBn').textContent=g.id==='rtmw'?'12:30. Now I know: the world, scanned. Only ideas scoring 12/20+ reach me.':a.benefit;
+    const o=fade(.15,g.d-.2);cap.style.opacity=o;cap.style.transform=`translateY(${(1-o)*14}px)`;$('fBar').style.width=(u*100)+'%';
+    $('fIdx').textContent=g.k==='agent'?String(FILMSEQ.findIndex(x=>x[0]===g.id)+1).padStart(2,'0')+' / 10':'';}
+  else{cap.style.opacity=0;$('fIdx').textContent=''}
+}
+if(FILM){document.body.classList.add('film');player.g.visible=false;ring.visible=false;pl.pos.set(60,TOP+.26,60);
+  bokeh=new BokehPass(scene,camera,{focus:20,aperture:.0015,maxblur:.006});composer.insertPass(bokeh,composer.passes.length-1);}
+window.__film={frame:filmFrame,len:FILM_LEN,fps:FPS};
+
 addEventListener('resize',resize);resize();
 (async()=>{updateSky();animate(0);updateCamera(1);try{await renderer.compileAsync(scene,camera)}catch(e){}composer.render();requestAnimationFrame(t=>{last=t;frame(t);setTimeout(()=>$('loader').classList.add('out'),200)});window.__game.ready=true})();
 </script>
