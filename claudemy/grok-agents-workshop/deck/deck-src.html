@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>סוכנים מאפס עם Grok</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --azure:#1689F5; --cobalt:#2345D8; --pink:#F347A0; --ivory:#F7F2ED; --blush:#F4B8CA; --silver:#D8E1E8; --lime:#D5F478; --ink:#202024;
+  --head:"Bamberger FM","BAMBERGERFM","Heebo",sans-serif; --body:"Heebo","Assistant",sans-serif; --latin:"Inter","Heebo",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#111;overflow:hidden;font-family:var(--body);color:var(--ink)}
+#stage{position:absolute;top:50%;left:50%;width:1920px;height:1080px;transform-origin:center}
+.slide{position:absolute;inset:0;background:var(--ivory);padding:120px 130px 100px;display:none;flex-direction:column;justify-content:center;align-items:center;text-align:center;overflow:hidden}
+.slide.on{display:flex}
+.en{font-family:var(--latin);direction:ltr;unicode-bidi:isolate}
+.kicker{font-family:var(--latin);font-weight:800;font-size:22px;letter-spacing:.16em;text-transform:uppercase;color:var(--cobalt);margin-bottom:22px;direction:ltr}
+h1{font-family:var(--head);font-weight:900;font-size:168px;line-height:1;letter-spacing:-3px}
+h2{font-family:var(--head);font-weight:900;font-size:100px;line-height:1.05;letter-spacing:-2px}
+h3{font-family:var(--head);font-weight:900;font-size:68px;line-height:1.1;letter-spacing:-1px;margin-bottom:44px}
+.sub{font-size:40px;line-height:1.4;margin-top:34px;max-width:1500px}
+.muted{color:#5d5d66}
+.pk{color:var(--pink)} .cb{color:var(--cobalt)}
+.hl{background:var(--lime);padding:0 14px;border-radius:8px}
+/* backgrounds */
+.az{background:var(--azure);color:var(--ivory)} .az .kicker{color:var(--lime)}
+.co{background:var(--cobalt);color:var(--ivory)} .co .kicker{color:var(--lime)}
+.pkbg{background:var(--pink);color:var(--ivory)}
+/* footer */
+.ft{position:absolute;bottom:40px;left:56px;right:56px;display:flex;justify-content:space-between;align-items:center;font-family:var(--latin);font-size:18px;color:#8a8a92;direction:ltr}
+.az .ft,.co .ft{color:rgba(247,242,237,.7)}
+.ft img{height:30px}
+/* retro window */
+.win{background:#fff;border:3px solid var(--ink);border-radius:18px;overflow:hidden;text-align:right;box-shadow:8px 8px 0 var(--ink)}
+.win .bar{display:flex;justify-content:space-between;align-items:center;background:var(--silver);border-bottom:3px solid var(--ink);padding:10px 20px;font-family:var(--latin);font-weight:800;font-size:18px;letter-spacing:.08em}
+.win .bar i{font-style:normal;letter-spacing:.3em;direction:ltr}
+.win .bar span,.task .bar span{direction:ltr;unicode-bidi:isolate}
+.win .bd{padding:28px 30px}
+.win b{display:block;font-family:var(--head);font-weight:900;font-size:36px;line-height:1.15;margin-bottom:10px}
+.win .bd>span{display:block;font-size:26px;line-height:1.4}
+.win.pkw .bar{background:var(--blush)} .win.lmw .bar{background:var(--lime)} .win.cow .bar{background:var(--cobalt);color:var(--ivory)} .win.azw .bar{background:var(--azure);color:var(--ivory)}
+.az .win,.co .win{color:var(--ink)}
+.grid{display:grid;gap:34px;width:100%;margin-top:6px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+/* flow */
+.flow{display:flex;align-items:stretch;justify-content:center;gap:0;width:100%;margin:10px 0}
+.flow .node{flex:1;max-width:330px}
+.flow .arr{display:flex;align-items:center;justify-content:center;font-size:56px;font-weight:900;color:var(--pink);width:70px;flex:none}
+.node .win .bd{padding:22px 22px;min-height:170px}
+.node .win b{font-size:32px}.node .win .bd>span{font-size:23px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;background:var(--pink);color:#fff;font-family:var(--latin);font-weight:800;font-size:24px;margin-bottom:10px}
+.lm .num,.num.lm{background:var(--lime);color:var(--ink)}
+.win .bd>span.num{display:inline-flex;font-size:24px;line-height:1}
+/* code */
+.code{direction:rtl;text-align:right;background:var(--ink);color:var(--ivory);font-size:28px;line-height:1.6;padding:36px 46px;width:100%;max-width:1600px;white-space:pre-wrap;border-radius:18px;font-family:var(--body)}
+.code .c{color:var(--lime)} .code .p{color:var(--blush)}
+/* table */
+table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:27px;text-align:right;background:#fff;border:3px solid var(--ink);border-radius:18px;overflow:hidden}
+table.t th,table.t td{padding:15px 22px;border-bottom:2px solid var(--silver);vertical-align:top;line-height:1.35}
+table.t tr:last-child td{border-bottom:0}
+table.t th{background:var(--ink);color:var(--ivory);font-size:24px;font-weight:700}
+table.t td:first-child{font-weight:800;white-space:nowrap}
+.tag{display:inline-block;font-family:var(--latin);font-weight:800;font-size:18px;padding:4px 12px;border-radius:30px;background:var(--pink);color:#fff;letter-spacing:.06em;vertical-align:middle}
+.tag.lm{background:var(--lime);color:var(--ink)} .tag.cb{background:var(--cobalt)}
+/* list */
+.list{list-style:none;text-align:right;width:100%;max-width:1560px}
+.list li{font-size:36px;line-height:1.4;padding:20px 0;border-bottom:3px solid var(--silver);display:flex;gap:26px;align-items:center}
+.list li .num{margin:0;flex:none}
+/* task */
+.task{background:#fff;border:3px solid var(--ink);border-radius:22px;box-shadow:12px 12px 0 var(--pink);width:100%;max-width:1600px;text-align:right;overflow:hidden}
+.task .bar{background:var(--lime);border-bottom:3px solid var(--ink);padding:14px 26px;display:flex;justify-content:space-between;font-family:var(--latin);font-weight:800;font-size:22px;letter-spacing:.1em}
+.task .bd{padding:36px 50px}
+.task h3{margin-bottom:24px;font-size:60px}
+.task ol{padding-right:44px;font-size:33px;line-height:1.6}
+.task .out{margin-top:20px;font-size:28px;font-weight:700;color:var(--cobalt)}
+/* timeline */
+.tl{display:flex;width:100%;height:120px;border:3px solid var(--ink);border-radius:18px;overflow:hidden;margin-top:30px}
+.tl div{display:flex;flex-direction:column;justify-content:center;align-items:center;border-left:2px solid var(--ink);font-size:20px;font-weight:700;line-height:1.2;padding:0 4px}
+.tl div:last-child{border-left:0}
+.tl small{font-family:var(--latin);font-size:16px;font-weight:500;opacity:.8;direction:ltr;unicode-bidi:isolate}
+/* big number divider */
+.co .big,.az .big{font-family:var(--latin);font-weight:800;font-size:200px;line-height:1;color:var(--lime)}
+.co h2,.az h2{font-size:120px}
+.chipw{position:absolute;top:56px;left:56px;font-family:var(--latin);font-weight:800;font-size:18px;letter-spacing:.1em;background:var(--ink);color:var(--ivory);padding:10px 18px;border-radius:30px;direction:ltr}
+.time{position:absolute;top:56px;right:56px;font-family:var(--latin);font-weight:800;font-size:18px;letter-spacing:.06em;background:var(--lime);color:var(--ink);padding:10px 18px;border-radius:30px;direction:ltr}
+.co .time,.az .time{background:var(--ivory)}
+#notes{position:fixed;bottom:0;left:0;right:0;max-height:40vh;overflow:auto;background:#0d0d10;color:#eee;font:18px/1.6 "Heebo",sans-serif;padding:18px 28px;display:none;direction:rtl;z-index:5;border-top:4px solid var(--pink)}
+#notes b{color:var(--lime)}
+#help{position:fixed;top:8px;left:10px;color:#777;font:12px "Inter",sans-serif;z-index:6;direction:ltr}
+@media print{
+  html,body{overflow:visible;background:#fff}
+  #stage{position:static;transform:none!important;width:auto;height:auto}
+  .slide{display:flex!important;position:relative;width:1920px;height:1080px;break-after:page;page-break-after:always}
+  #notes,#help{display:none!important}
+  @page{size:1920px 1080px;margin:0}
+}
+</style>
+</head>
+<body>
+<div id="help">← → / Space · N notes · F fullscreen</div>
+<div id="stage">
+
+<!-- ============ OPEN ============ -->
+<section class="slide az" data-notes="<b>0–5 · פתיחה.</b> בצ'אט כל משתתף כותב את המקצוע שלו ומשימה אחת שהוא רוצה להעביר לסוכן. אוספים 3 דוגמאות לאורך הערב. שם המוצר: 'סוכנים מאפס עם Grok' (כמו בחשבוניות ובלינקדאין).">
+  <div class="kicker">LIVE ON ZOOM · 2.11 · AGENTS FROM ZERO</div>
+  <h1>סוכנים מאפס<br>עם <span class="en">Grok</span></h1>
+  <div class="sub" style="font-weight:700">הסוכן מכין. <span class="hl" style="color:var(--ink)">אתם מחליטים.</span></div>
+  <div class="ft"><img src="LOGO_IVORY" alt=""><span>DISCO / AI &amp; CREATIVITY</span></div>
+</section>
+
+<section class="slide" data-notes="ההבטחה. לא צריך רקע טכני. בסוף הערב כל אחד מקים סוכן משלו, בלייב.">
+  <div class="time">0–5</div>
+  <div class="kicker">TONIGHT</div>
+  <h3>בעוד שעתיים יהיה לכם <span class="pk">סוכן שמכיר אתכם</span></h3>
+  <div class="grid g3">
+    <div class="win pkw"><div class="bar"><span>01.TXT</span><i>_ □ ×</i></div><div class="bd"><b>קובץ "מי אני"</b><span>3 אבנים גדולות, ערך מול מתחרים, הקול שלכם</span></div></div>
+    <div class="win lmw"><div class="bar"><span>02.BOT</span><i>_ □ ×</i></div><div class="bd"><b>כרטיס תפקיד</b><span>סוכן עם תפקיד, כללים ומשפט הרשאה</span></div></div>
+    <div class="win azw"><div class="bar"><span>03.RUN</span><i>_ □ ×</i></div><div class="bd"><b>סוכן שעובד</b><span>מקימים בלייב ב-15 הדקות האחרונות</span></div></div>
+  </div>
+  <div class="sub muted">לא צריך רקע טכני.</div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>02</span></div>
+</section>
+
+<section class="slide" data-notes="המפה של הערב. 3 אבנים: מי אני > הסוכן שלי > הסוכן עובד. ציר הזמן מתחת.">
+  <div class="kicker">THE MAP</div>
+  <h3>שלוש אבנים. שעתיים.</h3>
+  <div class="flow">
+    <div class="node"><div class="win pkw"><div class="bar"><span>STONE 1</span><i>_ □ ×</i></div><div class="bd"><b>מי אני</b><span>3 אבנים גדולות · ערך מול מתחרים · קול ובוק מותג</span></div></div></div>
+    <div class="arr">←</div>
+    <div class="node"><div class="win lmw"><div class="bar"><span>STONE 2</span><i>_ □ ×</i></div><div class="bd"><b>הסוכן שלי</b><span>כרטיס תפקיד · חיבורים · משפט הרשאה</span></div></div></div>
+    <div class="arr">←</div>
+    <div class="node"><div class="win azw"><div class="bar"><span>STONE 3</span><i>_ □ ×</i></div><div class="bd"><b>הסוכן עובד</b><span>קורא עמוד · פוסט בוקר · לידים ותגובות</span></div></div></div>
+  </div>
+  <div class="tl">
+    <div style="flex:5;background:var(--blush)">פתיחה<small>0–5</small></div>
+    <div style="flex:15;background:var(--silver)">יסודות<small>5–20</small></div>
+    <div style="flex:25;background:var(--blush)">מי אני<small>20–45</small></div>
+    <div style="flex:20;background:var(--lime)">תפקיד ועיצוב<small>45–65</small></div>
+    <div style="flex:5;background:#fff">☕<small>65–70</small></div>
+    <div style="flex:22;background:var(--azure);color:#fff">סושיאל ובטיחות<small>70–92</small></div>
+    <div style="flex:13;background:var(--silver)">עוד סוכנים<small>92–105</small></div>
+    <div style="flex:15;background:var(--pink);color:#fff">מקימים בלייב<small>105–120</small></div>
+  </div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>03</span></div>
+</section>
+
+<!-- ============ 01 FOUNDATIONS ============ -->
+<section class="slide co" data-notes="<b>5–20 · יסודות.</b> חייב להיות בהתחלה. בלי הבסיס הזה, כל השאר נשמע כמו קסם.">
+  <div class="big">01</div><h2>יסודות</h2><div class="kicker" style="margin-top:26px">BEFORE WE BUILD</div>
+  <div class="ft"><img src="LOGO_IVORY" alt=""><span>04</span></div>
+</section>
+
+<section class="slide" data-notes="למה דווקא Grok Bot. 6 סיבות. להדגיש: מחשב משלו בענן = עובד כשהלפטופ סגור. ספריית בוטים מוכנים = לא מתחילים מאפס. סקילים הם תיקיות עם הוראות, אותו רעיון כמו ב-Claude.">
+  <div class="time">5–20</div>
+  <div class="kicker">WHY GROK BOT</div>
+  <h3>למה דווקא <span class="en cb">Grok Bot</span>?</h3>
+  <div class="grid g3">
+    <div class="win"><div class="bar"><span>01</span><i>_ □ ×</i></div><div class="bd"><b>מחשב משלו בענן</b><span>עובד גם כשהלפטופ סגור</span></div></div>
+    <div class="win"><div class="bar"><span>02</span><i>_ □ ×</i></div><div class="bd"><b>צוות באפליקציה אחת</b><span>בוטים עם תפקיד, זיכרון, שגרות ואישורים</span></div></div>
+    <div class="win"><div class="bar"><span>03</span><i>_ □ ×</i></div><div class="bd"><b>מחובר לעכשיו</b><span>רשת ו-X בזמן אמת, עם מקורות</span></div></div>
+    <div class="win"><div class="bar"><span>04</span><i>_ □ ×</i></div><div class="bd"><b>מנוי אחד</b><span>צ'אט, תמונות, וידאו, קול ובוטים</span></div></div>
+    <div class="win"><div class="bar"><span>05</span><i>_ □ ×</i></div><div class="bd"><b>מחשב וטלפון</b><span>אותם בוטים, אותה שיחה</span></div></div>
+    <div class="win pkw"><div class="bar"><span>06</span><i>_ □ ×</i></div><div class="bd"><b>לא מתחילים מאפס</b><span>אלפי בוטים וסקילים מוכנים להעתקה</span></div></div>
+  </div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>05</span></div>
+</section>
+
+<section class="slide" data-notes="Grok עונה. Grok Bot מקבל משימה ועושה אותה. Grok: צ'אט עם DeepSearch, תמונות ווידאו ב-Imagine, שיחה קולית.">
+  <div class="kicker">GROK VS GROK BOT</div>
+  <h3><span class="en">Grok</span> עונה. <span class="en pk">Grok Bot</span> עושה.</h3>
+  <div class="grid g2">
+    <div class="win"><div class="bar"><span>GROK.CHAT</span><i>_ □ ×</i></div><div class="bd"><b>אתם שואלים, הוא עונה ומחכה</b><span>צ'אט וחיפוש עם מקורות · תמונות ווידאו ב-<span class="en">Imagine</span> · שיחה קולית</span></div></div>
+    <div class="win azw"><div class="bar"><span>GROK.BOT</span><i>_ □ ×</i></div><div class="bd"><b>מקבל תפקיד, עובד ועוצר לאישור</b><span>בוטים עם שם ותפקיד · זיכרון · חיבורים · שגרות · אישור לפני שליחה</span></div></div>
+  </div>
+  <div class="flow" style="margin-top:40px">
+    <div class="node"><div class="win"><div class="bd"><span class="num">1</span><b>תפקיד וכללים</b></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win"><div class="bd"><span class="num">2</span><b>עובד לבד בענן</b></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win"><div class="bd"><span class="num">3</span><b>מכין טיוטה ועוצר</b></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win lmw"><div class="bd"><span class="num lm">4</span><b>אתם מאשרים</b></div></div></div>
+  </div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>06</span></div>
+</section>
+
+<section class="slide" data-notes="<b>מסלולים (אומת 16.10, לבדוק שוב ביום הסדנה).</b> The X Subscription מאז 12.10: Plus $8 בלי בוט, Premium $30, Super $100, Ultra $200. בשקף בלי מספרים מדויקים אם יש ספק. מכסה שבועית משותפת. אין תקרה נפרדת לבוט. Cursor: SpaceX רכשה את Cursor באוגוסט 2026, ו-Grok Bot רץ על התשתית שלה, לכן נכנסים עם חשבון Cursor. איחוד חשבונות: לא נדרש, לא לוחצים.">
+  <div class="kicker">PLANS · CURSOR</div>
+  <h3>מה צריך כדי להתחיל</h3>
+  <div class="grid g4">
+    <div class="win"><div class="bar"><span>PLUS</span><i>_ □ ×</i></div><div class="bd"><b class="en">$8</b><span>צ'אט בלבד. <b style="display:inline;font-size:26px">בלי בוט</b></span></div></div>
+    <div class="win lmw"><div class="bar"><span>PREMIUM</span><i>_ □ ×</i></div><div class="bd"><b class="en">$30</b><span>מכאן יש <span class="en">Grok Bot</span>. מספיק לסדנה</span></div></div>
+    <div class="win"><div class="bar"><span>SUPER</span><i>_ □ ×</i></div><div class="bd"><b class="en">$100</b><span>יותר מכסה, לשימוש כבד</span></div></div>
+    <div class="win"><div class="bar"><span>ULTRA</span><i>_ □ ×</i></div><div class="bd"><b class="en">$200</b><span>הכי הרבה מכסה</span></div></div>
+  </div>
+  <div class="grid g3" style="margin-top:34px">
+    <div class="win pkw"><div class="bd"><b>מכסה שבועית אחת</b><span>משותפת לצ'אט, תמונות, קול ובוטים</span></div></div>
+    <div class="win pkw"><div class="bd"><b>נכנסים עם <span class="en">Cursor</span></b><span><span class="en">Grok Bot</span> רץ על התשתית שלה. בונוס, לא חובה</span></div></div>
+    <div class="win pkw"><div class="bd"><b>"איחוד חשבונות"</b><span>לא נדרש לסדנה. לא לוחצים</span></div></div>
+  </div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>07</span></div>
+</section>
+
+<section class="slide" data-notes="'המחשב של גרוק'. מחשב לינוקס בענן = מחשב אמיתי, עם מערכת הפעלה כמו ווינדוס או מק, רק אחרת. דפדפן, קבצים וטרמינל. מחשב אחד לכל החשבון, לא לכל בוט. כתובת זרה: אתרים כמו אינסטגרם עלולים לראות 'מכשיר חשוד'. אתם מתחברים בעצמכם בדפדפן שלו. סיסמה לא נכנסת לצ'אט. 3 חיבורים החוצה. סטטוס Added = הותקן, לא מחובר, צריך Authenticate. המחשב שלכם: Ask every time, ההמלצה הרשמית Never allow אם לא צריך קבצים מקומיים.">
+  <div class="kicker">THE GROK COMPUTER</div>
+  <h3>לבוטים יש <span class="pk">מחשב משלהם</span></h3>
+  <div style="display:flex;gap:40px;align-items:center;width:100%">
+    <div style="flex:1;display:flex;flex-direction:column;gap:26px">
+      <div class="win"><div class="bar"><span>1 · WEB</span><i>_ □ ×</i></div><div class="bd"><b>האינטרנט</b><span>גולש, קורא, ממלא טפסים כמו אדם</span></div></div>
+      <div class="win lmw"><div class="bar"><span>2 · CONNECT APPS</span><i>_ □ ×</i></div><div class="bd"><b>החיבורים שלכם</b><span><span class="en">Gmail · Calendar · Canva · Postiz</span><br>סטטוס <span class="en">Added</span> = עוד לא מחובר. לוחצים <span class="en">Authenticate</span></span></div></div>
+      <div class="win pkw"><div class="bar"><span>3 · YOUR PC</span><i>_ □ ×</i></div><div class="bd"><b>המחשב שלכם בבית</b><span>הרשאה נפרדת. ברירת מחדל: <span class="en">Ask every time</span></span></div></div>
+    </div>
+    <div style="font-size:70px;color:var(--pink);font-weight:900">←</div>
+    <div style="flex:1.1" class="win cow"><div class="bar"><span>GROK.COMPUTER · LINUX</span><i>_ □ ×</i></div><div class="bd" style="padding:40px">
+      <b style="font-size:44px">מחשב לינוקס בענן</b>
+      <span style="font-size:28px;line-height:1.7">דפדפן · קבצים · טרמינל<br><b style="display:inline;font-size:28px" class="pk">אחד לכל החשבון</b>, משותף לכל הבוטים<br>עובד גם כשהמחשב שלכם סגור<br>כתובת זרה: אתרים עלולים לחשוד<br>מתחברים בעצמכם · סיסמה לא בצ'אט</span></div></div>
+  </div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>08</span></div>
+</section>
+
+<section class="slide" data-notes="מה יש בכל שיחה עם בוט. להראות על המסך שלי.">
+  <div class="kicker">INSIDE EVERY CHAT</div>
+  <h3>מה יש לכם בכל שיחה</h3>
+  <div class="grid g3">
+    <div class="win"><div class="bar"><span>CHAT</span><i>_ □ ×</i></div><div class="bd"><b>מדברים כמו עם עובד</b><span>כותבים, מכתיבים או בקול</span></div></div>
+    <div class="win pkw"><div class="bar"><span>APPROVAL</span><i>_ □ ×</i></div><div class="bd"><b>כרטיס אישור</b><span class="en" style="text-align:right">Allow once · Always allow · Deny</span></div></div>
+    <div class="win"><div class="bar"><span>COMPUTER</span><i>_ □ ×</i></div><div class="bd"><b>רואים מה הוא עושה</b><span><span class="en">Take over</span> כשצריך סיסמה או קוד</span></div></div>
+    <div class="win"><div class="bar"><span>DETAILS</span><i>_ □ ×</i></div><div class="bd"><b>לשונית <span class="en">Details</span></b><span>השגרות שלו: מתי הוא רץ לבד</span></div></div>
+    <div class="win lmw"><div class="bar"><span>MEMORY</span><i>_ □ ×</i></div><div class="bd"><b>"מה אתה זוכר עליי?"</b><span>אין מסך זיכרון. שואלים אותו</span></div></div>
+    <div class="win"><div class="bar"><span>NOTIFY</span><i>_ □ ×</i></div><div class="bd"><b>התראות</b><span>הודעה כשסיים או כשצריך אתכם</span></div></div>
+  </div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>09</span></div>
+</section>
+
+<section class="slide" data-notes="איפה הבוט שומר מה. מהעבודה שלי באפליקציה. המשל: משרד. נוהל על הקיר, פנקס, לוח מודעות משותף, ספר מתכונים, יומן, מחשב משרדי, כספת, ארון תיקיות.">
+  <div class="kicker">WHERE IT REMEMBERS</div>
+  <h3>איפה הבוט שומר מה</h3>
+  <div class="grid g4" style="gap:24px">
+    <div class="win azw"><div class="bar"><span>INSTRUCTIONS</span><i>_ □ ×</i></div><div class="bd"><b>הוראות</b><span>תפקיד וכללים. רואה <u>בכל הודעה</u></span></div></div>
+    <div class="win"><div class="bar"><span>MEMORY</span><i>_ □ ×</i></div><div class="bd"><b>זיכרון הבוט</b><span>עובדות שלמד. נשאר גם אחרי ניקוי צ'אט</span></div></div>
+    <div class="win pkw"><div class="bar"><span>SHARED</span><i>_ □ ×</i></div><div class="bd"><b>זיכרון משותף</b><span>שם, סגנון, כללים. <b style="display:inline;font-size:26px">כל הבוטים רואים</b></span></div></div>
+    <div class="win"><div class="bar"><span>SKILLS</span><i>_ □ ×</i></div><div class="bd"><b>סקילים</b><span>מתכון למשימה קבועה. כל בוט יכול</span></div></div>
+    <div class="win"><div class="bar"><span>ROUTINES</span><i>_ □ ×</i></div><div class="bd"><b>שגרות</b><span>רצות לבד, לפי שעה או אירוע. ב-<span class="en">Details</span></span></div></div>
+    <div class="win pkw"><div class="bar"><span>COMPUTER</span><i>_ □ ×</i></div><div class="bd"><b>המחשב</b><span>קבצים, כלים, התחברויות. <b style="display:inline;font-size:26px">משותף לכולם</b></span></div></div>
+    <div class="win lmw"><div class="bar"><span>VAULT</span><i>_ □ ×</i></div><div class="bd"><b>כספת</b><span>סיסמאות, כרטיסים, פרטי קשר. מאובטח</span></div></div>
+    <div class="win"><div class="bar"><span>DRIVE · LIBRARY</span><i>_ □ ×</i></div><div class="bd"><b>דרייב</b><span>קבצים, דפים ותבניות שהבוטים מכינים</span></div></div>
+  </div>
+  <div class="sub" style="font-weight:800;margin-top:40px">כללים <span class="cb">בהוראות</span> · עובדות <span class="pk">בזיכרון</span> · קבצים <span class="hl">בדרייב</span></div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>10</span></div>
+</section>
+
+<section class="slide" data-notes="מילון של דקה. הסדר: קודם ידני ומתקנים, אחר כך סקיל, ורק אז שגרה. Teach a task: מקליטים את עצמכם עושים משימה בדפדפן של הבוט (עד 10 דקות, בלי מיקרופון), והוא הופך את ההדגמה לסקיל. דמו 3 דק': הצוות שלי ומסך של בוט בזמן עבודה.">
+  <div class="kicker">ONE-MINUTE DICTIONARY</div>
+  <h3>איך משימה הופכת <span class="pk">לחוזרת</span></h3>
+  <div class="flow">
+    <div class="node"><div class="win"><div class="bar"><span>STEP 1</span><i>_ □ ×</i></div><div class="bd"><b>ידני</b><span>עושים בצ'אט ומתקנים</span></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win lmw"><div class="bar"><span>SKILL</span><i>_ □ ×</i></div><div class="bd"><b>סקיל</b><span>"שמור את מה שעשינו כסקיל בשם..."</span></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win azw"><div class="bar"><span>ROUTINE</span><i>_ □ ×</i></div><div class="bd"><b>שגרה</b><span>הסקיל רץ לבד לפי שעה או אירוע. <span class="en">Test run</span> קודם</span></div></div></div>
+  </div>
+  <div class="win pkw" style="margin-top:40px;max-width:1200px"><div class="bar"><span>TEACH A TASK</span><i>_ □ ×</i></div><div class="bd"><b>מראים לו פעם אחת</b><span>מקליטים את עצמכם עושים משימה בדפדפן שלו, עד 10 דקות, והוא הופך את זה לסקיל</span></div></div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>11</span></div>
+</section>
+
+<section class="slide" data-notes="מה אפשר, מה מחכה, ומה אסור. הבוט עובד מהר ובביטחון, ולפעמים טועה. ג'וניור מעולה, לא מנכ''ל.">
+  <div class="kicker">CAN · WAITS · NEVER</div>
+  <h3>מה מותר לו, ומה לא</h3>
+  <div class="grid g3">
+    <div class="win lmw"><div class="bar"><span>✓ ALONE</span><i>_ □ ×</i></div><div class="bd"><b>לבד</b><span>קורא · חוקר · גולש · מסכם · מנסח טיוטות · מכין קבצים ועיצובים · רץ לפי שעה</span></div></div>
+    <div class="win pkw"><div class="bar"><span>! WAITS</span><i>_ □ ×</i></div><div class="bd"><b>מחכה לאישור</b><span>שולח · מפרסם · מגיב · קונה · משלם · מוחק · משתמש בכלי מחובר</span></div></div>
+    <div class="win cow"><div class="bar"><span>× NEVER</span><i>_ □ ×</i></div><div class="bd"><b>לא נותנים לו</b><span>חשבון בנק · פרטי ילדים · סיסמה בצ'אט · מחשב עם חשבונות רגישים</span></div></div>
+  </div>
+  <div class="sub" style="font-weight:800">העיקרון: <span class="hl">הסוכן מכין, אתם מחליטים.</span></div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>12</span></div>
+</section>
+
+<section class="slide" data-notes="טיפ ההגבלות. שתי שכבות. משפט בהוראות יכול לפספס, כלל Ask first תמיד עוצר. Settings > General > Custom Rules, מתחת למתג Auto Review. לא לוחצים Always allow על כסף. כרטיס בכספת יכול להתמלא בקופה בלי לשאול: בשבוע הראשון לא שומרים כרטיס. On-demand כבוי או עם תקרה.">
+  <div class="kicker">LIMITS · TWO LAYERS</div>
+  <h3>שום דבר שעולה כסף <span class="pk">לא רץ לבד</span></h3>
+  <div class="grid g2">
+    <div class="win"><div class="bar"><span>LAYER 1 · SOFT</span><i>_ □ ×</i></div><div class="bd"><b>שורה בהוראות של כל בוט</b><span>"אף פעם אל תפרסם, תשלח, תמחק או תקנה בלי אישור מפורש שלי. לפני פעולה כזו תראה לי רשימה ממוספרת ותחכה."</span></div></div>
+    <div class="win cow"><div class="bar"><span>LAYER 2 · HARD</span><i>_ □ ×</i></div><div class="bd"><b>כלל <span class="en">Ask first</span> בהגדרות</b><span class="en" style="text-align:left">Settings › General › Custom Rules<br>"Ask first before anything that costs money or credits, and before using any connected app."</span></div></div>
+  </div>
+  <div class="grid g3" style="margin-top:34px">
+    <div class="win pkw"><div class="bd"><b>× <span class="en">Always allow</span></b><span>לא על דברים שעולים כסף</span></div></div>
+    <div class="win pkw"><div class="bd"><b>× כרטיס בכספת</b><span>לא בשבוע הראשון</span></div></div>
+    <div class="win lmw"><div class="bd"><b>✓ <span class="en">On-demand</span></b><span>כבוי, או עם תקרה חודשית</span></div></div>
+  </div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>13</span></div>
+</section>
+
+<!-- ============ 02 WHO AM I ============ -->
+<section class="slide co" data-notes="<b>20–45 · מי אני.</b> למה לפני הבנייה: סוכן בלי כיוון מייצר עוד ועוד תוכן שלא מקדם אתכם. קודם מחליטים מה חשוב.">
+  <div class="big">02</div><h2>מי אני</h2><div class="kicker" style="margin-top:26px">3 BIG STONES</div>
+  <div class="ft"><img src="LOGO_IVORY" alt=""><span>14</span></div>
+</section>
+
+<section class="slide" data-notes="השיטה: דף עבודה, 8 דקות כתיבה. הסוכן לא מציע מחירים ללקוחות. המחירון בשבילו רק הקשר. 'האבנים הן שלכם. הסוכן רק שומר שלא תתפזרו.'">
+  <div class="time">20–35</div>
+  <div class="kicker">3 BIG STONES</div>
+  <h3>האבנים הן שלכם. <span class="pk">הסוכן שומר שלא תתפזרו.</span></h3>
+  <div class="grid g4">
+    <div class="win pkw"><div class="bd"><span class="num">1</span><b>3 האבנים הגדולות</b><span>3 עמודי תווך. מה שלא נשען עליהם, הסוכן לא עושה</span></div></div>
+    <div class="win"><div class="bd"><span class="num">2</span><b>החזון והמקצוע</b><span>מה אני עושה, ולמי</span></div></div>
+    <div class="win"><div class="bd"><span class="num">3</span><b>הערך מול מתחרים</b><span>3 דברים שאצלי שונים או טובים יותר</span></div></div>
+    <div class="win"><div class="bd"><span class="num">4</span><b>מחירון</b><span>הקשר בלבד. הסוכן לא מציע מחירים</span></div></div>
+  </div>
+  <div class="code" style="margin-top:36px;font-size:25px"><span class="p">פרומפט · סקירת מתחרים</span>
+תמצא 5 מתחרים שלי ב<span class="c">[תחום + אזור]</span>, ברשת, ב-X ובעמודים ציבוריים. תעשה טבלה: מה הם מוכרים, מחיר מפורסם אם יש, טון, מה חזק אצלם ומה חסר. קישור לכל נתון. בסוף, 3 ניסוחים למשפט 'רק אצלי תקבלו...'. מה שאין לו מקור, תסמן 'לא אומת'.</div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>15</span></div>
+</section>
+
+<section class="slide" data-notes="4 דרכים ללמד את הסוכן, ובוחרים מה שנוח. אחרי כל דרך: 'תגיד לי במילים שלך מה הבנת עליי', ומתקנים. הקובץ 'מי אני' החי: הזיכרון האוטומטי מסכם ולא מעתיק, קובץ כתוב טוב יותר. דמו 4 דק': סריקה ברשת ותיקון פרט אחד.">
+  <div class="time">35–45</div>
+  <div class="kicker">TEACH IT ABOUT YOU</div>
+  <h3>4 דרכים ללמד את הסוכן מי אתם</h3>
+  <div class="grid g4">
+    <div class="win"><div class="bar"><span>VOICE</span><i>_ □ ×</i></div><div class="bd"><b>לדבר</b><span>שיחה קולית, כמו לעובד חדש</span></div></div>
+    <div class="win"><div class="bar"><span>DICTATE</span><i>_ □ ×</i></div><div class="bd"><b>להכתיב</b><span>טקסט ארוך בלי להקליד</span></div></div>
+    <div class="win"><div class="bar"><span>PASTE</span><i>_ □ ×</i></div><div class="bd"><b>לכתוב</b><span>מדביקים את דף 3 האבנים</span></div></div>
+    <div class="win"><div class="bar"><span>SCAN</span><i>_ □ ×</i></div><div class="bd"><b>סריקה ברשת</b><span>מה כתוב עליכם ומה אתם מפרסמים</span></div></div>
+  </div>
+  <div class="win lmw" style="margin-top:36px;max-width:1500px"><div class="bar"><span>WHO-AM-I.MD · LIVING FILE</span><i>_ □ ×</i></div><div class="bd"><b>קובץ "מי אני" חי</b><span>הבוט שומר את מה שלמד בקובץ במחשב שלו וקורא אותו לפני כל משימה. כלל קבוע: <b style="display:inline;font-size:26px">"כל פעם שאני מתקנת אותך, תעדכן את 'מי אני' ותגיד לי מה שינית."</b></span></div></div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>16</span></div>
+</section>
+
+<section class="slide" data-notes="<b>תרגיל 1 · 8 דק'.</b> עוזר ההוראה (1 לכל 12 משתתפים) עובר בין החדרים.">
+  <div class="task"><div class="bar"><span>EXERCISE 01</span><span>8 MIN</span></div><div class="bd">
+    <h3>תכתבו את 3 האבנים שלכם</h3>
+    <ol><li>3 עמודי תווך: על מה כל מה שאתם עושים נשען</li><li>חזון ומקצוע: מה אתם עושים, ולמי</li><li>3 דברים שאצלכם טובים יותר מהמתחרים</li><li>מדביקים לבוט: "תגיד לי במילים שלך מה הבנת עליי"</li><li>מתקנים פרט אחד שהוא הבין לא נכון</li></ol>
+    <div class="out">התוצר: קובץ "מי אני" ראשון</div></div></div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>17</span></div>
+</section>
+
+<!-- ============ 03 ROLE + DESIGN ============ -->
+<section class="slide co" data-notes="<b>45–65 · כרטיס תפקיד ועיצוב.</b>">
+  <div class="big">03</div><h2>תפקיד ועיצוב</h2><div class="kicker" style="margin-top:26px">ROLE CARD · BRAND</div>
+  <div class="ft"><img src="LOGO_IVORY" alt=""><span>18</span></div>
+</section>
+
+<section class="slide" data-notes="איך בונים בוט: New chat > Create new agent > Bot actions > Edit Profile. בוט אחד = תפקיד אחד. הכרטיס נכנס להוראות (התיאור). הדוגמה: סוכן סושיאל לסטודיו פילאטיס שכונתי (עסק בדיוני): קבוצות קטנות ותשומת לב אישית, פילאטיס לגב ולשגרה, קהילה שכונתית. לא מבטיח תוצאות רפואיות.">
+  <div class="time">45–55</div>
+  <div class="kicker">HOW TO BUILD A BOT · ROLE CARD</div>
+  <h3>כרטיס תפקיד: <span class="pk">8 שדות</span></h3>
+  <div class="grid g4" style="gap:22px">
+    <div class="win azw"><div class="bd"><span class="num">1</span><b>תפקיד</b><span>מנהל הסושיאל של הסטודיו</span></div></div>
+    <div class="win"><div class="bd"><span class="num">2</span><b>מי האדם</b><span>בעלת סטודיו, 12 שנות ניסיון</span></div></div>
+    <div class="win"><div class="bd"><span class="num">3</span><b>מטרות</b><span>20 פניות בחודש מאינסטגרם</span></div></div>
+    <div class="win"><div class="bd"><span class="num">4</span><b>3 אבנים</b><span>קבוצות קטנות · גב ושגרה · קהילה</span></div></div>
+    <div class="win"><div class="bd"><span class="num">5</span><b>מה עושים</b><span>5 פוסטים בשבוע · טיוטה בבוקר</span></div></div>
+    <div class="win"><div class="bd"><span class="num">6</span><b>סגנון</b><span>חם, ישיר, בלי "גוף מושלם"</span></div></div>
+    <div class="win pkw"><div class="bd"><span class="num">7</span><b>כללים</b><span>לא מפרסם · לא מבטיח תוצאות · לא מציע מחירים</span></div></div>
+    <div class="win lmw"><div class="bd"><span class="num lm">8</span><b>כשאין נתונים</b><span>אומר מה חסר. לא מנחש</span></div></div>
+  </div>
+  <div class="sub muted" style="font-size:30px"><span class="en">New chat › Create new agent › Bot actions › Edit Profile</span></div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>19</span></div>
+</section>
+
+<section class="slide" data-notes="מה כותבים. שני משפטים שנכנסים לכל כרטיס. משפט ההרשאה, וכלל הרשתות לכל סוכן סושיאל.">
+  <div class="kicker">WHAT YOU WRITE</div>
+  <h3>שני משפטים שנכנסים <span class="pk">לכל בוט</span></h3>
+  <div class="code"><span class="p">משפט ההרשאה · לכל כרטיס</span>
+אף פעם אל תפרסם, תשלח, תמחק או תקנה בלי אישור מפורש שלי. לפני פעולה כזו תראה לי רשימה ממוספרת ותחכה. אם אתר דורש התחברות, עצור ותעביר את השלב אליי.
+
+<span class="p">כלל הרשתות · לכל סוכן סושיאל</span>
+ברשתות החברתיות אתה רק קורא ומציע. אתה לא לוחץ על לייק, לא מגיב, לא שולח הודעה ולא מפרסם.</div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>20</span></div>
+</section>
+
+<section class="slide" data-notes="5 דרכים ללמד עיצוב, ומספיקה אחת. 1 העתיקו סגנון מצילום. 2 Canva דרך תוסף (תבניות מותג ומילוי אוטומטי רק ב-Canva Enterprise, אומת). 3 אין Canva: 3-5 עיצובים קיימים. 4 שמות גופנים וקודי צבע. 5 צ'קליסט בוק מותג. סוגרים: 'שמור את כל כללי העיצוב כסקיל בשם העיצוב שלי'. טקסט בעברית מוסיפים בעיצוב (Canva), לא בתוך תמונה שנוצרה.">
+  <div class="time">55–65</div>
+  <div class="kicker">TEACH IT YOUR DESIGN</div>
+  <h3>ללמד את הסוכן <span class="pk">את העיצוב שלכם</span></h3>
+  <div style="display:flex;gap:40px;width:100%;align-items:flex-start">
+    <div style="flex:1" class="win"><div class="bar"><span>BRAND-CHECKLIST</span><i>_ □ ×</i></div><div class="bd">
+      <span style="font-size:27px;line-height:1.75">☐ לוגו (בהירה וכהה)<br>☐ 2–3 צבעים עם קודים<br>☐ 2 גופנים: כותרת וטקסט<br>☐ סגנון תמונות: תאורה, אווירה, מה אסור<br>☐ 3–5 דוגמאות "ככה כן" · 2 "ככה לא"<br>☐ טון בשלוש מילים<br>☐ פורמטים: <span class="en">4:5</span> לפיד, <span class="en">9:16</span> לסטורי</span></div></div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:24px">
+      <div class="win"><div class="bd"><b>מצרפים מה שיש</b><span>צילום של קרוסלה שאוהבים · 3–5 עיצובים · <span class="en">Canva</span> דרך תוסף</span></div></div>
+      <div class="win lmw"><div class="bd"><b>שומרים כסקיל</b><span>"שמור את כל כללי העיצוב כסקיל בשם 'העיצוב שלי'"</span></div></div>
+      <div class="win pkw"><div class="bd"><b>טקסט בעברית</b><span>מוסיפים בעיצוב, לא בתוך תמונה שנוצרה</span></div></div>
+    </div>
+  </div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>21</span></div>
+</section>
+
+<section class="slide" data-notes="מצגות ועיצובים, שלב 1. מהבוק לתוצר. הבוט בונה מצגת, קרוסלה או דף נחיתה כקובץ/דף על המחשב שלו, לפי הסקיל 'העיצוב שלי'. טיפ מהשטח: המחשב של הבוט הוא שולחן עבודה, לא ארכיון. אצלי המחשב עלה ריק והקבצים נעלמו. הכלל: עובדים בתיקיית workspace, תוצר סופי מצורף לשיחה, ועיצוב מאושר עותק מלא ל-Google Drive. מחשב נתקע: קודם Recover, אחר כך Update. Reset רק כמוצא אחרון.">
+  <div class="kicker">PRESENTATIONS &amp; DESIGNS · PHASE 1</div>
+  <h3>מהבוק <span class="pk">לתוצר</span></h3>
+  <div class="flow">
+    <div class="node"><div class="win"><div class="bd"><span class="num">1</span><b>בוק מותג</b><span>צ'קליסט + דוגמאות</span></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win lmw"><div class="bd"><span class="num lm">2</span><b>סקיל</b><span>"העיצוב שלי"</span></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win azw"><div class="bd"><span class="num">3</span><b>תוצר</b><span>מצגת · קרוסלה · דף נחיתה</span></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win"><div class="bd"><span class="num">4</span><b>אתם מאשרים</b><span>מתקנים פעם אחת</span></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win pkw"><div class="bd"><span class="num">5</span><b>עותק לדרייב</b><span>המקור, הפונטים, התוצר</span></div></div></div>
+  </div>
+  <div class="code" style="margin-top:30px;font-size:25px"><span class="p">פרומפט · מצגת</span>
+תבנה לי מצגת של 10 שקפים על <span class="c">[נושא]</span> לפי הסקיל 'העיצוב שלי'. כותרת אחת גדולה בכל שקף, תרשים אחד, בלי בולטים ארוכים. תראה לי לפני שאתה ממשיך.</div>
+  <div class="sub" style="font-size:30px;margin-top:22px"><b>המחשב של הבוט הוא שולחן עבודה, לא ארכיון.</b> אישרתם? עותק לדרייב.</div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>22</span></div>
+</section>
+
+<section class="slide pkbg" data-notes="<b>65–70 · הפסקה.</b>">
+  <div class="big en" style="font-family:var(--latin);font-weight:800;font-size:220px;color:var(--lime)">5'</div><h2 style="font-size:120px">הפסקה</h2>
+  <div class="ft" style="color:rgba(247,242,237,.8)"><img src="LOGO_IVORY" alt=""><span>23</span></div>
+</section>
+
+<!-- ============ 04 SOCIAL ============ -->
+<section class="slide co" data-notes="<b>70–92 · סוכן סושיאל ובטיחות ברשתות.</b>">
+  <div class="big">04</div><h2>סוכן סושיאל</h2><div class="kicker" style="margin-top:26px">INSTAGRAM · SAFETY</div>
+  <div class="ft"><img src="LOGO_IVORY" alt=""><span>24</span></div>
+</section>
+
+<section class="slide" data-notes="שתי דרכים לחבר, ההבטוחה לפחות. תוסף (מומלץ): Connect apps > Postiz (תזמון פוסט, סטורי וריל) או Composio (קריאת פוסטים, סטוריז ותובנות). מאשרים פעם אחת בחלון של Meta. דורש חשבון Business או Creator. הדפדפן של הבוט: לקריאה בלבד. כניסה ממחשב בענן עלולה להפעיל בדיקת אבטחה. מטיוטה לשגרה: אחרי שבוע של טיוטות שאתם מאשרים כמעט בלי תיקון, 'שמור את התהליך כסקיל פוסט בוקר', ורק אז שגרה. דמו 8 דק'.">
+  <div class="time">70–85</div>
+  <div class="kicker">INSTAGRAM AGENT</div>
+  <h3>מחברים, קוראים, <span class="pk">מציעים</span></h3>
+  <div class="grid g2">
+    <div class="win lmw"><div class="bar"><span>A · PLUGIN (RECOMMENDED)</span><i>_ □ ×</i></div><div class="bd"><b>תוסף</b><span><span class="en">Connect apps › Postiz</span> או <span class="en">Composio</span>. מאשרים פעם אחת מול <span class="en">Meta</span>. חשבון <span class="en">Business</span> או <span class="en">Creator</span></span></div></div>
+    <div class="win pkw"><div class="bar"><span>B · BOT BROWSER</span><i>_ □ ×</i></div><div class="bd"><b>הדפדפן של הבוט</b><span>לקריאה בלבד. אתם מתחברים, פעם אחת. כניסה מהענן עלולה להפעיל בדיקת אבטחה</span></div></div>
+  </div>
+  <div class="grid g4" style="margin-top:30px;gap:20px">
+    <div class="win"><div class="bd"><b>קריאת עמוד</b><span>על מה, באיזה טון, מה עבד</span></div></div>
+    <div class="win"><div class="bd"><b>ביו</b><span>3 גרסאות, עד 150 תווים</span></div></div>
+    <div class="win"><div class="bd"><b>ביצועים</b><span>מה עבד ב-30 יום</span></div></div>
+    <div class="win"><div class="bd"><b>טרנדים</b><span>5 נושאים עם מקור</span></div></div>
+    <div class="win"><div class="bd"><b>נישה</b><span>10 חשבונות חזקים</span></div></div>
+    <div class="win"><div class="bd"><b>הייליטס</b><span>5 הצעות לעמוד</span></div></div>
+    <div class="win azw"><div class="bd"><b>פוסט בוקר</b><span>טיוטה ב-7:30, לאישור</span></div></div>
+    <div class="win"><div class="bd"><b>אין תוכן?</b><span>שיחה קולית ← 5 פוסטים</span></div></div>
+  </div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>25</span></div>
+</section>
+
+<section class="slide" data-notes="הסיפור שלי, 2 דק', בגוף ראשון: הבוט שלי ידע לפרסם סטורי, ואז אינסטגרם חסם אותי. כניסות ממחשב בענן, מכתובת שאינסטגרם לא מכיר, נראות בדיוק כמו פריצה. זה לא קרה רק לי. הכלל: הבוט יכול טכנית ללחוץ על הכפתורים, אבל הרשתות מזהות התנהגות אוטומטית ועלולות להגביל או לחסום. לכן הבוט מכין, ואתם מבצעים.">
+  <div class="time">85–92</div>
+  <div class="kicker">SOCIAL SAFETY · MY STORY</div>
+  <h3>הבוט שלי פרסם סטורי. <span class="pk">ואז אינסטגרם חסם אותי.</span></h3>
+  <ul class="list">
+    <li><span class="num">1</span><span><b>תוסף לפני דפדפן.</b> הרשאה רשמית של <span class="en">Meta</span> בטוחה יותר מבוט שלוחץ על כפתורים</span></li>
+    <li><span class="num">2</span><span><b>מתחברים בעצמכם, פעם אחת.</b> לא נותנים לבוט לנסות להתחבר לבד</span></li>
+    <li><span class="num">3</span><span><b>אימות דו-שלבי פעיל</b>, ובודקים את רשימת ההתחברויות</span></li>
+    <li><span class="num">4</span><span><b>קצב של בן אדם.</b> בלי עשרות פעולות ברצף ובלי הודעות המוניות</span></li>
+    <li><span class="num">5</span><span><b>טיוטה קודם.</b> הבוט מכין, אתם מבצעים</span></li>
+  </ul>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>26</span></div>
+</section>
+
+<section class="slide" data-notes="הכספת: Settings > Vault, במחשב ובטלפון. סיסמאות לא מדביקים בצ'אט ולא כותבים בקובץ, כי ה-Reset וה-Update יכולים למחוק סיסמאות שנכתבו בקבצים על המחשב, והכספת נשמרת בנפרד. המלצה לסדנה: בשבוע הראשון לא שומרים כרטיס. מי שרוצה לנסות: כרטיס וירטואלי עם תקרה נמוכה. לאן הולך המידע: כל בקשה עוברת לשרתים של Cursor, מחשב ענן נפרד לכל משתמש. לא להגיד 'הכל מוצפן ולא נשלח לאף שרת'.">
+  <div class="kicker">VAULT · WHERE DATA GOES</div>
+  <h3>איפה שמים סיסמאות <span class="pk">וכרטיסים</span></h3>
+  <table class="t">
+    <tr><th>מה שומרים</th><th>מה הבוט רואה</th><th>מתי הוא עוצר ושואל</th></tr>
+    <tr><td>התחברויות: אתר, משתמש, סיסמה</td><td>שהחשבון קיים, בלי הסיסמה</td><td>התיעוד לא מתאר אישור לפני כניסה</td></tr>
+    <tr><td>כרטיס אשראי</td><td>4 ספרות אחרונות בלבד</td><td>לפני כל שימוש בכרטיס בקופה</td></tr>
+    <tr><td>פרטי קשר</td><td>הכל, כדי לבחור את הנכון</td><td>ממלא לבד שדות משלוח וחיוב</td></tr>
+  </table>
+  <div class="grid g3" style="margin-top:30px">
+    <div class="win pkw"><div class="bd"><b>סיסמה לא בצ'אט</b><span>ולא בקובץ. רק בכספת</span></div></div>
+    <div class="win pkw"><div class="bd"><b>שבוע ראשון בלי כרטיס</b><span>או וירטואלי עם תקרה נמוכה</span></div></div>
+    <div class="win"><div class="bd"><b>המחשב שלכם</b><span>מומלץ <span class="en">Never allow</span>, אלא אם צריך קבצים</span></div></div>
+  </div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>27</span></div>
+</section>
+
+<!-- ============ 05 MORE AGENTS ============ -->
+<section class="slide co" data-notes="<b>92–105 · עוד סוכנים: דיוור, לקוחות, מעקב, מזכירה.</b>">
+  <div class="big">05</div><h2>עוד סוכנים</h2><div class="kicker" style="margin-top:26px">LEADS · CLIENTS · SECRETARY</div>
+  <div class="ft"><img src="LOGO_IVORY" alt=""><span>28</span></div>
+</section>
+
+<section class="slide" data-notes="מתגובה לליד. הפוסט עם המילה האחת ('תכתבו גבולות') הוא שער הכניסה. ורוד = הרגעים שאתם פועלים בהם. כל השאר הבוט מכין. מייל תגובה: האם שליחה אוטומטית לכל נרשם אפשרית? לאמת. כרגע: מאשרים בקבוצות. ניוזלטר לרשימה גדולה: שירות דיוור ייעודי, לא Gmail אישי. חשבוניות מהמייל: קריאה בלבד, עדיף חשבון נפרד, לא משלם, לא מעביר.">
+  <div class="time">92–100</div>
+  <div class="kicker">FROM COMMENT TO LEAD</div>
+  <h3>מתגובה <span class="pk">לליד</span></h3>
+  <div class="flow">
+    <div class="node"><div class="win pkw"><div class="bd"><span class="num">1</span><b>פוסט עם מילה</b><span>הבוט מנסח, אתם מפרסמים</span></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win"><div class="bd"><span class="num">2</span><b>מי הגיב</b><span>הבוט אוסף לרשימה</span></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win pkw"><div class="bd"><span class="num">3</span><b>קישור בפרטי</b><span>אתם שולחים, בקצב אנושי</span></div></div></div>
+  </div>
+  <div class="flow">
+    <div class="node"><div class="win"><div class="bd"><span class="num">4</span><b>דף נחיתה</b><span>לפי "העיצוב שלי"</span></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win"><div class="bd"><span class="num">5</span><b>טבלת לידים</b><span><span class="en">Google Sheet</span></span></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win pkw"><div class="bd"><span class="num">6</span><b>מייל אישור</b><span>נוסח מאושר, ואז שגרה</span></div></div></div>
+  </div>
+  <div class="win lmw" style="margin-top:20px;max-width:1300px"><div class="bar"><span>INVOICES.EXE</span><i>_ □ ×</i></div><div class="bd"><span><b style="display:inline;font-size:28px">חשבוניות מהמייל:</b> מחפש, מסדר בטבלה (ספק, תאריך, סכום) ושומר בתיקייה. קריאה בלבד, עדיף חשבון נפרד. לא משלם, לא מוחק, לא מעביר.</span></div></div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>29</span></div>
+</section>
+
+<section class="slide" data-notes="גלריית סוכנים. מזכירה: תדריך בוקר מהיומן והמייל, ו'Don't Leave Me Hanging': הבטחות פתוחות במייל עם טיוטת follow-up. לקוחות ומעקב: טבלה, מי מחכה לתשובה, follow-up כטיוטה. משפחה ויומן: סיכום בוקר, הודעה לאישור. וואטסאפ: אין חיבור רשמי. דרך וואטסאפ ווב בדפדפן הבוט, נבדק, עלול להיחשב אוטומטי: הבוט מנסח ואתם מדביקים. בוט שפותר תקלות: בודק פעם ביום מה רץ ומה לא, מסביר ומציע, לא מתקן לבד. כלל האצבע: מוסיפים בוט רק כשיש משימה חוזרת שתקועה לכם.">
+  <div class="time">100–105</div>
+  <div class="kicker">MORE AGENTS</div>
+  <h3>סוכן לכל משימה <span class="pk">שחוזרת ותקועה</span></h3>
+  <div class="grid g3">
+    <div class="win azw"><div class="bar"><span>SECRETARY</span><i>_ □ ×</i></div><div class="bd"><b>מזכירה</b><span>תדריך בוקר · מה דורש תשובה · הבטחות פתוחות במייל</span></div></div>
+    <div class="win"><div class="bar"><span>CLIENTS</span><i>_ □ ×</i></div><div class="bd"><b>לקוחות ומעקב</b><span>טבלת לקוחות · מי מחכה · <span class="en">follow-up</span> כטיוטה</span></div></div>
+    <div class="win"><div class="bar"><span>NEWSLETTER</span><i>_ □ ×</i></div><div class="bd"><b>דיוור</b><span>3 דברים מהשבוע ← גיליון ← אתם עורכים</span></div></div>
+    <div class="win"><div class="bar"><span>FAMILY</span><i>_ □ ×</i></div><div class="bd"><b>משפחה ויומן</b><span>סיכום בוקר: מי, מה, מתי, מה להביא</span></div></div>
+    <div class="win pkw"><div class="bar"><span>WHATSAPP ⚠</span><i>_ □ ×</i></div><div class="bd"><b>וואטסאפ</b><span>אין חיבור רשמי. הבוט מנסח, אתם מדביקים</span></div></div>
+    <div class="win lmw"><div class="bar"><span>FIXER</span><i>_ □ ×</i></div><div class="bd"><b>בוט שפותר תקלות</b><span>בודק מה רץ ומה לא. מסביר ומציע, לא מתקן לבד</span></div></div>
+  </div>
+  <div class="sub muted" style="font-size:28px">מאמנת · עו"ד · חנות אונליין · מסעדה · נדל"ן · יוצר תוכן · מרצה: לכל מקצוע יש סוכן אחד שמתחילים ממנו</div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>30</span></div>
+</section>
+
+<section class="slide" data-notes="איך בוטים מדברים ביניהם. בוט מתאם (Chief of Staff) עם רשימת צוות. העברות ברורות (handoffs) דרך קבצים במחשב המשותף או צ'אט קבוצתי, ואישורים. השלב הסודי: בוט בודק שמחזיר לתיקון. מוסיפים בוט רק כשיש תפקיד מומחה יציב. כל בוט מיותר אוכל מכסה.">
+  <div class="kicker">HOW BOTS TALK</div>
+  <h3>צוות: <span class="pk">ראש מערכת ומומחים</span></h3>
+  <div class="win cow" style="max-width:640px;margin-bottom:22px"><div class="bd" style="text-align:center;padding:20px"><b style="margin:0">ראש מערכת · <span class="en">Chief of Staff</span></b><span>מחזיק את רשימת הצוות ומחלק עבודה</span></div></div>
+  <div class="flow">
+    <div class="node"><div class="win"><div class="bd"><b>סורק</b><span>10 פריטים מהלילה</span></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win"><div class="bd"><b>עורך</b><span>בוחר 3</span></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win"><div class="bd"><b>כותב</b><span>טיוטה בקול שלכם</span></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win pkw"><div class="bd"><b>בודק</b><span>השלב הסודי</span></div></div></div><div class="arr">←</div>
+    <div class="node"><div class="win lmw"><div class="bd"><b>אתם</b><span>מאשרים</span></div></div></div>
+  </div>
+  <div class="sub" style="font-size:30px">מעבירים עבודה דרך קבצים במחשב המשותף או צ'אט קבוצתי · <b>מוסיפים בוט רק לתפקיד יציב</b></div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>31</span></div>
+</section>
+
+<section class="slide" data-notes="מאיפה מביאים סקילים ובוטים: גלריית Bot templates תחת Connect apps · קישורי x.ai/bot (מוסיף עותק של המתכון, לא את הנתונים של היוצר) · Marketplace של פלאגינים · GitHub ו-npx skills add · dr eggbot שבונה בוט מכמה שאלות · Memory Transfer שמעביר מה ש-ChatGPT/Claude יודעים עליכם. סקילים הם תיקיות עם הוראות ב-Markdown: אותו פורמט עובד גם ב-Claude ובכלים אחרים. סדר: בוט אחד תפקיד אחד, רשימת צוות, Hide מסתיר ו-Delete מוחק לתמיד, Mission Control/Bot Optimizer בודקים מכסה. בטיחות: קוראים הוראות, חיבורים ושגרות לפני שמוסיפים. לא מפנים בוט לקרוא ספריות של זרים ו'לקלוט סקילים'.">
+  <div class="kicker">SKILLS · LIBRARIES · ORDER</div>
+  <h3>מאיפה מביאים, <span class="pk">ואיך עושים סדר</span></h3>
+  <div class="grid g3">
+    <div class="win azw"><div class="bar"><span>WHERE FROM</span><i>_ □ ×</i></div><div class="bd"><span style="font-size:25px;line-height:1.7">גלריית <span class="en">Bot templates</span><br>קישורי <span class="en">x.ai/bot</span><br><span class="en">Plugin Marketplace</span><br><span class="en">GitHub · npx skills add</span><br><span class="en">dr eggbot</span> · <span class="en">Memory Transfer</span></span></div></div>
+    <div class="win lmw"><div class="bar"><span>KEEP ORDER</span><i>_ □ ×</i></div><div class="bd"><span style="font-size:25px;line-height:1.7">בוט אחד, תפקיד אחד<br>רשימת צוות אצל ראש המערכת<br><span class="en">Hide</span> מסתיר · <span class="en">Delete</span> מוחק לתמיד<br>בוט שבודק מכסה ושגרות<br>Reset? אף פעם כשנתקע</span></div></div>
+    <div class="win pkw"><div class="bar"><span>PORTABLE</span><i>_ □ ×</i></div><div class="bd"><span style="font-size:25px;line-height:1.7">סקיל = תיקייה עם הוראות<br>אותו פורמט עובד גם ב-<span class="en">Claude</span><br>ובכלים אחרים שתומכים בסקילים<br><b style="display:inline;font-size:25px">קוראים מתכון לפני שמוסיפים</b></span></div></div>
+  </div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>32</span></div>
+</section>
+
+<section class="slide" data-notes="סיכום מהיר של מה שעובד אצל אנשים. מהטבלה שאספתי.">
+  <div class="kicker">WHAT WORKS FOR PEOPLE</div>
+  <h3>מה עובד אצל אנשים</h3>
+  <table class="t">
+    <tr><th>סוג</th><th>דוגמאות</th><th>איך עושים</th></tr>
+    <tr><td>שגרות</td><td><span class="en">Morning brief</span> · <span class="en">QA</span> יומי · מעקב מתחרים</td><td>אומרים פעם אחת "תזכור" ומגדירים זמן</td></tr>
+    <tr><td>סקילים</td><td><span class="en">Stageshow</span> · <span class="en">GitHub workflow</span> · בדיקת עובדות</td><td>מבקשים מהבוט ליצור סקיל, או <span class="en">npx skills add</span></td></tr>
+    <tr><td>צוותים</td><td><span class="en">Chief of Staff</span> + מומחים</td><td>צ'אט קבוצתי · העברות ברורות · אישורים</td></tr>
+    <tr><td>ספריות</td><td>מאגרי <span class="en">GitHub</span> · <span class="en">Pages</span> · <span class="en">dr eggbot</span></td><td><span class="en">GitHub</span> ו-<span class="en">Marketplace</span> של בוטים</td></tr>
+    <tr><td>שימושים מדהימים</td><td>משחק קלפים · עסק ב-4 ימים · מיזוג קוד אוטומטי</td><td>נותנים תוצאה ברורה + בדיקה</td></tr>
+  </table>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>33</span></div>
+</section>
+
+<!-- ============ 06 LIVE BUILD ============ -->
+<section class="slide co" data-notes="<b>105–120 · מקימים בלייב.</b>">
+  <div class="big">06</div><h2>מקימים בלייב</h2><div class="kicker" style="margin-top:26px">YOUR TURN</div>
+  <div class="ft"><img src="LOGO_IVORY" alt=""><span>34</span></div>
+</section>
+
+<section class="slide" data-notes="15 דקות. אם אין זמן: מוותרים על החיבור. סוכן עם כרטיס תפקיד טוב מועיל גם בלי חיבורים, וחיבורים עושים בשקט בבית.">
+  <div class="time">105–120</div>
+  <div class="task"><div class="bar"><span>LIVE BUILD</span><span>15 MIN</span></div><div class="bd">
+    <h3>הקימו את הסוכן שלכם</h3>
+    <div class="tl" style="margin:6px 0 24px;height:110px">
+      <div style="flex:2;background:var(--silver)">בוט חדש<small>105–107</small></div>
+      <div style="flex:4;background:var(--blush)">כרטיס תפקיד<small>107–111</small></div>
+      <div style="flex:2;background:var(--lime)">הרשאה וכללים<small>111–113</small></div>
+      <div style="flex:3;background:var(--silver)">"מה הבנת?"<small>113–116</small></div>
+      <div style="flex:3;background:var(--azure);color:#fff">משימה ראשונה<small>116–119</small></div>
+      <div style="flex:1;background:var(--pink);color:#fff">צ'אט<small>120</small></div>
+    </div>
+    <ol><li>יוצרים בוט ונותנים לו שם לפי התפקיד</li><li>מדביקים כרטיס תפקיד לפי 3 האבנים</li><li>משפט ההרשאה, כלל הרשתות וכלל "מי אני"</li><li>"תגיד לי במילים שלך מה הבנת עליי", ומתקנים</li><li>"תביא לי 3 רעיונות לפוסטים לפי 3 האבנים, עם טיוטה לאחד"</li></ol>
+    <div class="out">ובסוף: כל אחד כותב בצ'אט איזה סוכן הקים</div></div></div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>35</span></div>
+</section>
+
+<section class="slide" data-notes="שיעורי בית ומפגש ההמשך. יומיים לפני שולחים שאלון: מה הסוכן עשה השבוע? איפה נתקעת?">
+  <div class="kicker">UNTIL NEXT WEEK</div>
+  <h3>השבוע שלכם עם הסוכן</h3>
+  <div class="grid g4">
+    <div class="win"><div class="bar"><span>TOMORROW</span><i>_ □ ×</i></div><div class="bd"><b>פוסט בוקר</b><span>טיוטה בלבד</span></div></div>
+    <div class="win"><div class="bar"><span>DAILY</span><i>_ □ ×</i></div><div class="bd"><b>משפרים ומפרסמים</b><span>מתקנים במשפט אחד</span></div></div>
+    <div class="win"><div class="bar"><span>MID-WEEK</span><i>_ □ ×</i></div><div class="bd"><b>"מה אתה יודע עליי?"</b><span>ותיקון של "מי אני"</span></div></div>
+    <div class="win lmw"><div class="bar"><span>GOOD WEEK</span><i>_ □ ×</i></div><div class="bd"><b>סקיל, ואז שגרה</b><span>"שמור את זה כסקיל"</span></div></div>
+  </div>
+  <div class="win azw" style="margin-top:36px;max-width:1300px"><div class="bar"><span>FOLLOW-UP · 60 MIN · NEXT WEEK</span><i>_ □ ×</i></div><div class="bd"><span style="font-size:28px">מה בניתם · בעיות ופתרונות בלייב · עוד רעיונות: סקיל, שגרה, <span class="en">Teach a task</span>, צוות · הצעד הבא</span></div></div>
+  <div class="ft"><img src="LOGO_BLUE" alt=""><span>36</span></div>
+</section>
+
+<section class="slide az" data-notes="סגירה. בניתם משהו? תייגו אותי.">
+  <div class="kicker">3 RULES THAT STAY WITH YOU</div>
+  <div style="text-align:right;font-size:46px;line-height:1.7;font-weight:800">
+    <div><span class="num lm">1</span> שום דבר לא מתפרסם, נשלח או נקנה בלי אישור</div>
+    <div><span class="num lm">2</span> מתחברים בעצמכם, ומחברים רק מה שהמשימה צריכה</div>
+    <div><span class="num lm">3</span> טרנד בלי מקור פתוח לא עולה</div>
+  </div>
+  <h2 style="margin-top:50px">הסוכן מכין. <span style="color:var(--lime)">אתם מחליטים.</span></h2>
+  <div class="ft"><img src="LOGO_IVORY" alt=""><span class="en">@shelly_or_gisser · shelly@aigosai.com</span></div>
+</section>
+
+</div>
+<div id="notes"></div>
+<script>
+const slides=[...document.querySelectorAll('.slide')],stage=document.getElementById('stage'),notes=document.getElementById('notes');
+let i=0;try{i=Math.min(slides.length-1,Math.max(0,(parseInt(location.hash.slice(1))||1)-1))}catch(e){}
+function fit(){const s=Math.min(innerWidth/1920,innerHeight/1080);stage.style.transform=`translate(-50%,-50%) scale(${s})`}
+function show(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,k)=>s.classList.toggle('on',k===i));notes.innerHTML=slides[i].dataset.notes||'';try{history.replaceState(null,'','#'+(i+1))}catch(e){}}
+addEventListener('resize',fit);
+addEventListener('keydown',e=>{
+  if(['ArrowLeft','ArrowDown','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();show(i+1)}
+  else if(['ArrowRight','ArrowUp','PageUp','Backspace'].includes(e.key)){e.preventDefault();show(i-1)}
+  else if(e.key==='Home')show(0);else if(e.key==='End')show(slides.length-1);
+  else if('nNמ'.includes(e.key)){notes.style.display=notes.style.display==='block'?'none':'block'}
+  else if('fFכ'.includes(e.key)){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+});
+stage.addEventListener('click',e=>show(e.clientX<innerWidth/2?i+1:i-1));
+fit();show(i);
+</script>
+</body>
+</html>
