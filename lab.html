@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>מעבדת הסוכן</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* layout: workbench. parts to assemble on the start side, the night the agent runs on the end side, the take-home brief below */
+@font-face{font-family:Bamberger;src:url('assets/bamberger-black.otf') format('opentype');font-display:swap;font-weight:900}
+@font-face{font-family:HeeboL;src:url('assets/heebo.ttf') format('truetype');font-display:swap}
+@font-face{font-family:AntonL;src:url('assets/anton.ttf') format('truetype');font-display:swap}
+:root{
+  color-scheme:light;
+  --ink:#303039; --sky:#DDF4FF; --sky2:#e9f6fc; --pink:#F4B8CA; --mag:#B93372; --plum:#60445d; --cream:#F7F2ED;
+  --lilac:#E8E0F2; --line:#b9d1db; --paper:#fffdfb; --soft:#6c6c78; --bad:#b3261e; --badbg:#fde7e4; --ok:#1f6b4a; --okbg:#dff3e8;
+  --grad:linear-gradient(120deg,#c2337a 0%,#8e3fb8 55%,#5b4bd6 100%);
+  --display:Bamberger,HeeboL,Heebo,Arial,sans-serif; --text:HeeboL,Heebo,Arial,sans-serif; --label:AntonL,HeeboL,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--sky);color:var(--ink);font-family:var(--text);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding-block:36px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--display);font-weight:900;line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.3px}
+h1{font-size:clamp(34px,6vw,60px)} h2{font-size:clamp(24px,3.4vw,34px)} h3{font-size:21px}
+p{margin:0}
+.eyebrow{font-family:var(--label);letter-spacing:1.8px;font-size:13px;color:var(--plum);text-transform:uppercase}
+.hl{box-decoration-break:clone;-webkit-box-decoration-break:clone;background:linear-gradient(transparent 55%,var(--pink) 55%,var(--pink) 94%,transparent 94%);padding:0 4px}
+.lead{font-size:18px;max-width:60ch}
+header{display:flex;flex-direction:column;gap:12px}
+
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tab{font:inherit;font-weight:700;font-size:15px;padding:9px 18px;border-radius:999px;border:1px solid var(--ink);background:#ffffff80;color:var(--ink);cursor:pointer;transition:background .2s,color .2s}
+.tab[aria-selected="true"]{background:var(--ink);color:#fff}
+.goal{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px 20px;display:flex;flex-direction:column;gap:2px}
+.goal b{font-weight:800}
+
+.bench{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:24px;align-items:start}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.colh{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.count{font-family:var(--label);font-size:14px;letter-spacing:1px;color:var(--plum);font-variant-numeric:tabular-nums}
+
+.part{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px 18px;display:flex;flex-direction:column;gap:10px;transition:border-color .2s,background .2s}
+.part.on{border-color:var(--ink)}
+.part.hint{box-shadow:0 0 0 3px var(--pink)}
+.ph{display:flex;align-items:center;gap:14px}
+.ph div{flex:1;min-width:0}
+.ph small{display:block;color:var(--soft);font-size:14px;line-height:1.4}
+.sw{flex:none;width:54px;height:30px;border-radius:999px;border:1px solid var(--ink);background:#fff;position:relative;cursor:pointer;padding:0;transition:background .2s}
+.sw::after{content:"";position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:var(--ink);transition:transform .2s,background .2s}
+.sw[aria-checked="true"]{background:var(--mag);border-color:var(--mag)}
+.sw[aria-checked="true"]::after{transform:translateX(-24px);background:#fff}
+.pb{display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line);padding-top:10px}
+.pb label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--soft)}
+.pb input[type=text]{font:inherit;font-size:16px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:0;width:100%}
+.pb .ck{flex-direction:row;align-items:flex-start;gap:9px;font-size:15px;color:var(--ink);cursor:pointer}
+.pb .ck input{margin-top:5px;accent-color:var(--mag);width:16px;height:16px;flex:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:14px;font-weight:700;padding:5px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--lilac);border-color:var(--plum)}
+.note{font-size:13px;color:var(--soft)}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--mag);outline-offset:2px}
+
+.stage{background:var(--cream);border:1px solid var(--line);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:16px;position:sticky;top:calc(16px + env(safe-area-inset-top,0px))}
+.run{font:800 17px/1.2 var(--text);color:#fff;background:var(--grad);border:0;border-radius:999px;min-height:54px;padding:8px 26px;cursor:pointer;box-shadow:0 12px 30px -12px #8e3fb8cc;transition:transform .2s}
+.run:hover{transform:translateY(-2px)}
+.stale{font-size:14px;color:var(--mag);font-weight:700}
+.trace{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.trace.old{opacity:.45}
+.st{display:grid;grid-template-columns:54px minmax(0,1fr);gap:12px;align-items:start}
+.st time{font-family:var(--label);font-size:15px;letter-spacing:.5px;color:var(--plum);padding-top:9px;font-variant-numeric:tabular-nums}
+.st .b{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:9px 14px;min-width:0}
+.st .b strong{display:block;font-weight:800}
+.st .b span{display:block;font-size:15px;color:var(--soft);overflow-wrap:anywhere}
+.st.bad .b{background:var(--badbg);border-color:var(--bad)} .st.bad .b strong{color:var(--bad)}
+.st.ok .b{background:var(--okbg);border-color:var(--ok)} .st.ok .b strong{color:var(--ok)}
+.st.idle .b{background:transparent;border-style:dashed}
+.st q{display:block;quotes:none;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:8px;font-size:15px;color:var(--ink);overflow-wrap:anywhere}
+.st mark{background:var(--badbg);color:var(--bad);font-weight:700;padding:0 3px;border-radius:4px}
+@media (prefers-reduced-motion:no-preference){.trace.play .st{animation:in .45s both}@keyframes in{from{opacity:0;transform:translateY(8px)}}}
+.verdict{border-radius:14px;padding:14px 18px;background:var(--ink);color:#fff;display:flex;flex-direction:column;gap:4px}
+.verdict .eyebrow{color:var(--pink)}
+.verdict p{font-size:17px;font-weight:700}
+.verdict small{font-size:14px;color:#ffffffc0}
+
+.learn{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.ls{background:var(--paper);border:1px dashed var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.ls b{font-family:var(--display);font-size:18px}
+.ls span{font-size:14px;color:var(--soft);line-height:1.45}
+.ls.got{border-style:solid;border-color:var(--ink)} .ls.got span{color:var(--ink)}
+
+.brief{background:var(--paper);border:1px solid var(--ink);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.brief.locked{border-style:dashed;border-color:var(--line)}
+.brief pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--text);font-size:15px;line-height:1.65;background:var(--sky2);border-radius:12px;padding:16px 18px;user-select:all;-webkit-user-select:all}
+.acts{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{font:800 16px/1.2 var(--text);border-radius:999px;min-height:48px;padding:8px 22px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:#fff;text-decoration:none;display:inline-flex;align-items:center}
+.btn.ghost{background:#ffffff80;color:var(--ink)}
+footer{font-size:13px;color:var(--soft)}
+@media (max-width:860px){
+  .bench{grid-template-columns:minmax(0,1fr)} .stage{position:static}
+  .learn{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Agent Lab / מעבדת הסוכן</div>
+    <h1>מה הופך צ׳אט <span class="hl">לסוכן</span>? חמישה חלקים.</h1>
+    <p class="lead">בוחרים משימה, מרכיבים סוכן חלק אחרי חלק, ומריצים. כל חלק שחסר שובר משהו אחר, וככה מבינים למה הוא שם. בסוף יוצאים עם בריף מוכן לסוכן שלכם.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="משימה" id="tabs"></div>
+  <div class="goal" id="goal"></div>
+
+  <div class="bench">
+    <section class="col" aria-label="החלקים של הסוכן">
+      <div class="colh"><h2>מרכיבים</h2><span class="count" id="count"></span></div>
+      <div class="col" id="parts"></div>
+    </section>
+
+    <section class="stage" aria-label="ההרצה">
+      <div class="colh"><h2>מריצים</h2><span class="stale" id="stale" hidden>שיניתם משהו. להריץ שוב?</span></div>
+      <button class="run" id="run" type="button">להריץ</button>
+      <ol class="trace" id="trace" aria-live="polite"></ol>
+      <div class="verdict" id="verdict"></div>
+    </section>
+  </div>
+
+  <section class="col" aria-label="מה למדתם">
+    <div class="colh"><h2>מה כל חלק עושה</h2><span class="count" id="lcount"></span></div>
+    <div class="learn" id="learn"></div>
+    <p class="note" id="lnote"></p>
+  </section>
+
+  <section class="brief locked" id="brief" aria-label="הבריף לסוכן"></section>
+
+  <footer>ההרצה כאן היא הדמיה שנכתבה מראש, לא מודל חי. הדוגמאות (דנה, רון, המחירים) בדויות. מה שאמיתי: חמשת החלקים, והתקלות שקורות כשאחד מהם חסר.</footer>
+</div>
+
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const TOOLS={mail:['מייל','לקרוא פניות ולהכין טיוטות תשובה'],cal:['יומן','לבדוק מתי פנוי'],web:['חיפוש ברשת','למצוא מה חדש היום'],sheet:['גיליון חשבוניות','לראות מי שילם ומי לא']};
+const TONES={warm:['חם','חם ואישי, כמו הודעה לחברה'],biz:['ענייני','ענייני וקצר, בלי קישוטים'],wit:['שנון','שנון וקליל, עם קריצה אחת לכל היותר']};
+const GUARDS=[['approve','לא שולחים ולא מפרסמים בלי אישור שלי'],['facts','לא מבטיחים מחיר, הנחה או מועד שלא כתובים כאן'],['ask','אם משהו לא ברור, עוצרים ושואלים אותי']];
+const PARTS=[
+  ['trigger','טריגר','מתי הוא מתחיל לעבוד, בלי שתבקשו','צ׳אט מחכה שתשאלו. סוכן מתחיל לבד, כשמשהו קורה או כשמגיעה השעה.'],
+  ['tools','כלים','למה יש לו גישה: מייל, יומן, רשת, קבצים','בלי כלים הוא רק מדבר. כלים הם הידיים שלו: לקרוא מייל, לחפש, לפתוח קובץ.'],
+  ['know','ידע','מה הוא יודע על העסק שלכם','מה שלא סיפרתם לו, הוא ימציא. ובביטחון מלא.'],
+  ['role','תפקיד וקול','מי הוא, ואיך הוא נשמע','בלי תפקיד וקול הוא נשמע כמו כולם. הקול שלכם הוא חלק מההוראות.'],
+  ['guard','גבולות','מה אסור לו לעשות בלי לשאול','סוכן טוב יודע איפה לעצור ולשאול. אתם מחליטים מה דורש אישור.']
+];
+
+/* each mission: the same five parts, a different night */
+const M={
+  lead:{name:'ליד בלילה',need:'mail',trig:'ברגע שנכנסת פנייה חדשה',t:['02:14','02:15','08:00'],runLabel:'להריץ את הלילה',
+    goal:'דנה כותבת לכם ב־02:14 ושואלת כמה זה עולה. המטרה: לקום בבוקר לתשובה מוכנה, נכונה ובקול שלכם.',
+    ev:['פנייה חדשה נכנסה','דנה: ״היי, כמה עולה אצלכם? ויש מקום השבוע?״'],
+    sleep:['הפנייה מחכה. הצ׳אט מחכה.','אף אחד לא ביקש ממנו כלום, אז הוא לא עשה כלום.','09:40','פתחתם את הצ׳אט ושאלתם בעצמכם','דנה חיכתה שבע שעות וחצי. בינתיים היא כתבה גם למתחרים.'],
+    noTool:['אין לו גישה לתיבת המייל','הוא התעורר בזמן, אבל לא רואה את הפנייה. במקום תשובה לדנה קיבלתם ״5 טיפים למענה מהיר ללידים״.'],
+    use:['קרא את המייל של דנה','זיהה שאלה על מחיר ועל זמינות.'],
+    invent:f=>['כתב תשובה, אבל המציא','שלום דנה, תודה על פנייתך לעסק שלנו. <mark>המחיר מתחיל ב־₪199</mark> וכולל <mark>ליווי אישי מלא</mark>.','המחיר והליווי לא קיימים. הוא לא ידע, אז הוא ניחש.'],
+    robot:f=>['העובדות נכונות, הקול לא שלכם',`לקוח/ה יקר/ה, פנייתך התקבלה. ${esc(f.offer)}: ${esc(f.price)}. לפרטים נוספים ניתן להשיב להודעה זו. בברכה, ${esc(f.biz)}.`,'ככה נשמע כל עסק. דנה לא תרגיש שמישהו ענה לה.'],
+    good:{warm:f=>`היי דנה, איזה כיף שכתבת! ${esc(f.offer)}: ${esc(f.price)}. יש מקום ביום חמישי בערב. לשריין לך?`,
+          biz:f=>`שלום דנה, תודה על הפנייה. ${esc(f.offer)}: ${esc(f.price)}. המועד הפנוי הקרוב הוא יום חמישי בערב. לאשר?`,
+          wit:f=>`דנה, לכתוב ב־02:14 זו מחויבות, ואנחנו מעריכים. ${esc(f.offer)}: ${esc(f.price)}. יש מקום בחמישי בערב. סוגרים?`},
+    loose:['נשלח לדנה. בלי שראיתם.','התשובה יצאה ב־02:15, כולל הבטחה ליום חמישי בערב. ביום חמישי בערב אתם בחתונה.'],
+    win:['תשובה מוכנה מחכה לאישור שלכם','טיוטה אחת, בקול שלכם, עם המחיר הנכון. דנה תקבל תשובה שתי דקות אחרי שתקומו.'],
+    job:'כשנכנסת פנייה מלקוח חדש, אתה מכין טיוטת תשובה קצרה שעונה בדיוק על מה שנשאל.',
+    out:'טיוטת תשובה אחת, עד 4 שורות, מוכנה לשליחה. מתחתיה שורה אחת: מה הלקוח ביקש, ומה כדאי להציע לו.'},
+  trend:{name:'מטרנד לטיוטה',need:'web',trig:'כל בוקר ב־07:30',t:['07:30','07:31','08:00'],runLabel:'להריץ את הבוקר',
+    goal:'משהו חדש עולה בתחום שלכם הבוקר. המטרה: טיוטת פוסט עם זווית שלכם, לפני שכולם מתחילים לגלול.',
+    ev:['נושא חדש מתחיל לעלות','בתחום שלכם מדברים על זה מאז 06:00.'],
+    sleep:['הטרנד עולה. הצ׳אט מחכה.','אף אחד לא ביקש ממנו לבדוק מה חדש.','13:20','נזכרתם לשאול בצהריים','עד שהטיוטה הייתה מוכנה, שלושה מתחרים כבר פרסמו.'],
+    noTool:['אין לו גישה לרשת','הוא כתב על ״הטרנד החם״ מתוך מה שהוא זוכר. המידע בן חודשים.'],
+    use:['חיפש מה עלה ב־12 השעות האחרונות','מצא 3 מקורות ובחר את הנושא שהכי קשור לתחום.'],
+    invent:f=>['כתב פוסט, אבל כללי ומומצא','5 דברים שכל עסק חייב לדעת על הטרנד החדש. <mark>87% מהלקוחות כבר שם!</mark>','הנתון הומצא, והפוסט מתאים לכל עסק בעולם. הוא לא יודע מי אתם.'],
+    robot:f=>['הזווית נכונה, הקול לא שלכם',`${esc(f.biz)} מעדכנת: חלה התפתחות בתחום. להלן עיקרי הדברים והשלכותיהם על ${esc(f.offer)}.`,'זה נקרא כמו הודעה לעיתונות. אף אחד לא עוצר על זה בפיד.'],
+    good:{warm:f=>`ראיתם מה קרה הבוקר? אצלנו ב${esc(f.biz)} מרגישים את זה כבר חודשים. הנה מה שזה אומר למי שחושב על ${esc(f.offer)}.`,
+          biz:f=>`מה שעלה הבוקר, בשלוש שורות, ומה זה משנה למי שמתעניין ב${esc(f.offer)}. ${esc(f.biz)}.`,
+          wit:f=>`כולם מדברים על זה מהבוקר. ב${esc(f.biz)} מדברים על זה מהקיץ. אז הנה הגרסה הקצרה, כולל מה זה אומר על ${esc(f.offer)}.`},
+    loose:['פורסם ב־07:31. לפני שקראתם.','עם שגיאה בשם של לקוח, ועם טענה שלא הייתם חותמים עליה.'],
+    win:['טיוטה ושלושה מקורות מחכים לאישור','אתם קוראים, מתקנים מילה, ומפרסמים. ראשונים.'],
+    job:'כל בוקר אתה בודק מה חדש בתחום, בוחר נושא אחד, ומכין טיוטת פוסט עם הזווית של העסק.',
+    out:'תקציר של הנושא בשלוש שורות, קישורים למקורות, וטיוטת פוסט אחת. בלי נתונים שאין להם מקור.'},
+  pay:{name:'מי לא שילם',need:'sheet',trig:'ב־1 בכל חודש, ב־09:00',t:['09:00','09:01','09:05'],runLabel:'להריץ את סוף החודש',
+    goal:'שלוש חשבוניות פתוחות כבר יותר מחודש. המטרה: תזכורות מנומסות שמחכות לאישור, בלי להביך אף אחד.',
+    ev:['סוף חודש','יש חשבוניות שעוד לא נסגרו.'],
+    sleep:['החשבוניות פתוחות. הצ׳אט מחכה.','אף אחד לא ביקש ממנו לבדוק.','יום 19','נזכרתם באמצע החודש','רון כבר 64 יום באיחור, ואתם שוב כותבים את התזכורת בעצמכם.'],
+    noTool:['אין לו גישה לגיליון','הוא לא יודע מי שילם. קיבלתם ״טיפים לגבייה יעילה״.'],
+    use:['פתח את גיליון החשבוניות','רון: 45 יום. מיכל: 32 יום. אבי: שילם אתמול.'],
+    invent:f=>['כתב תזכורת, אבל המציא','שלום רון, נותרה יתרה של <mark>₪1,200</mark>. לפי התנאים שלנו <mark>תחול ריבית פיגורים של 5%</mark>.','הסכום והריבית הומצאו. אין לכם תנאים כאלה.'],
+    robot:f=>['הפרטים נכונים, הטון מסוכן',`הודעת תשלום: טרם התקבל תשלום עבור ${esc(f.offer)} בסך ${esc(f.price)}. נא להסדיר את החוב לאלתר. ${esc(f.biz)}.`,'רון לקוח של שלוש שנים. ככה לא מדברים איתו.'],
+    good:{warm:f=>`היי רון, מה שלומך? תזכורת קטנה: החשבונית על ${esc(f.offer)} (${esc(f.price)}) עדיין פתוחה. אם כבר העברת, אפשר להתעלם. תודה!`,
+          biz:f=>`שלום רון, החשבונית על ${esc(f.offer)} (${esc(f.price)}) פתוחה 45 יום. אשמח לעדכון מתי היא תוסדר. תודה, ${esc(f.biz)}.`,
+          wit:f=>`רון, החשבונית על ${esc(f.offer)} (${esc(f.price)}) מתגעגעת אליך כבר 45 יום. נסגור אותה השבוע?`},
+    loose:['נשלח לשלושתם ב־09:01','כולל אבי, ששילם אתמול. עכשיו צריך להתנצל בפניו.'],
+    win:['שתי טיוטות מחכות לאישור','לרון ולמיכל. אבי סומן כשולם ולא קיבל כלום.'],
+    job:'בתחילת כל חודש אתה עובר על החשבוניות הפתוחות ומכין תזכורת מנומסת לכל מי שעבר 30 יום.',
+    out:'רשימה: מי באיחור וכמה ימים. לכל אחד טיוטת תזכורת נפרדת. מי ששילם לא מופיע.'}
+};
+
+/* state */
+const DEF={m:'lead',on:{},f:{biz:'סטודיו קרמיקה נועה',offer:'סדנת זוגות',price:'₪380 לזוג'},tone:'warm',tools:{mail:true,web:true,sheet:true,cal:false},g:{approve:true,facts:true,ask:true},got:{},won:{}};
+let S=JSON.parse(JSON.stringify(DEF));
+try{const v=JSON.parse(localStorage.getItem('agentlab')||'null');if(v&&M[v.m])S=Object.assign(S,v)}catch(e){}
+const save=()=>{try{localStorage.setItem('agentlab',JSON.stringify(S))}catch(e){}};
+let ran=null;
+
+function outcome(){
+  const m=M[S.m],o=S.on;
+  if(!o.trigger)return'trigger';
+  if(!o.tools||!S.tools[m.need])return'tools';
+  if(!o.know||!S.f.biz.trim()||!S.f.offer.trim()||!S.f.price.trim())return'know';
+  if(!o.role)return'role';
+  if(!o.guard||!S.g.approve)return'guard';
+  return'win';
+}
+function steps(res){
+  const m=M[S.m],f=S.f,t=m.t,L=[];
+  const add=(time,cls,title,sub,quote)=>L.push({time,cls,title,sub,quote});
+  add(t[0],'',m.ev[0],m.ev[1]);
+  if(res==='trigger'){add('…','idle',m.sleep[0],m.sleep[1]);add(m.sleep[2],'bad',m.sleep[3],m.sleep[4]);return L}
+  add(t[0],'','הסוכן התעורר לבד',`טריגר: ${m.trig}.`);
+  if(res==='tools'){const miss=S.on.tools&&!S.tools[m.need];add(t[1],'bad',m.noTool[0],m.noTool[1]+(miss?` יש לו כלים, אבל לא את הכלי שהמשימה הזאת צריכה: ${TOOLS[m.need][0]}.`:''));return L}
+  add(t[1],'',m.use[0],m.use[1]);
+  if(res==='know'){const x=m.invent(f);add(t[1],'bad',x[0],x[2],x[1]);return L}
+  if(res==='role'){const x=m.robot(f);add(t[1],'bad',x[0],x[2],x[1]);return L}
+  add(t[1],'',`כתב טיוטה בקול שלכם (${TONES[S.tone][0]})`,'',m.good[S.tone](f));
+  if(res==='guard'){add(t[1],'bad',m.loose[0],m.loose[1]);return L}
+  add(t[1],'','עצר לפני השליחה','גבול: לא שולחים בלי אישור שלכם.');
+  add(t[2],'ok',m.win[0],m.win[1]);return L;
+}
+const VERDICT={
+  trigger:['זה עדיין צ׳אט','הוא יודע לענות, אבל רק כששואלים אותו. חסר לו טריגר.'],
+  tools:['הוא התעורר, ואין לו ידיים','בלי גישה לכלי הנכון הוא יכול רק לדבר על העבודה, לא לעשות אותה.'],
+  know:['הוא עבד, והמציא','הוא לא יודע כלום על העסק, אז הוא מילא את החסר מהדמיון.'],
+  role:['נכון, אבל לא אתם','העובדות במקום. הקול של רובוט.'],
+  guard:['מצוין, ומסוכן','הוא עשה הכול נכון, ואז שלח בלי לשאול.'],
+  win:['זה סוכן','חמישה חלקים, לילה שלם, אפס תקלות. הבריף שלכם מוכן למטה.']
+};
+
+/* render */
+function tabs(){$('tabs').innerHTML=Object.keys(M).map(k=>`<button class="tab" role="tab" type="button" data-m="${k}" aria-selected="${S.m===k}">${M[k].name}</button>`).join('');
+  $('goal').innerHTML=`<b>המשימה: ${M[S.m].name}</b><span>${M[S.m].goal}</span>`;$('run').textContent=M[S.m].runLabel}
+function parts(){
+  const m=M[S.m],next=outcome();
+  $('parts').innerHTML=PARTS.map(([id,name,sub])=>{
+    const on=!!S.on[id];let body='';
+    if(on&&id==='trigger')body=`<div class="pb"><p class="note">במשימה הזאת: <b>${m.trig}</b>. לא מחכים שתבקשו.</p></div>`;
+    if(on&&id==='tools')body=`<div class="pb">${Object.keys(TOOLS).map(k=>`<label class="ck"><input type="checkbox" id="tool-${k}" data-tool="${k}" ${S.tools[k]?'checked':''}><span><b>${TOOLS[k][0]}</b>: ${TOOLS[k][1]}</span></label>`).join('')}</div>`;
+    if(on&&id==='know')body=`<div class="pb"><label>שם העסק<input type="text" id="f-biz" data-f="biz" value="${esc(S.f.biz)}" maxlength="40"></label><label>מה אתם מציעים<input type="text" id="f-offer" data-f="offer" value="${esc(S.f.offer)}" maxlength="40"></label><label>מחיר<input type="text" id="f-price" data-f="price" value="${esc(S.f.price)}" maxlength="30"></label><p class="note">הפרטים כאן הם דוגמה. החליפו אותם בשלכם, והבריף בסוף יהיה שלכם.</p></div>`;
+    if(on&&id==='role')body=`<div class="pb"><div class="chips">${Object.keys(TONES).map(k=>`<button class="chip" type="button" data-tone="${k}" aria-pressed="${S.tone===k}">${TONES[k][0]}</button>`).join('')}</div><p class="note">${TONES[S.tone][1]}.</p></div>`;
+    if(on&&id==='guard')body=`<div class="pb">${GUARDS.map(([k,t])=>`<label class="ck"><input type="checkbox" id="g-${k}" data-g="${k}" ${S.g[k]?'checked':''}><span>${t}</span></label>`).join('')}</div>`;
+    return`<div class="part${on?' on':''}${ran&&ran===next&&next===id?' hint':''}"><div class="ph"><div><h3>${name}</h3><small>${sub}</small></div><button class="sw" type="button" role="switch" aria-checked="${on}" aria-label="${name}" data-part="${id}"></button></div>${body}</div>`}).join('');
+  $('count').textContent=`${PARTS.filter(p=>S.on[p[0]]).length} / 5`;
+}
+function trace(play){
+  const res=ran,L=steps(res),v=VERDICT[res];
+  $('trace').className='trace'+(play?' play':'');
+  $('trace').innerHTML=L.map((s,i)=>`<li class="st ${s.cls}" style="animation-delay:${i*.32}s"><time>${s.time}</time><div class="b"><strong>${s.title}</strong>${s.sub?`<span>${s.sub}</span>`:''}${s.quote?`<q>${s.quote}</q>`:''}</div></li>`).join('');
+  const part=PARTS.find(p=>p[0]===res);
+  $('verdict').innerHTML=`<div class="eyebrow">${res==='win'?'Result / עבר':'Result / נשבר'}</div><p>${v[0]}</p><small>${v[1]}${part?` החלק שחסר: ${part[1]}.`:''}</small>`;
+  $('stale').hidden=true;
+}
+function learn(){
+  const n=PARTS.filter(p=>S.got[p[0]]).length;
+  $('learn').innerHTML=PARTS.map(([id,name,,lesson])=>`<div class="ls${S.got[id]?' got':''}"><b>${name}</b><span>${S.got[id]?lesson:'עוד לא ראיתם מה קורה בלעדיו.'}</span></div>`).join('');
+  $('lcount').textContent=`${n} / 5`;
+  $('lnote').textContent=n===5?'ראיתם את כל חמש התקלות. עכשיו אתם יודעים לאבחן סוכן שלא עובד: שואלים איזה חלק חסר.':
+    (S.won[S.m]?'הסוכן עובד. רוצים להבין למה כל חלק שם? כבו חלק אחד והריצו שוב.':'כל תקלה שתראו בהרצה תיפתח כאן כתובנה.');
+}
+function briefText(){
+  const m=M[S.m],f=S.f,tl=Object.keys(TOOLS).filter(k=>S.tools[k]),gl=GUARDS.filter(g=>S.g[g[0]]);
+  return[`הסוכן שלי: ${m.name}`,'',
+    'תפקיד',`אתה הסוכן האישי של ${f.biz}. ${m.job}`,`הקול: ${TONES[S.tone][1]}. כותבים בעברית, בגוף ראשון של העסק.`,'',
+    'מה חשוב לדעת',`- העסק: ${f.biz}`,`- מה מציעים: ${f.offer}`,`- מחיר: ${f.price}`,'- אם חסר לך פרט, לא ממציאים. כותבים ״חסר לי:״ ואת מה שחסר.','',
+    'כלים',...tl.map(k=>`- ${TOOLS[k][0]}: ${TOOLS[k][1]}`),'',
+    'מתי פועלים',`${m.trig}. לא מחכים שיבקשו.`,'',
+    'גבולות',...gl.map(g=>`- ${g[1]}`),'',
+    'מה מחכה לי בסוף',m.out].join('\n');
+}
+function brief(){
+  const el=$('brief');
+  if(!S.won[S.m]||outcome()!=='win'){el.className='brief locked';
+    el.innerHTML=`<div class="eyebrow">Take home / הבריף שלכם</div><h2>הבריף נפתח כשהסוכן עובר הרצה בלי תקלה</h2><p class="lead">זה הטקסט שמדביקים כהוראות לסוכן אמיתי: תפקיד, ידע, כלים, טריגר וגבולות, עם הפרטים שמילאתם.</p>`;return}
+  el.className='brief';
+  el.innerHTML=`<div class="eyebrow">Take home / הבריף שלכם</div><h2>הבריף לסוכן ״${M[S.m].name}״</h2>
+  <p class="lead">חמשת החלקים, כתובים כהוראות. מדביקים אותו בשדה ההוראות של הסוכן שלכם. את הכלים והטריגר מחברים בהגדרות של הפלטפורמה שבה אתם עובדים.</p>
+  <pre id="btext">${esc(briefText())}</pre>
+  <div class="acts"><button class="btn" type="button" id="copy">להעתיק את הבריף</button><!--cta--><a class="btn ghost" href="index.html#signup">לחבר אותו באמת: הסדנה</a><!--/cta--><span class="note" id="copied" role="status"></span></div>`;
+}
+function all(){tabs();parts();learn();brief()}
+function run(play){
+  ran=outcome();if(ran==='win')S.won[S.m]=true;else S.got[ran]=true;save();trace(play);parts();learn();brief();
+}
+function dirty(){save();$('stale').hidden=false;$('trace').classList.add('old');brief()}
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.m){S.m=t.dataset.m;all();run(false);return}
+  if(t.dataset.part){S.on[t.dataset.part]=!S.on[t.dataset.part];parts();dirty();const b=document.querySelector(`[data-part="${t.dataset.part}"]`);if(b)b.focus();return}
+  if(t.dataset.tone){S.tone=t.dataset.tone;parts();dirty();return}
+  if(t.id==='run'){run(true);if(matchMedia('(max-width:860px)').matches)$('trace').scrollIntoView({behavior:'smooth',block:'nearest'});return}
+  if(t.id==='copy'){const txt=briefText(),done=()=>{$('copied').textContent='הועתק.'},fail=()=>{const r=document.createRange();r.selectNodeContents($('btext'));const s=getSelection();s.removeAllRanges();s.addRange(r);$('copied').textContent='הטקסט מסומן. Ctrl+C או ״העתקה״.'};
+    try{navigator.clipboard.writeText(txt).then(done,fail)}catch(err){fail()}}
+});
+document.addEventListener('input',e=>{const t=e.target;
+  if(t.dataset.f){S.f[t.dataset.f]=t.value;dirty()}
+});
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.tool){S.tools[t.dataset.tool]=t.checked;dirty()}
+  if(t.dataset.g){S.g[t.dataset.g]=t.checked;dirty()}
+});
+all();run(false);
+})();
+</script>
+</body>
+</html>
