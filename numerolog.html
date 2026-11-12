@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>נורית קוראת מספרים</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* layout: a full-bleed living particle field; the reading happens in one quiet conversation column on the start side */
+@font-face{font-family:Bamberger;src:url('assets/bamberger-black.otf') format('opentype');font-display:block;font-weight:900}
+@font-face{font-family:HeeboL;src:url('assets/heebo.ttf') format('truetype');font-display:swap}
+@font-face{font-family:AntonL;src:url('assets/anton.ttf') format('truetype');font-display:swap}
+:root{
+  color-scheme:dark;
+  --bg:#07060a; --fg:#f3ede4; --dim:rgba(243,237,228,.64); --faint:rgba(243,237,228,.18);
+  --glass:rgba(14,12,18,.6); --accent:#ffb86b; --accent2:#ff6fae;
+  --display:Bamberger,AntonL,HeeboL,system-ui,sans-serif;
+  --text:HeeboL,Heebo,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;overflow:hidden}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--text);font-size:16px;
+  -webkit-font-smoothing:antialiased;overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none}
+#stage{position:fixed;inset:0}
+#gl{width:100%;height:100%;display:block;cursor:crosshair;touch-action:none}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+#top{position:fixed;inset:0 0 auto 0;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:2;
+  padding-block:calc(14px + env(safe-area-inset-top,0px)) 0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));pointer-events:none}
+#mark{font-family:var(--display);font-size:20px;display:flex;align-items:baseline;gap:8px}
+#mark small{font-family:var(--text);font-size:12.5px;color:var(--dim)}
+#tools{display:flex;gap:8px;pointer-events:auto;direction:ltr}
+.ib{width:42px;height:42px;border-radius:50%;border:1px solid var(--faint);background:var(--glass);color:var(--fg);
+  display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:border-color .2s}
+.ib:hover{border-color:var(--accent)}
+.ib svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ib[aria-pressed="false"]{color:var(--dim)}
+
+#chat{position:fixed;top:calc(64px + env(safe-area-inset-top,0px));right:0;bottom:var(--kb,0px);width:min(440px,100%);display:flex;flex-direction:column;gap:12px;z-index:1;
+  padding-block:0 calc(14px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));
+  background:linear-gradient(to left,rgba(7,6,10,.86) 55%,rgba(7,6,10,0))}
+#nums{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+#lp{font-family:var(--display);font-size:clamp(60px,9vw,92px);line-height:.82;color:var(--accent);font-variant-numeric:tabular-nums;
+  text-shadow:0 0 40px color-mix(in srgb,var(--accent) 45%,transparent)}
+#lpl{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+#lpl b{font-family:var(--display);font-size:20px;font-weight:900}
+#lpl span{font-size:13px;color:var(--dim);overflow-wrap:anywhere}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:14px;color:var(--fg);background:var(--glass);border:1px solid var(--faint);border-radius:999px;padding:6px 14px;cursor:pointer;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:border-color .2s,color .2s}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip b{color:var(--accent);font-weight:400;font-variant-numeric:tabular-nums}
+#log{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;touch-action:pan-y;overscroll-behavior:contain;
+  user-select:text;-webkit-user-select:text;padding-block:26px 4px;scrollbar-width:thin;
+  -webkit-mask-image:linear-gradient(to bottom,transparent,#000 30px);mask-image:linear-gradient(to bottom,transparent,#000 30px)}
+.m{max-width:100%;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.m.her{font-size:16.5px}
+.m.me{align-self:flex-end;background:var(--glass);border:1px solid var(--faint);border-radius:16px 16px 16px 4px;padding:8px 14px;font-size:15px;color:var(--dim);max-width:85%}
+.m.note{font-size:13px;color:var(--dim)}
+.m.wait{color:var(--dim)}
+@media (prefers-reduced-motion:no-preference){.m{animation:mi .5s both}@keyframes mi{from{opacity:0;transform:translateY(6px)}}
+  .m.wait{animation:mi .5s both,br 1.6s ease-in-out infinite}@keyframes br{50%{opacity:.35}}}
+#f{display:flex;gap:8px}
+#msg{flex:1;min-width:0;height:50px;border-radius:14px;border:1px solid var(--faint);background:var(--glass);color:var(--fg);
+  font-family:var(--text);font-size:17px;padding:0 16px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  user-select:text;-webkit-user-select:text;caret-color:var(--accent)}
+#msg::placeholder{color:var(--dim)}
+#msg:focus{border-color:var(--accent);outline:none}
+#msg:disabled{opacity:.5}
+#send{height:50px;border-radius:14px;border:0;padding:0 18px;font-family:var(--text);font-size:15px;cursor:pointer;white-space:nowrap;
+  color:#120c08;background:linear-gradient(120deg,var(--accent),var(--accent2))}
+#foot{margin:0;font-size:12px;color:var(--dim);line-height:1.5}
+
+#sheet{position:fixed;inset:0;background:rgba(5,4,8,.88);display:grid;place-items:center;z-index:5;
+  padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+#sheet .box{display:flex;flex-direction:column;gap:12px;align-items:center;max-height:100%}
+#poster{max-width:100%;max-height:calc(100vh - 150px);border-radius:6px;box-shadow:0 30px 80px rgba(0,0,0,.6);-webkit-touch-callout:default}
+#sheet p{margin:0;color:var(--dim);font-size:13px;text-align:center}
+#sheet .acts{display:flex;gap:8px}
+.tb{font-family:var(--text);font-size:14px;height:42px;padding:0 18px;border-radius:12px;border:1px solid var(--faint);background:var(--glass);color:var(--fg);cursor:pointer}
+.tb.pri{border:0;color:#120c08;background:linear-gradient(120deg,var(--accent),var(--accent2))}
+#nogl{position:fixed;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--dim);z-index:9}
+@media (max-width:700px){
+  #chat{top:auto;height:54%;width:100%;gap:10px;padding-right:max(16px,env(safe-area-inset-right,0px));
+    background:linear-gradient(to top,rgba(7,6,10,.94) 70%,rgba(7,6,10,0))}
+  #mark small{display:none}
+  #lp{font-size:54px} #lpl b{font-size:17px}
+  #foot{display:none}
+}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="gl" aria-label="שדה חלקיקים חי שנוצר מהשם ומתאריך הלידה"></canvas></div>
+
+<header id="top">
+  <div id="mark">נורית <small>קוראת מספרים כבר שלושים שנה</small></div>
+  <div id="tools">
+    <button class="ib" id="bSound" type="button" aria-label="צליל" aria-pressed="true" title="צליל">
+      <svg viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4z"/><path id="wav" d="M15.5 9a4.2 4.2 0 010 6M18 6.5a8 8 0 010 11"/></svg></button>
+    <button class="ib" id="bPoster" type="button" aria-label="פוסטר של המפה שלי" title="פוסטר" hidden>
+      <svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="1.5"/><path d="M8.5 15.5l2.6-3 2 2.2 1.3-1.4 1.6 2.2"/><circle cx="10" cy="8.5" r="1.2"/></svg></button>
+    <button class="ib" id="bReset" type="button" aria-label="פגישה חדשה" title="פגישה חדשה">
+      <svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.2-5.1"/><path d="M5 5v3.6h3.6"/></svg></button>
+  </div>
+</header>
+
+<aside id="chat" aria-label="הפגישה עם נורית">
+  <div id="nums" hidden>
+    <div id="lp">0</div>
+    <div id="lpl"><b>שביל הגורל</b><span id="lpc"></span><div class="chips" id="nchips"></div></div>
+  </div>
+  <div id="log" role="log" aria-live="polite"></div>
+  <div class="chips" id="quick"></div>
+  <form id="f" autocomplete="off">
+    <input id="msg" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="400" aria-label="התשובה שלך" enterkeyhint="send">
+    <button id="send" type="submit">שליחה</button>
+  </form>
+  <p id="foot">נומרולוגיה היא מסורת של התבוננות, לא מדע ולא תחזית. ההחלטות נשארות אצלך.</p>
+</aside>
+
+<div id="sheet" hidden>
+  <div class="box">
+    <img id="poster" alt="פוסטר המפה הנומרולוגית">
+    <p id="pHint">לחיצה ארוכה על התמונה שומרת אותה.</p>
+    <div class="acts"><button class="tb pri" id="pSave" type="button">הורדה</button><button class="tb" id="pClose" type="button">סגירה</button></div>
+  </div>
+</div>
+
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const cv=$('gl');
+const qs=new URLSearchParams(location.search);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ───────── language: gematria, scales, lexicon ───────── */
+const HV={'א':1,'ב':2,'ג':3,'ד':4,'ה':5,'ו':6,'ז':7,'ח':8,'ט':9,'י':10,'כ':20,'ך':20,'ל':30,'מ':40,'ם':40,'נ':50,'ן':50,'ס':60,'ע':70,'פ':80,'ף':80,'צ':90,'ץ':90,'ק':100,'ר':200,'ש':300,'ת':400};
+const ORD='אבגדהוזחטיכלמנסעפצקרשת', FIN={'ך':'כ','ם':'מ','ן':'נ','ף':'פ','ץ':'צ'};
+const letterVal=ch=>HV[ch]|| (/[a-z]/i.test(ch)? ch.toLowerCase().charCodeAt(0)-96 : 0);
+const letterIdx=ch=>{const h=ORD.indexOf(FIN[ch]||ch); if(h>=0)return h; return /[a-z]/i.test(ch)? ch.toLowerCase().charCodeAt(0)-97 : -1;};
+const gematria=s=>[...s].reduce((a,c)=>a+letterVal(c),0);
+const clean=s=>[...s.replace(/[^א-תA-Za-z0-9. ]/g,'')].slice(0,26).join('').replace(/^\s+/,'').replace(/\s{2,}/g,' ');
+
+const SCALES=[['דורי',[0,2,3,5,7,9,10]],['חיג׳אז',[0,1,4,5,7,8,10]],['מינור טבעי',[0,2,3,5,7,8,10]],['לידי',[0,2,4,6,7,9,11]],
+  ['פנטטוני',[0,3,5,7,10]],['מינור הרמוני',[0,2,3,5,7,8,11]],['מיקסולידי',[0,2,4,5,7,9,10]]];
+const FAMILIES=['מושך מוזר','קשר טורוס','הרמוניה כדורית','סופר־צורה','קשר ליסאז׳ו'];
+
+const LEX=[...new Set(`אהבה אחד אור חושך שלום אמת חלום לב נשמה רוח אש מים אדמה שמים ים כוכב ירח שמש עולם זמן חיים מוות אדם חוה אם אב בן בת ילד ילדה בית דרך מסע סוד קסם נס פלא יופי חכמה בינה דעת כתר חסד גבורה תפארת נצח הוד יסוד מלכות אמונה תקווה שמחה עצב פחד אומץ כוח חופש דרור צדק משפט רחמים חן טוב רע יין לחם דבש חלב מלח זהב כסף ברזל אבן עץ פרח שושנה ורד גן יער הר נהר גשם ענן רעם ברק שלג סערה שקט דממה קול שיר מילה אות ספר סיפור שפה שם מספר צבע אדום כחול ירוק צהוב לבן שחור סגול ורוד כתום צורה קו נקודה עיגול משולש ריבוע מרחב חלל אין יש אני אתה את הוא היא אנחנו שלי שלך יחד לבד חבר אח אחות משפחה עם ארץ עיר ירושלים ישראל גליל נגב מדבר אילת חיפה ציון מלך מלכה נסיך נביא כהן משיח מלאך שטן נחש אריה זאב צבי יונה נשר דג פרפר דבורה חתול כלב סוס גמל ציפור עין יד רגל פה אוזן ראש גוף דם עור עצם דמעה צחוק בכי חיוך נשיקה חיבוק מגע ריקוד מחול משחק עבודה יצירה אמנות אמן ציור פיסול מוזיקה ניגון תוף כינור חליל מדע טבע קוד מכונה רשת מחשב מסך פיקסל נתון מידע מלאכותית סוכן סדנה רעיון מחשבה שאלה תשובה ספק ודאות סיכוי מזל גורל בחירה רצון תשוקה געגוע זיכרון שכחה עבר הווה עתיד עכשיו רגע שנה חודש שבוע יום לילה בוקר ערב שבת חג פסח סוכות חנוכה פורים תורה מצווה תפילה ברכה קדוש טהור אלוהים שכינה בריאה בראשית תוהו בוהו אבק עפר אפר להבה ניצוץ זוהר נוגה קרן צל מראה חלון דלת מפתח שער גשר קיר גג מגדל סולם מדרגה כיסא שולחן מיטה כוס ענב תאנה רימון זית תמר חיטה שדה כרם זרע שורש ענף עלה פרי קוץ אביב קיץ סתיו חורף מלחמה ניצחון תבוסה גיבור אויב חרב מגן חץ קשת עושר עוני מתנה חוב שוק מחיר ערך אמא אבא סבא סבתא תינוק נער זקן אישה איש גבר כלה חתן חתונה לידה הריון השראה דמיון פליאה תודה סליחה בדידות שייכות ריפוי כאב אושר שלווה תנועה נשימה לחישה צעקה הד גל חוף אי סירה מפרש עוגן מצפן מפה אופק זריחה שקיעה דמדומים טל ערפל קרח אבוקה נר פנס כוכבים שביט גלקסיה מאדים נוגה צדק חלב שביל אינסוף אפס מאה אלף שבע שלוש עשר חי`.split(/\s+/).filter(Boolean))];
+const BYVAL=new Map(); for(const w of LEX){const v=gematria(w); (BYVAL.get(v)||BYVAL.set(v,[]).get(v)).push(w);}
+
+/* ───────── seeded randomness ───────── */
+function rng32(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const gauss=R=>{let u=0,v=0;while(!u)u=R();v=R();return Math.sqrt(-2*Math.log(u))*Math.cos(6.28318*v)};
+
+/* ───────── world generators: a number becomes a form ───────── */
+function genWorld(value,N,out){
+  const R=rng32(Math.imul(value|0,2654435761)^0x9e3779b9);
+  const fam=value%5, P=(i,x,y,z,w)=>{out[i*4]=x;out[i*4+1]=y;out[i*4+2]=z;out[i*4+3]=w};
+  if(value<=0){ for(let i=0;i<N;i++){const a=R()*6.2832,r=1+gauss(R)*.05;P(i,Math.cos(a)*r,Math.sin(a)*r*.38,Math.sin(a)*r*.9+gauss(R)*.03,a/6.2832);} return finish(); }
+  const tube=(i,curve,t,rad,strands,turns)=>{
+    const e=1e-3,c=curve(t),d=curve(t+e);let tx=d[0]-c[0],ty=d[1]-c[1],tz=d[2]-c[2];const tl=Math.hypot(tx,ty,tz)||1;tx/=tl;ty/=tl;tz/=tl;
+    let nx=c[0],ny=c[1],nz=c[2]+.31;const dt=nx*tx+ny*ty+nz*tz;nx-=dt*tx;ny-=dt*ty;nz-=dt*tz;const nl=Math.hypot(nx,ny,nz)||1;nx/=nl;ny/=nl;nz/=nl;
+    const bx=ty*nz-tz*ny,by=tz*nx-tx*nz,bz=tx*ny-ty*nx;
+    const s=Math.floor(R()*strands), ph=t*turns+s/strands*6.2832, core=R()<.72;
+    const rr=core? rad*(1+gauss(R)*.07) : Math.abs(gauss(R))*rad*.9, pa=core? ph : R()*6.2832;
+    const ca=Math.cos(pa)*rr,sa=Math.sin(pa)*rr;
+    P(i,c[0]+nx*ca+bx*sa,c[1]+ny*ca+by*sa,c[2]+nz*ca+bz*sa,(t/6.2832+ (core?s/strands*.25:0))%1);
+  };
+  if(fam===0){ // Pickover strange attractor, parameters drawn until the orbit is truly chaotic
+    let a,b,c,d,e,ok=false;
+    for(let tries=0;tries<60&&!ok;tries++){
+      const r=()=>(R()<.5?-1:1)*(.7+R()*2.1); a=r();b=r();c=r();d=r();e=.7+R()*1.1;
+      let x=.1,y=.1,z=.1;const seen=new Set();
+      for(let i=0;i<4200;i++){const X=Math.sin(a*y)-z*Math.cos(b*x),Y=z*Math.sin(c*x)-Math.cos(d*y),Z=e*Math.sin(x);x=X;y=Y;z=Z;
+        if(i>200)seen.add(((x*5+16)|0)+(((y*5+16)|0)<<6)+(((z*5+16)|0)<<12));}
+      ok=seen.size>620;
+    }
+    if(!ok){a=2.24;b=.43;c=-.65;d=-2.43;e=1;}
+    let x=.1,y=.1,z=.1;
+    for(let i=-300;i<N;i++){const X=Math.sin(a*y)-z*Math.cos(b*x),Y=z*Math.sin(c*x)-Math.cos(d*y),Z=e*Math.sin(x);
+      const sp=Math.hypot(X-x,Y-y,Z-z);x=X;y=Y;z=Z;if(i>=0)P(i,x,z*1.15,y,Math.min(1,sp/2.6));}
+  }else if(fam===1){
+    const K=[[2,3],[3,4],[2,5],[3,5],[4,5],[3,7],[5,7],[2,7],[5,8],[4,7],[3,8],[5,6]][Math.floor(R()*12)],p=K[0],q=K[1];
+    const r=.3+R()*.28,st=2+Math.floor(R()*5),tw=Math.floor(R()*9)+1,rad=.07+R()*.07,sq=.55+R()*.6;
+    const curve=t=>{const w=1+r*Math.cos(q*t);return[w*Math.cos(p*t),w*Math.sin(p*t),r*sq*2*Math.sin(q*t)]};
+    for(let i=0;i<N;i++)tube(i,curve,R()*6.2832,rad,st,tw*q);
+  }else if(fam===2){
+    const m=[1+Math.floor(R()*6),Math.floor(R()*5),1+Math.floor(R()*6),Math.floor(R()*5),1+Math.floor(R()*6),Math.floor(R()*5),1+Math.floor(R()*6),Math.floor(R()*5)];
+    if(m[1]+m[3]+m[5]+m[7]<3){m[1]=2;m[5]=3;}
+    const L=28+Math.floor(R()*30);
+    for(let i=0;i<N;i++){let u=R(),v=R();const k=R(); if(k<.34)u=Math.round(u*L)/L; else if(k<.68)v=Math.round(v*L)/L;
+      const ph=u*Math.PI,th=v*6.2832;
+      const r=Math.pow(Math.sin(m[0]*ph),m[1])+Math.pow(Math.cos(m[2]*ph),m[3])+Math.pow(Math.sin(m[4]*th),m[5])+Math.pow(Math.cos(m[6]*th),m[7]);
+      P(i,r*Math.sin(ph)*Math.cos(th),r*Math.cos(ph),r*Math.sin(ph)*Math.sin(th),Math.min(1,Math.abs(r)/3));}
+  }else if(fam===3){
+    const sf=(a,m,n1,n2,n3)=>Math.pow(Math.pow(Math.abs(Math.cos(m*a/4)),n2)+Math.pow(Math.abs(Math.sin(m*a/4)),n3),-1/n1);
+    const m1=2+Math.floor(R()*11),m2=2+Math.floor(R()*9),a1=[.35+R()*2.4,.4+R()*2.6,.4+R()*2.6],a2=[.35+R()*2.4,.4+R()*2.6,.4+R()*2.6],L=26+Math.floor(R()*30);
+    for(let i=0;i<N;i++){let u=R(),v=R();const k=R(); if(k<.36)u=Math.round(u*L)/L; else if(k<.72)v=Math.round(v*L)/L;
+      const th=(u*2-1)*Math.PI,ph=(v-.5)*Math.PI;let r1=sf(th,m1,a1[0],a1[1],a1[2]),r2=sf(ph,m2,a2[0],a2[1],a2[2]);
+      r1=Math.min(r1,4);r2=Math.min(r2,4);
+      P(i,r1*Math.cos(th)*r2*Math.cos(ph),r2*Math.sin(ph),r1*Math.sin(th)*r2*Math.cos(ph),(u+v*.5)%1);}
+  }else{
+    const F=[[3,2,7],[3,4,7],[2,3,5],[5,4,3],[3,5,7],[4,3,5],[2,5,3],[5,3,2],[4,5,7],[3,7,4]][Math.floor(R()*10)];
+    const px=R()*6.28,py=R()*6.28,pz=R()*6.28,st=1+Math.floor(R()*5),tw=3+Math.floor(R()*14),rad=.06+R()*.08;
+    const curve=t=>[Math.cos(F[0]*t+px),Math.cos(F[1]*t+py),Math.cos(F[2]*t+pz)*.85];
+    for(let i=0;i<N;i++)tube(i,curve,R()*6.2832,rad,st,tw);
+  }
+  return finish();
+  function finish(){ // centre, then scale so the 95th-percentile radius sits at 1.2
+    let cx=0,cy=0,cz=0;for(let i=0;i<N;i++){cx+=out[i*4];cy+=out[i*4+1];cz+=out[i*4+2]}cx/=N;cy/=N;cz/=N;
+    const S=Math.min(N,6000),rs=new Float32Array(S);
+    for(let j=0;j<S;j++){const i=Math.floor(j*N/S);rs[j]=Math.hypot(out[i*4]-cx,out[i*4+1]-cy,out[i*4+2]-cz)}
+    rs.sort();const sc=1.2/(rs[Math.floor(S*.985)]||1);
+    for(let i=0;i<N;i++){let x=(out[i*4]-cx)*sc,y=(out[i*4+1]-cy)*sc,z=(out[i*4+2]-cz)*sc;const l=Math.hypot(x,y,z);
+      if(l>1.38){const f=1.38/l;x*=f;y*=f;z*=f}out[i*4]=x;out[i*4+1]=y;out[i*4+2]=z}
+  }
+}
+
+/* ───────── WebGL2 ───────── */
+const gl=cv.getContext('webgl2',{antialias:false,alpha:false,powerPreference:'high-performance'});
+if(!gl){const d=document.createElement('div');d.id='nogl';d.textContent='הדפדפן הזה לא תומך ב־WebGL2, ולכן העולם לא יכול להיפתח כאן. כדאי לנסות בכרום או בספארי עדכניים.';document.body.appendChild(d);return;}
+const small=Math.min(screen.width,screen.height)<760||matchMedia('(pointer:coarse)').matches;
+const N=Math.max(2000,+qs.get('n')||(small?80000:170000));
+let floatOK=!!gl.getExtension('EXT_color_buffer_float')||!!gl.getExtension('EXT_color_buffer_half_float');
+
+const HEAD='#version 300 es\nprecision highp float;\nlayout(location=0) in vec3 aPos;layout(location=1) in vec3 aVel;layout(location=2) in vec4 aTA;layout(location=3) in vec4 aTB;layout(location=4) in vec4 aRnd;\n';
+const VS_UPD=HEAD+`
+uniform float uT,uDt,uMix,uChaos,uPulse,uFreq,uTurb,uAspect,uPtrOn,uBurstT;
+uniform mat3 uRot;uniform mat4 uVP;uniform vec2 uPtr,uBurstO;uniform vec3 uCamR,uCamU;
+out vec3 vPos;out vec3 vVel;
+vec3 flow(vec3 p,float t){
+  vec3 v=vec3(sin(p.y*1.7+t)+cos(p.z*2.3-t*.7),sin(p.z*1.9+t*1.1)+cos(p.x*2.1+t*.5),sin(p.x*1.6-t*.9)+cos(p.y*2.5+t*.8));
+  vec3 q=p.zxy*2.7+v*.6;
+  return v+.5*vec3(sin(q.y*1.7-t)+cos(q.z*2.3),sin(q.z*1.9)+cos(q.x*2.1+t),sin(q.x*1.6)+cos(q.y*2.5-t));
+}
+void main(){
+  float m=smoothstep(aRnd.x*.55,aRnd.x*.55+.45,uMix);
+  vec3 tb=uRot*aTB.xyz; tb+=flow(tb*uFreq*.6,uT*.25)*.016*(1.+uPulse*2.); tb*=1.+uPulse*.045;
+  vec3 ta=aTA.xyz; ta.z+=sin(uT*.8+aRnd.z*6.283)*.03; ta.xy+=flow(ta*3.,uT*.3).xy*.004;
+  vec3 tgt=mix(ta,tb,m); float k=15.,turb=uTurb;
+  if(aRnd.y<.09){vec3 h=fract(aRnd.xzw*vec3(127.1,311.7,74.7)+aRnd.wxz*13.)*2.-1.;tgt=h*vec3(3.4,2.1,2.2);k=.5;turb=.8;}
+  vec3 p=aPos,v=aVel;
+  vec3 acc=(tgt-p)*k+flow(p*uFreq+aRnd.w*.3,uT*.2)*(turb+uChaos*(2.+3.5*aRnd.z));
+  vec4 c=uVP*vec4(p,1.);vec2 nd=c.xy/c.w;
+  vec2 d=nd-uPtr;d.x*=uAspect;float dl=length(d)+1e-4;
+  acc+=(uCamR*d.x+uCamU*d.y)/dl*exp(-dl*dl/.028)*uPtrOn*36.;
+  if(uBurstT<1.6){vec2 e=nd-uBurstO;e.x*=uAspect;float el=length(e)+1e-4;
+    float w=exp(-pow((el-uBurstT*1.5)/.17,2.))*(1.-uBurstT/1.6);acc+=(uCamR*e.x+uCamU*e.y)/el*w*64.;}
+  v=(v+acc*uDt)*exp(-3.8*uDt); p+=v*uDt;
+  vPos=p;vVel=v;gl_Position=vec4(0.);
+}`;
+const FS_NULL='#version 300 es\nprecision mediump float;out vec4 o;void main(){o=vec4(0.);}';
+const VS_DRAW=HEAD+`
+uniform mat4 uVP;uniform float uMix,uPx,uPulse,uT,uGain;uniform vec3 uC1,uC2,uC3;uniform vec2 uOff;
+out vec3 vCol;
+void main(){
+  vec4 c=uVP*vec4(aPos,1.);c.xy+=uOff*c.w;gl_Position=c;
+  float m=smoothstep(aRnd.x*.55,aRnd.x*.55+.45,uMix);
+  float w=mix(aTA.w,aTB.w,m),sp=length(aVel);
+  vec3 col=mix(uC1,uC2,smoothstep(.12,.88,w));
+  col=mix(col,uC3,clamp(smoothstep(.8,1.,aRnd.z)*.75+sp*.22+(1.-m)*.3,0.,.85));
+  bool dust=aRnd.y<.09;
+  float size=mix(.75,2.1,aRnd.w*aRnd.w)*(1.+uPulse*.4);
+  gl_PointSize=max(1.,size*uPx/c.w);
+  float tw=.72+.28*sin(uT*(1.5+aRnd.x*2.5)+aRnd.z*40.);
+  vCol=col*(dust?.3:1.)*tw*uGain*(1.+uPulse*.5);
+}`;
+const FS_DRAW='#version 300 es\nprecision mediump float;in vec3 vCol;out vec4 o;void main(){float d=length(gl_PointCoord-.5);float f=smoothstep(.5,0.,d);o=vec4(vCol*f*f,1.);}';
+const VS_QUAD='#version 300 es\nout vec2 vUv;void main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));vUv=p;gl_Position=vec4(p*2.-1.,0.,1.);}';
+const FS_FADE='#version 300 es\nprecision highp float;in vec2 vUv;uniform sampler2D uTex;uniform float uDecay;out vec4 o;void main(){o=vec4(textureLod(uTex,vUv,0.).rgb*uDecay,1.);}';
+const FS_FINAL=`#version 300 es
+precision highp float;in vec2 vUv;uniform sampler2D uTex;uniform float uT,uAspect,uExp;uniform vec3 uTint;uniform vec2 uOff;out vec4 o;
+float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
+void main(){
+  vec2 q=vUv-.5;float r2=dot(q,q);
+  vec2 ab=q*r2*.012;
+  vec3 c=vec3(textureLod(uTex,vUv+ab,0.).r,textureLod(uTex,vUv,0.).g,textureLod(uTex,vUv-ab,0.).b);
+  vec3 b=textureLod(uTex,vUv,2.5).rgb*.5+textureLod(uTex,vUv,4.).rgb*.55+textureLod(uTex,vUv,5.5).rgb*.6+textureLod(uTex,vUv,7.).rgb*.7;
+  c=1.-exp(-(c+b*.55)*uExp);
+  vec2 g=(vUv-.5-uOff*.5)*vec2(uAspect,1.);
+  vec3 bg=vec3(.022,.019,.03)+uTint*.07*exp(-dot(g,g)*3.2);
+  c=bg+c*(1.-bg);
+  c*=1.-r2*.9;
+  c+=(h(vUv*913.+fract(uT)*7.)-.5)*.022;
+  o=vec4(pow(max(c,0.),vec3(.94)),1.);
+}`;
+function sh(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s}
+function prog(vs,fs,tf){const p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_SHADER,vs));gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fs));
+  if(tf)gl.transformFeedbackVaryings(p,tf,gl.INTERLEAVED_ATTRIBS);gl.linkProgram(p);
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p));
+  const u={},n=gl.getProgramParameter(p,gl.ACTIVE_UNIFORMS);for(let i=0;i<n;i++){const a=gl.getActiveUniform(p,i);u[a.name]=gl.getUniformLocation(p,a.name)}
+  return{p,u}}
+const pUpd=prog(VS_UPD,FS_NULL,['vPos','vVel']),pDraw=prog(VS_DRAW,FS_DRAW),pFade=prog(VS_QUAD,FS_FADE),pFinal=prog(VS_QUAD,FS_FINAL);
+
+const R0=rng32(20261111);
+const state=new Float32Array(N*6),rnd=new Float32Array(N*4),tA=new Float32Array(N*4),tB=new Float32Array(N*4);
+for(let i=0;i<N;i++){const a=R0()*6.2832,r=2.5+R0()*2.5,y=(R0()-.5)*3;state[i*6]=Math.cos(a)*r;state[i*6+1]=y;state[i*6+2]=Math.sin(a)*r-1;
+  rnd[i*4]=R0();rnd[i*4+1]=R0();rnd[i*4+2]=R0();rnd[i*4+3]=R0();}
+const mk=(data,usage)=>{const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,data,usage);return b};
+const bState=[mk(state,gl.DYNAMIC_COPY),mk(state,gl.DYNAMIC_COPY)],bRnd=mk(rnd,gl.STATIC_DRAW),bTA=mk(tA,gl.DYNAMIC_DRAW),bTB=mk(tB,gl.DYNAMIC_DRAW);
+const vao=bState.map(b=>{const v=gl.createVertexArray();gl.bindVertexArray(v);
+  gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,24,0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,3,gl.FLOAT,false,24,12);
+  [[bTA,2],[bTB,3],[bRnd,4]].forEach(([bb,l])=>{gl.bindBuffer(gl.ARRAY_BUFFER,bb);gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,4,gl.FLOAT,false,0,0)});
+  return v});
+gl.bindVertexArray(null);
+const tfo=gl.createTransformFeedback(), qvao=gl.createVertexArray();
+let cur=0;
+
+let W=1,H=1,scale=1,acc=[],accI=0;
+function mkTarget(w,h){const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);
+  const lv=Math.floor(Math.log2(Math.max(w,h)))+1;
+  gl.texStorage2D(gl.TEXTURE_2D,lv,floatOK?gl.RGBA16F:gl.RGBA8,w,h);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  const f=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,f);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,t,0);
+  const ok=gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE;
+  gl.clearColor(0,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT);gl.bindFramebuffer(gl.FRAMEBUFFER,null);return{t,f,ok}}
+function resize(){
+  const dpr=Math.min(devicePixelRatio||1,small?1.6:1.75)*scale;
+  W=Math.max(2,Math.round(cv.clientWidth*dpr));H=Math.max(2,Math.round(cv.clientHeight*dpr));cv.width=W;cv.height=H;
+  acc.forEach(a=>{gl.deleteTexture(a.t);gl.deleteFramebuffer(a.f)});
+  acc=[mkTarget(W,H),mkTarget(W,H)];
+  if(floatOK&&!acc[0].ok){floatOK=false;acc.forEach(a=>{gl.deleteTexture(a.t);gl.deleteFramebuffer(a.f)});acc=[mkTarget(W,H),mkTarget(W,H)];}
+}
+
+/* ───────── camera maths ───────── */
+const FOV=40*Math.PI/180,DIST=4.3;
+function mul(a,b){const o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o}
+const rotY=a=>{const c=Math.cos(a),s=Math.sin(a);return new Float32Array([c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1])};
+const rotX=a=>{const c=Math.cos(a),s=Math.sin(a);return new Float32Array([1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1])};
+function persp(f,asp,n,fr){const t=1/Math.tan(f/2);return new Float32Array([t/asp,0,0,0,0,t,0,0,0,0,(fr+n)/(n-fr),-1,0,0,2*fr*n/(n-fr),0])}
+const m3=m=>new Float32Array([m[0],m[1],m[2],m[4],m[5],m[6],m[8],m[9],m[10]]);
+
+/* ───────── the word as particles ───────── */
+const off=document.createElement('canvas');off.width=1400;off.height=760;const octx=off.getContext('2d',{willReadFrequently:true});
+const ui=rng32(7);const pick=new Float32Array(N),jit=new Float32Array(N*3);for(let i=0;i<N;i++){pick[i]=ui();jit[i*3]=ui()-.5;jit[i*3+1]=ui()-.5;jit[i*3+2]=gauss(ui)}
+const viewOff=()=>cv.clientWidth<=700?[0,.46]:[-Math.min(.4,470/cv.clientWidth),0];
+function rasterWord(text){
+  const asp=cv.clientWidth/cv.clientHeight;
+  if(!text.trim()){genWorld(0,N,tA);gl.bindBuffer(gl.ARRAY_BUFFER,bTA);gl.bufferSubData(gl.ARRAY_BUFFER,0,tA);return}
+  const tt=text.trim(),lines=(tt.includes(' ')&&(asp<.9||tt.length>9))?tt.split(' '):[tt];
+  const fam='Bamberger,AntonL,HeeboL,sans-serif';let size=300;
+  octx.setTransform(1,0,0,1,0,0);octx.clearRect(0,0,off.width,off.height);octx.direction='rtl';octx.textAlign='center';octx.textBaseline='middle';
+  octx.font=`900 ${size}px ${fam}`;const mw=Math.max(...lines.map(l=>octx.measureText(l).width),1);
+  size=Math.min(size*off.width*.94/mw,off.height*.8/lines.length,560);octx.font=`900 ${size}px ${fam}`;octx.fillStyle='#fff';
+  lines.forEach((l,i)=>octx.fillText(l,off.width/2,off.height/2+(i-(lines.length-1)/2)*size*1.02));
+  const d=octx.getImageData(0,0,off.width,off.height).data,px=[];let x0=1e9,x1=-1,y0=1e9,y1=-1;
+  for(let x=off.width-1;x>=0;x-=2)for(let y=0;y<off.height;y+=2)if(d[(y*off.width+x)*4+3]>110){px.push(x,y);if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+  const cnt=px.length/2;if(!cnt){genWorld(0,N,tA)}else{
+    const bw=Math.max(x1-x0,40),bh=Math.max(y1-y0,40),vh=2*Math.tan(FOV/2)*DIST,vw=vh*asp;
+    const sc=Math.min(vw*(cv.clientWidth<=700?.84:.5)/bw,vh*(cv.clientWidth<=700?.26:.42)/bh),cx=(x0+x1)/2,cy=(y0+y1)/2;
+    for(let i=0;i<N;i++){const j=Math.min(cnt-1,Math.floor(pick[i]*cnt))*2;
+      tA[i*4]=(px[j]+jit[i*3]*2.4-cx)*sc;tA[i*4+1]=-(px[j+1]+jit[i*3+1]*2.4-cy)*sc;tA[i*4+2]=jit[i*3+2]*.035;
+      tA[i*4+3]=Math.min(1,Math.max(0,(x1-px[j])/bw*.82+pick[(i*7)%N]*.18));}
+  }
+  gl.bindBuffer(gl.ARRAY_BUFFER,bTA);gl.bufferSubData(gl.ARRAY_BUFFER,0,tA);
+}
+
+/* ───────── colour from number ───────── */
+function hsl(h,s,l){h=((h%360)+360)%360/360;const f=n=>{const k=(n+h*12)%12,a=s*Math.min(l,1-l);return l-a*Math.max(-1,Math.min(k-3,9-k,1))};return[f(0),f(8),f(4)]}
+const lin=c=>c.map(v=>Math.pow(v,2.2));
+function palette(v){const h=(v*137.508+18)%360,o=34+(v%5)*27;return{c1:hsl(h,.92,.58),c2:hsl(h+o,.88,.6),c3:hsl(h-25,.35,.93),u1:hsl(h,.95,.72),u2:hsl(h+o,.9,.7),h}}
+const css=c=>`rgb(${c.map(v=>Math.round(v*255)).join(',')})`;
+let colT=palette(340),col={c1:lin(colT.c1),c2:lin(colT.c2),c3:lin(colT.c3)};
+
+/* ───────── sound ───────── */
+let AC=null,master,rev,dly,muted=false,droneG=null,droneO=[],seqTimer=0,seq=null,pulse=0;
+function audio(){
+  if(AC||muted)return AC;const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;AC=new A();
+  master=AC.createGain();master.gain.value=.85;const comp=AC.createDynamicsCompressor();comp.threshold.value=-16;comp.ratio.value=4;master.connect(comp);comp.connect(AC.destination);
+  const len=AC.sampleRate*3.4,buf=AC.createBuffer(2,len,AC.sampleRate);
+  for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6)}
+  rev=AC.createConvolver();rev.buffer=buf;const rg=AC.createGain();rg.gain.value=.5;rev.connect(rg);rg.connect(master);
+  dly=AC.createDelay(1.5);dly.delayTime.value=.39;const fb=AC.createGain();fb.gain.value=.36;const lp=AC.createBiquadFilter();lp.frequency.value=2200;
+  dly.connect(lp);lp.connect(fb);fb.connect(dly);const dg=AC.createGain();dg.gain.value=.3;lp.connect(dg);dg.connect(master);dg.connect(rev);
+  return AC}
+function tone(){const v=curVal||1,sc=SCALES[v%7][1],root=174.6*Math.pow(2,(v%12)/12);return{sc,root}}
+function noteFreq(idx,oct){const{sc,root}=tone(),span=sc.length*2+1,st=((idx%span)+span)%span;return root*Math.pow(2,(sc[st%sc.length]+12*Math.floor(st/sc.length))/12)*Math.pow(2,oct||0)}
+function pluck(f,when,vel,long){
+  if(!AC||muted)return;const t=Math.max(when,AC.currentTime),g=AC.createGain(),lp=AC.createBiquadFilter(),pan=AC.createStereoPanner?AC.createStereoPanner():null;
+  const dur=long?4.2:1.9;lp.type='lowpass';lp.frequency.setValueAtTime(Math.min(9000,f*7),t);lp.frequency.exponentialRampToValueAtTime(Math.max(300,f*1.4),t+dur*.7);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel,t+.006);g.gain.exponentialRampToValueAtTime(.0006,t+dur);
+  [['triangle',1,1],['sine',2.003,.32],['sine',long?.5:3.01,long?.7:.09]].forEach(([ty,m,a])=>{const o=AC.createOscillator(),og=AC.createGain();o.type=ty;o.frequency.value=f*m;o.detune.value=(Math.random()-.5)*9;og.gain.value=a;o.connect(og);og.connect(lp);o.start(t);o.stop(t+dur+.05)});
+  lp.connect(g);let out=g;if(pan){pan.pan.value=(Math.random()-.5)*1.1;g.connect(pan);out=pan}
+  const dry=AC.createGain();dry.gain.value=.55;out.connect(dry);dry.connect(master);out.connect(rev);out.connect(dly);
+  setTimeout(()=>{pulse=Math.min(1.4,pulse+vel*3.2)},Math.max(0,(t-AC.currentTime)*1000));
+}
+function whoosh(up){
+  if(!AC||muted)return;const t=AC.currentTime,len=AC.sampleRate*2,b=AC.createBuffer(1,len,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+  const s=AC.createBufferSource();s.buffer=b;const f=AC.createBiquadFilter();f.type='bandpass';f.Q.value=1.2;
+  f.frequency.setValueAtTime(up?180:2400,t);f.frequency.exponentialRampToValueAtTime(up?3200:160,t+1.7);
+  const g=AC.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16,t+.5);g.gain.exponentialRampToValueAtTime(.001,t+1.9);
+  s.connect(f);f.connect(g);g.connect(master);g.connect(rev);s.start(t);s.stop(t+2);
+}
+function droneOn(){
+  if(!AC||muted)return;droneOff();const{root}=tone(),t=AC.currentTime;droneG=AC.createGain();droneG.gain.setValueAtTime(0,t);droneG.gain.linearRampToValueAtTime(.085,t+3.5);
+  const lp=AC.createBiquadFilter();lp.frequency.value=320;lp.Q.value=2;const lfo=AC.createOscillator(),lg=AC.createGain();lfo.frequency.value=.07;lg.gain.value=170;lfo.connect(lg);lg.connect(lp.frequency);lfo.start();
+  droneO=[lfo];[[.25,'sawtooth',-6],[.25,'sawtooth',7],[.375,'sine',0],[.5,'triangle',3]].forEach(([m,ty,dt])=>{const o=AC.createOscillator();o.type=ty;o.frequency.value=root*m;o.detune.value=dt;o.connect(lp);o.start();droneO.push(o)});
+  lp.connect(droneG);droneG.connect(master);droneG.connect(rev);
+}
+function droneOff(){if(!droneG||!AC)return;const g=droneG,os=droneO,t=AC.currentTime;g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(g.gain.value,t);g.gain.linearRampToValueAtTime(0,t+1.2);
+  setTimeout(()=>{os.forEach(o=>{try{o.stop()}catch(e){}});g.disconnect()},1500);droneG=null;droneO=[]}
+function seqStart(){
+  seqStop();if(!AC||muted)return;const ls=[...melodyWord].map(c=>c===' '?-1:letterIdx(c));if(!ls.some(i=>i>=0))return;
+  const beat=.19+(curVal%7)*.024;seq={ls,beat,next:AC.currentTime+1.3,step:0,cycle:0};
+  seqTimer=setInterval(()=>{if(!AC||!seq)return;
+    while(seq.next<AC.currentTime+.14){const n=seq.ls.length,restN=Math.max(3,8-(n%8)),total=n+restN,s=seq.step%total;
+      if(s===0){pluck(noteFreq(seq.ls.find(i=>i>=0),-2),seq.next,.2,true);seq.cycle++}
+      if(s<n){const order=seq.cycle%4===3?n-1-s:s,idx=seq.ls[order];
+        if(idx>=0)pluck(noteFreq(idx,seq.cycle%4===2?1:0),seq.next,.15+(s===0?.07:0)+(seq.cycle%2?.0:.03));}
+      else if(seq.cycle%2===0&&s===n+1){const e=seq.ls.filter(i=>i>=0);pluck(noteFreq(e[e.length-1]+4,1),seq.next,.05)}
+      seq.next+=seq.beat*(s%2?1.08:.92);seq.step++}},40);
+}
+function seqStop(){clearInterval(seqTimer);seq=null}
+
+/* ───────── numerology: every number is computed here, never by the model ───────── */
+const digits=n=>[...String(n)].reduce((a,c)=>a+ +c,0);
+const red=(n,keep)=>{keep=keep||[];while(n>9&&!keep.includes(n))n=digits(n);return n};
+function lifePath(d,m,y){const p=[red(d,[11,22]),red(m,[11]),red(digits(y),[11,22])],sum=p[0]+p[1]+p[2];return{p,sum,n:red(sum,[11,22,33])}}
+const personalYear=(d,m,Y)=>red(red(d)+red(m)+red(digits(Y)));
+function parseDate(s){const m=/(\d{1,2})\D+(\d{1,2})\D+(\d{2,4})/.exec(s);if(!m)return null;let d=+m[1],mo=+m[2],y=+m[3];
+  const now=new Date();if(m[3].length<=2)y+=y<=now.getFullYear()%100?2000:1900;if(m[3].length===3)return null;
+  const t=new Date(y,mo-1,d);if(t.getFullYear()!==y||t.getMonth()!==mo-1||t.getDate()!==d||t>now||y<1900)return null;return{d,m:mo,y}}
+function numbersFor(name,date){const o={};
+  if(name){const w=nameClean(name);o.name=w;o.letters=[...w].filter(c=>c!==' ').length;o.gematria=gematria(w);o.nameNumber=red(o.gematria,[11,22])}
+  if(date){const lp=lifePath(date.d,date.m,date.y);o.date=`${date.d}.${date.m}.${date.y}`;o.lifePath=lp.n;o.lifePathSum=`${lp.p.join(' + ')} = ${lp.sum}`;
+    o.birthday=red(date.d,[11,22]);o.personalYear=personalYear(date.d,date.m,new Date().getFullYear())}
+  return o}
+
+const LP={1:'שביל 1 הוא שביל של מי שהולך ראשון. יש בו עצמאות, יוזמה וצורך עמוק לעשות דברים בדרך משלו. השיעור: להוביל בלי לדרוס, ולבקש עזרה בלי להרגיש שזו חולשה.',
+2:'שביל 2 הוא שביל של שותפות. רגישות גבוהה, יכולת לשמוע את מה שלא נאמר, כישרון לגשר בין אנשים. השיעור: לא להיעלם בתוך הצרכים של אחרים.',
+3:'שביל 3 הוא שביל של ביטוי. מילים, צבע, הומור, במה. יש כאן שמחת חיים שמדביקה אחרים. השיעור: לסיים את מה שמתחילים, ולא לפזר את הכישרון על עשרה כיוונים.',
+4:'שביל 4 הוא שביל של בנייה. סדר, התמדה, אמינות. אנשים נשענים על שביל כזה. השיעור: לא לבלבל יציבות עם נוקשות, ולהשאיר מקום גם למה שלא תוכנן.',
+5:'שביל 5 הוא שביל של חופש. שינוי, תנועה, סקרנות לכל דבר חדש. השגרה חונקת כאן. השיעור: להבדיל בין חופש לבין בריחה, ולהישאר גם כשנהיה קצת משעמם.',
+6:'שביל 6 הוא שביל של אחריות ואהבה. בית, משפחה, דאגה לאחרים, חוש ליופי ולהרמוניה. השיעור: לתת בלי לשלוט, ולזכור שגם למי שמטפל בכולם מגיע שיטפלו בו.',
+7:'שביל 7 הוא שביל של חקירה. צורך בשקט, בעומק, בהבנה של מה שמתחת לפני השטח. שום דבר לא מתקבל כאן כמובן מאליו. השיעור: לסמוך, ולתת לאנשים להתקרב.',
+8:'שביל 8 הוא שביל של כוח ושל עולם החומר. ניהול, כסף, השפעה, יכולת להזיז דברים גדולים. השיעור: להשתמש בכוח בהגינות, ולזכור שהצלחה היא אמצעי ולא זהות.',
+9:'שביל 9 הוא שביל של סיום ושל נתינה. לב רחב, ראייה גדולה, משיכה לעזור. הרבה פרידות ושחרורים לאורך הדרך. השיעור: לשחרר בלי מרירות, ולתת בלי להתרוקן.',
+11:'שביל 11 הוא מספר מאסטר. אינטואיציה חדה מאוד, רגישות שלפעמים מכבידה, יכולת לתת השראה לאחרים. מתחתיו עובד תמיד גם ה־2. השיעור: להאמין למה שמרגישים, ולעגן את זה בקרקע.',
+22:'שביל 22 הוא מספר מאסטר, הבנאי הגדול. חזון רחב יחד עם יכולת מעשית להקים אותו. מתחתיו עובד ה־4. השיעור: לא להיבהל מהגודל של מה שאפשר לבנות, ולהתחיל מלבנה אחת.',
+33:'שביל 33 הוא מספר מאסטר נדיר, המורה. נתינה, ריפוי, אחריות על אחרים. מתחתיו עובד ה־6. השיעור: ללמד דרך דוגמה אישית, ולא לשאת את כולם על הגב.'};
+const NM={1:'השם דוחף קדימה, ליוזמה ולעמידה עצמאית.',2:'השם מביא רכות, דיפלומטיה וצורך בשיתוף.',3:'השם מביא קלילות, כושר ביטוי וקסם אישי.',4:'השם מביא רצינות, יסודיות ויכולת לעבוד קשה.',5:'השם מביא תנועה, סקרנות וכושר הסתגלות.',6:'השם מביא חום, אחריות ונטייה לדאוג לאחרים.',7:'השם מביא עומק, פרטיות ונטייה לחקור.',8:'השם מביא שאפתנות, סמכות וחוש לעסקים.',9:'השם מביא נדיבות, אידיאליזם ורוחב לב.'};
+const YR={1:'התחלה. זורעים עכשיו את מה שיגדל בתשע השנים הבאות.',2:'סבלנות ושיתופי פעולה. דברים מבשילים לאט.',3:'ביטוי, חברה ויצירה. שנה לצאת החוצה.',4:'עבודה ויסודות. שנה לבנות, בלי קיצורי דרך.',5:'שינוי. משהו זז, ועדיף לזוז איתו.',6:'בית, משפחה ומחויבות.',7:'התכנסות ולימוד. פחות רעש, יותר עומק.',8:'קציר. כסף, קריירה והכרה.',9:'סיום ושחרור. מפנים מקום למחזור הבא.'};
+const nameClean=t=>clean(String(t).replace(/[0-9.]/g,' ')).trim();
+const nameText=n=>(n>9?'מספר מאסטר. ':'')+NM[red(n)];
+
+/* ───────── state ───────── */
+let curWord='',melodyWord='',curVal=0,mode=0,mix=0,mixT=0,chaos=0,spin=0,uYaw=0,uPitch=.28,camX=0,camY=0;
+let ptr=[9,9],ptrOn=0,ptrSeen=0,burstT=9,burstO=[0,0],T=0,last=0;
+function showWord(w){curWord=w;rasterWord(w);if(mode===1){mode=0;chaos=1;seqStop();droneOff()}mixT=0}
+function openWorld(seed){curVal=seed;colT=palette(seed);mode=1;mixT=1;chaos=1;genWorld(seed,N,tB);gl.bindBuffer(gl.ARRAY_BUFFER,bTB);gl.bufferSubData(gl.ARRAY_BUFFER,0,tB);
+  if(AC&&!muted){whoosh(true);droneOn();seqStart()}}
+
+/* ───────── frame ───────── */
+function frame(now){
+  const dt=Math.min(.033,Math.max(.001,(now-last)/1000||.016));last=now;T+=dt;
+  mix+=(mixT-mix)*Math.min(1,dt*(mixT>mix?1.15:2.4));chaos*=Math.exp(-dt*1.5);pulse*=Math.exp(-dt*4.5);burstT+=dt;
+  for(const k of['c1','c2','c3']){const t=lin(colT[k]);for(let i=0;i<3;i++)col[k][i]+=(t[i]-col[k][i])*Math.min(1,dt*2.5)}
+  if(now-ptrSeen>2600)ptrOn+=(0-ptrOn)*Math.min(1,dt*3);
+  if(!drag){spin+=dt*(reduce?.03:.11)*mix;camX*=Math.exp(-dt*2);camY*=Math.exp(-dt*2)}
+  const asp=W/H,o=viewOff();
+  const V=mul(new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,-DIST,1]),mul(rotX(Math.sin(T*.23)*.04+camY),rotY(Math.sin(T*.31)*.09+camX)));
+  const VP=mul(persp(FOV,asp,.1,40),V),ws=Math.max(.6,Math.min(.86,asp*1.25)),rot=m3(mul(rotY(spin+uYaw),rotX(uPitch))).map(v=>v*ws);
+  const camR=[V[0],V[4],V[8]],camU=[V[1],V[5],V[9]];
+
+  gl.useProgram(pUpd.p);let u=pUpd.u;
+  gl.uniform1f(u.uT,T);gl.uniform1f(u.uDt,dt);gl.uniform1f(u.uMix,mix);gl.uniform1f(u.uChaos,chaos*(reduce?.4:1));gl.uniform1f(u.uPulse,pulse);
+  gl.uniform1f(u.uFreq,1.05+(curVal%9)*.11);gl.uniform1f(u.uTurb,(reduce?.03:.07)+mix*.05);gl.uniform1f(u.uAspect,asp);gl.uniform1f(u.uPtrOn,ptrOn);gl.uniform1f(u.uBurstT,burstT);
+  gl.uniformMatrix3fv(u.uRot,false,rot);gl.uniformMatrix4fv(u.uVP,false,VP);gl.uniform2f(u.uPtr,ptr[0]-o[0],ptr[1]-o[1]);gl.uniform2f(u.uBurstO,burstO[0]-o[0],burstO[1]-o[1]);
+  gl.uniform3fv(u.uCamR,camR);gl.uniform3fv(u.uCamU,camU);
+  gl.bindVertexArray(vao[cur]);gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK,tfo);gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER,0,bState[1-cur]);
+  gl.enable(gl.RASTERIZER_DISCARD);gl.beginTransformFeedback(gl.POINTS);gl.drawArrays(gl.POINTS,0,N);gl.endTransformFeedback();gl.disable(gl.RASTERIZER_DISCARD);
+  gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER,0,null);gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK,null);cur=1-cur;
+
+  const src=acc[accI],dst=acc[1-accI];gl.viewport(0,0,W,H);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,dst.f);gl.disable(gl.BLEND);gl.useProgram(pFade.p);gl.bindVertexArray(qvao);
+  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,src.t);gl.uniform1i(pFade.u.uTex,0);gl.uniform1f(pFade.u.uDecay,Math.exp(-dt*(floatOK?9.5:13)));gl.drawArrays(gl.TRIANGLES,0,3);
+  gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);gl.useProgram(pDraw.p);u=pDraw.u;
+  gl.uniformMatrix4fv(u.uVP,false,VP);gl.uniform1f(u.uMix,mix);gl.uniform1f(u.uPx,H*.0098);gl.uniform1f(u.uPulse,pulse);gl.uniform1f(u.uT,T);
+  gl.uniform1f(u.uGain,(floatOK?.085:.11)*Math.pow(170000/N,.75)*(1.7-mix*.7));
+  gl.uniform3fv(u.uC1,col.c1);gl.uniform3fv(u.uC2,col.c2);gl.uniform3fv(u.uC3,col.c3);gl.uniform2f(u.uOff,o[0],o[1]);
+  gl.bindVertexArray(vao[cur]);gl.drawArrays(gl.POINTS,0,N);gl.disable(gl.BLEND);
+  gl.bindTexture(gl.TEXTURE_2D,dst.t);gl.generateMipmap(gl.TEXTURE_2D);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.useProgram(pFinal.p);u=pFinal.u;gl.bindVertexArray(qvao);
+  gl.uniform1i(u.uTex,0);gl.uniform1f(u.uT,T);gl.uniform1f(u.uAspect,asp);gl.uniform1f(u.uExp,1.25);gl.uniform3fv(u.uTint,col.c1);gl.uniform2f(u.uOff,o[0],o[1]);
+  gl.drawArrays(gl.TRIANGLES,0,3);accI=1-accI;
+}
+let slow=0,frames=0;
+function loop(now){frame(now);
+  if(frames++>40&&frames<400){slow=(performance.now()-now>26)?slow+1:Math.max(0,slow-1);if(slow>24&&scale>.6){scale*=.8;slow=0;resize()}}
+  requestAnimationFrame(loop)}
+
+
+
+/* ───────── pointer ───────── */
+let drag=null;
+const ndc=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)/r.width*2-1,1-(e.clientY-r.top)/r.height*2]};
+cv.addEventListener('pointerdown',e=>{audio();if(AC&&AC.state==='suspended')AC.resume();cv.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY,moved:0};ptr=ndc(e);ptrOn=1;ptrSeen=performance.now();if(small)msg.blur()});
+cv.addEventListener('pointermove',e=>{ptr=ndc(e);ptrOn=1;ptrSeen=performance.now();
+  if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;drag.moved+=Math.abs(dx)+Math.abs(dy);
+    if(mode===1){uYaw+=dx*.006;uPitch=Math.max(-1.3,Math.min(1.3,uPitch+dy*.005))}else{camX=Math.max(-.7,Math.min(.7,camX+dx*.004));camY=Math.max(-.5,Math.min(.5,camY+dy*.003))}}});
+cv.addEventListener('pointerup',e=>{if(drag&&drag.moved<7){burstO=ndc(e);burstT=0;if(AC&&!muted)pluck(noteFreq(Math.floor((burstO[0]+1)*5),-1),0,.1)}drag=null;if(e.pointerType!=='mouse')ptrSeen=0});
+cv.addEventListener('pointercancel',()=>{drag=null});
+$('bSound').addEventListener('click',()=>{muted=!muted;$('bSound').setAttribute('aria-pressed',String(!muted));$('wav').style.display=muted?'none':'';
+  if(muted){seqStop();droneOff();if(master)master.gain.value=0}else{audio();if(AC.state==='suspended')AC.resume();master.gain.value=.85;if(mode===1){droneOn();seqStart()}}});
+
+/* ───────── Claude, when the page is opened inside a Claude viewer ───────── */
+let sample=null,toolsOK=false,saver=null;
+const capsReady=(window.claude&&window.claude.use)?Promise.all([
+  window.claude.use('sample').then(async s=>{sample=s;if(s){try{toolsOK=!!(await s.limits()).tools}catch(e){}}},()=>{}),
+  window.claude.use('downloads').then(d=>{saver=d},()=>{})]):Promise.resolve();
+
+/* ───────── the session ───────── */
+const log=$('log'),msg=$('msg'),quick=$('quick'),sendBtn=$('send');
+const wait=ms=>new Promise(r=>setTimeout(r,reduce?0:ms));
+let P={},step='name',turns=[],ctl=null,busyNow=false,gen=0;
+function say(text,cls){const d=document.createElement('div');d.className='m '+(cls||'her');d.textContent=text;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+async function her(lines,g){for(const l of lines){await wait(700);if(g!==gen)return false;say(l)}return true}
+function chips(list,cb){quick.textContent='';list.forEach(([label,val])=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=label;
+  b.onclick=()=>{quick.textContent='';cb(val,label)};quick.appendChild(b)})}
+function busy(on){busyNow=on;sendBtn.textContent=on&&ctl?'עצירה':'שליחה';msg.disabled=on&&!ctl}
+const ph=t=>{msg.placeholder=t};
+
+function greet(){say('שלום, אני נורית. שלושים שנה אני קוראת אנשים דרך המספרים שלהם, ועדיין מופתעת כל פעם מחדש.');
+  say('נתחיל מהשם. מה השם המלא שניתן לך בלידה?');ph('שם מלא')}
+function reset(){gen++;if(ctl)ctl.abort();ctl=null;P={};turns=[];step='name';log.textContent='';quick.textContent='';$('nums').hidden=true;$('bPoster').hidden=true;
+  melodyWord='';curVal=0;colT=palette(340);showWord('');busy(false);msg.value='';greet()}
+
+async function onName(text){
+  const w=nameClean(text),n=[...w].filter(c=>c!==' ').length;
+  if(n<2){say('אני צריכה שם באותיות, בעברית או באנגלית.');return}
+  const g=gen;say(text.trim(),'me');P.name=w;P.g=gematria(w);P.nameN=red(P.g,[11,22]);P.letters=n;
+  P.sibs=(BYVAL.get(P.g)||[]).filter(x=>x!==w).slice(0,4);
+  curVal=P.g;colT=palette(P.g);melodyWord=w;showWord(w);
+  if(audio()&&!muted){if(AC.state==='suspended')AC.resume();[...w].filter(c=>c!==' ').forEach((c,i)=>pluck(noteFreq(letterIdx(c),0),AC.currentTime+.25+i*.17,.15))}
+  step='wait';
+  const lines=[`${w}. ${n} אותיות, וביחד הן שוות ${P.g}. את המספר הזה אני שומרת בצד.`];
+  if(P.sibs.length)lines.push(`אגב, גם ״${P.sibs[0]}״ שווה ${P.g}. אני אוהבת צירופי מקרים כאלה.`);
+  lines.push('עכשיו תאריך הלידה. יום, חודש ושנה.');
+  if(await her(lines,g)){step='date';ph('למשל 14.3.1985')}
+}
+async function onDate(text){
+  const dt=parseDate(text);
+  if(!dt){say('לא הצלחתי לקרוא את התאריך. אפשר לכתוב כך: 14.3.1985');return}
+  const g=gen;say(text.trim(),'me');Object.assign(P,dt);const lp=lifePath(dt.d,dt.m,dt.y);P.lp=lp;P.bday=red(dt.d,[11,22]);P.py=personalYear(dt.d,dt.m,new Date().getFullYear());
+  showWord(`${dt.d}.${dt.m}.${dt.y}`);step='wait';
+  const lines=[`${dt.d}.${dt.m}.${dt.y}. אני מחברת: ${lp.p[0]} ועוד ${lp.p[1]} ועוד ${lp.p[2]}, יוצא ${lp.sum}${lp.sum!==lp.n?`, ומצמצמת ל־${lp.n}`:''}.`];
+  if(!await her(lines,g))return;
+  await wait(900);if(g!==gen)return;
+  openWorld(P.g+lp.n*1000);
+  $('lp').textContent=lp.n;$('lpc').textContent=`${lp.p.join(' + ')} = ${lp.sum}${lp.sum!==lp.n?` ← ${lp.n}`:''}`;
+  const nc=$('nchips');nc.textContent='';
+  [['מספר השם',P.nameN,'name'],['יום הלידה',P.bday,'bday'],[`שנה אישית ${new Date().getFullYear()}`,P.py,'year']].forEach(([l,v,k])=>{
+    const b=document.createElement('button');b.type='button';b.className='chip';b.append(l+' ');const s=document.createElement('b');s.textContent=v;b.append(s);b.onclick=()=>numChip(k,l,v);nc.appendChild(b)});
+  $('nums').hidden=false;$('bPoster').hidden=false;
+  if(!await her([`שביל הגורל שלך הוא ${lp.n}.${lp.n>9?' זה מספר מאסטר, ואותו לא מצמצמים.':''} מה שנפתח עכשיו על המסך הוא המפה שלך. היא נבנתה מהשם ומהתאריך, ואין עוד אחת כמוה.`,
+    'לפני שאני קוראת אותה: איך נוח לך שאפנה?'],g))return;
+  step='addr';ph('');chips([['בלשון נקבה','f'],['בלשון זכר','m'],['בלי מגדר','n']],(v,l)=>onAddr(v,l));
+}
+async function onAddr(v,label){const g=gen;say(label,'me');P.addr=v;step='wait';
+  if(!await her(['ומה הביא אותך אליי היום?'],g))return;
+  step='topic';ph('אפשר גם לכתוב במילים שלך');
+  chips([['אהבה וזוגיות','אהבה וזוגיות'],['עבודה וכסף','עבודה וכסף'],['החלטה שעומדת בפניי','החלטה שעומדת בפניי'],['סקרנות','סתם סקרנות, רציתי לשמוע מה המספרים אומרים']],(val,l)=>onTopic(val,l));
+}
+async function onTopic(val,label){quick.textContent='';say(label||val,'me');P.topic=val;step='chat';ph('לשאול את נורית');
+  await Promise.race([capsReady,new Promise(r=>setTimeout(r,4000))]);
+  if(!sample){scripted();return}
+  say('רגע אחד עם המספרים.','note');
+  turns=[{role:'user',content:'זו תחילת הפגישה. תני את הקריאה הראשונה: פתחי בשביל הגורל, קשרי אותו למספר השם ולשנה האישית, והתייחסי למה שהביא אותי לכאן. סיימי בשאלה אחת אליי.'}];
+  run();
+}
+function scripted(){const n=P.lp.n;
+  say(LP[n]);say(`מספר השם שלך הוא ${P.nameN}. ${nameText(P.nameN)}`);say(`ואת ${new Date().getFullYear()} עוברים אצלך בשנה אישית ${P.py}. ${YR[P.py]}`);
+  say('זו הקריאה הכתובה. כדי לשוחח איתי חופשי צריך לפתוח את הדף דרך Claude ולאשר לו לענות. המספרים למעלה נשארים זמינים בלחיצה.','note');
+  msg.disabled=true;ph('שיחה חופשית זמינה דרך Claude')}
+function numChip(k,label,v){
+  if(busyNow)return;
+  if(sample&&step==='chat'){ask(`ספרי לי עוד על ${label.replace(/ \d{4}$/,'')} שלי, ${v}.`);return}
+  if(step!=='chat')return;
+  say(k==='name'?`מספר השם ${v}. ${nameText(v)}`:k==='year'?`שנה אישית ${v}. ${YR[v]}`:`יום הלידה ${v} הוא הכישרון שבאים איתו. ${LP[v].split('. ').slice(1,2).join('. ')}.`)}
+
+function rules(){const now=new Date(),addr={f:'פני אליה בלשון נקבה.',m:'פני אליו בלשון זכר.',n:'נסחי בלי לשון פנייה מגדרית ככל האפשר (״אצלך״, ״שלך״, שם הפועל).'}[P.addr||'n'];
+return `את נורית, נומרולוגית בת 60 עם שלושים שנות ניסיון בקליניקה. את יושבת עכשיו מול אדם אחד בפגישה אישית, ואת עונה רק בתור נורית.
+
+איך את מדברת
+- עברית מדוברת, חמה וישירה. חכמת חיים והומור יבש במידה. בלי התלהבות מזויפת ובלי קלישאות על ״היקום״.
+- את מדברת מתוך המסורת הנומרולוגית בביטחון, ומתארת נטיות ודפוסים, לא גזירות גורל.
+- פסקאות קצרות של טקסט רגיל. בלי כותרות, בלי רשימות, בלי כוכביות, בלי אימוג׳י.
+- קריאה טובה היא לא רשימת תכונות. קשרי בין המספרים לבין מה שהאדם סיפר, והצביעי על מתחים בין המספרים עצמם, למשל שביל שמבקש חופש מול שם שמבקש יציבות.
+- כמו בעלת מקצוע ותיקה, את שואלת. סיימי בשאלה אחת ממוקדת כשהיא באמת מקדמת את השיחה, ובני על התשובות שקיבלת.
+- ${addr}
+
+גבולות
+- המספרים שלמטה חושבו עבורך והם מדויקים. אל תחשבי אותם מחדש ואל תמציאי מספרים אחרים.
+- ${toolsOK?'כשעולה אדם נוסף (בן או בת זוג, ילד, שותף), בקשי שם מלא ותאריך לידה, וחשבי את המספרים שלו רק בעזרת הכלי chashev.':'אם מבקשים ממך מספרים של אדם נוסף, אמרי שהיום את מתמקדת במי שיושב מולך, ודברי על מה שהמספרים שלו אומרים על הקשר.'}
+- לא מנבאים מוות, מחלה, הריון או תאריכים. לא נותנים הוראות רפואיות, משפטיות או כספיות. בהחלטות גדולות את עוזרת לראות את התמונה, וההחלטה נשארת אצל האדם.
+- אם האדם נשמע במצוקה אמיתית, הניחי למספרים, דברי בגובה העיניים והציעי לפנות לאדם קרוב או לאיש מקצוע.
+- אם שואלים אם זה מדעי, עני ביושר שזו מסורת של התבוננות ולא מדע, בלי להתנצל עליה.
+- אורך: הקריאה הראשונה 150 עד 220 מילים. אחר כך 50 עד 130 מילים.
+
+הנתונים של מי שמולך
+- שם מלא: ${P.name} (${P.letters} אותיות). גימטריה: ${P.g}. מספר השם: ${P.nameN}.
+- מילים בעברית עם אותה גימטריה: ${P.sibs.length?P.sibs.join(', '):'לא מצאתי'}.
+- תאריך לידה: ${P.d}.${P.m}.${P.y}. שביל הגורל: ${P.lp.n} (החישוב: ${P.lp.p.join(' + ')} = ${P.lp.sum}).
+- מספר יום הלידה: ${P.bday}.
+- שנה אישית ב־${now.getFullYear()}: ${P.py}.
+- מה הביא את האדם לכאן: ${P.topic}.
+- התאריך היום: ${now.getDate()}.${now.getMonth()+1}.${now.getFullYear()}.
+
+מילות מפתח מהמסורת, לשימושך בלבד
+- שביל ${P.lp.n}: ${LP[P.lp.n]}
+- מספר השם ${P.nameN}: ${nameText(P.nameN)}
+- שנה אישית ${P.py}: ${YR[P.py]}`}
+const TOOL={name:'chashev',description:'מחשבת מספרים נומרולוגיים של אדם נוסף. מקבלת שם מלא ו/או תאריך לידה ומחזירה גימטריה, מספר שם, שביל גורל, מספר יום לידה ושנה אישית. יש להשתמש בה תמיד במקום לחשב לבד.',
+  inputSchema:{type:'object',properties:{name:{type:'string',description:'שם מלא'},date:{type:'string',description:'תאריך לידה בצורה יום.חודש.שנה, למשל 3.4.1980'}}},
+  execute(i){const d=i.date?parseDate(String(i.date)):null;if(i.date&&!d)throw new Error('תאריך לא תקין, בקשי אותו שוב בצורה יום.חודש.שנה');
+    if(!i.name&&!d)throw new Error('צריך שם או תאריך');return numbersFor(i.name?String(i.name):'',d)}};
+const strip=t=>t.replace(/[*#`_]+/g,'');
+async function run(){
+  const g=gen,b=say('נורית חושבת…','her wait');ctl=new AbortController();busy(true);
+  const opts={cache:false,signal:ctl.signal,onText:({text})=>{if(g!==gen)return;b.classList.remove('wait');b.textContent=strip(text);pulse=Math.min(1,pulse+.1);log.scrollTop=log.scrollHeight}};
+  if(turns.length>1)opts.effort='low';if(toolsOK)opts.tools=[TOOL];
+  try{const r=await sample([{role:'user',content:rules()},...turns.slice(-17)],opts);if(g!==gen)return;
+    b.classList.remove('wait');b.textContent=strip(r.text);turns.push({role:'assistant',content:r.text});
+    if(r.truncated)say('נקטעתי באמצע. אפשר לבקש שאמשיך.','note')}
+  catch(e){if(g!==gen)return;const c=e&&e.code,part=e&&e.text;
+    if(part){b.classList.remove('wait');b.textContent=strip(part);turns.push({role:'assistant',content:part})}else{b.remove();turns.pop()}
+    if(c==='cancelled'){}
+    else if(['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(c)){sample=null;if(!turns.some(t=>t.role==='assistant'))scripted();else{say('השיחה החופשית נסגרה בצפייה הזאת.','note');msg.disabled=true}}
+    else if(c==='rate_limited')say('יש עומס כרגע. אפשר לנסות שוב בעוד רגע.','note');
+    else if(c==='session_expired')say('צריך להתחבר מחדש ל־Claude כדי להמשיך.','note');
+    else if(c==='refused')say('על זה אני לא יכולה לענות. אפשר לשאול אחרת.','note');
+    else say('משהו נקטע בדרך. אפשר לשלוח שוב.','note')}
+  finally{if(g===gen){ctl=null;busy(false);if(!msg.disabled&&!small)msg.focus()}}
+}
+function ask(text){if(busyNow||!sample)return;say(text,'me');turns.push({role:'user',content:text});run()}
+$('f').addEventListener('submit',e=>{e.preventDefault();
+  if(busyNow&&ctl){ctl.abort();return}
+  const t=msg.value.trim();if(!t||busyNow||step==='wait')return;
+  audio();if(AC&&AC.state==='suspended')AC.resume();msg.value='';
+  if(step==='name')onName(t);else if(step==='date')onDate(t);else if(step==='addr')onAddr('n',t);else if(step==='topic')onTopic(t,t);else ask(t)});
+$('bReset').addEventListener('click',reset);
+
+/* ───────── poster ───────── */
+let posterBlob=null;
+$('bPoster').addEventListener('click',()=>{if(!P.lp)return;
+  const PW=1080,PH=1350,c=document.createElement('canvas');c.width=PW;c.height=PH;const x=c.getContext('2d');
+  frame(performance.now());
+  const s=Math.max(PW/W,PH/H)*1.02,o=viewOff();x.fillStyle='#07060a';x.fillRect(0,0,PW,PH);
+  x.drawImage(cv,PW/2-(W/2+o[0]*W/2)*s,PH*.42-(H/2-o[1]*H/2)*s,W*s,H*s);
+  const gr=x.createLinearGradient(0,PH*.52,0,PH);gr.addColorStop(0,'rgba(7,6,10,0)');gr.addColorStop(1,'rgba(7,6,10,.94)');x.fillStyle=gr;x.fillRect(0,PH*.52,PW,PH*.48);
+  const a=css(colT.u1);x.direction='rtl';x.textAlign='right';x.textBaseline='alphabetic';
+  x.fillStyle=a;x.font='900 230px Bamberger,AntonL,sans-serif';x.fillText(String(P.lp.n),PW-70,PH-210);
+  const nw=x.measureText(String(P.lp.n)).width;x.fillStyle='#f3ede4';let fs=96;x.font=`900 ${fs}px Bamberger,AntonL,sans-serif`;
+  const room=PW-140-nw-50,tw=x.measureText(P.name).width;if(tw>room){fs*=room/tw;x.font=`900 ${fs}px Bamberger,AntonL,sans-serif`}
+  x.fillText(P.name,PW-70-nw-44,PH-210);
+  x.font='30px HeeboL,sans-serif';x.fillStyle='rgba(243,237,228,.8)';
+  x.fillText(`שביל הגורל ${P.lp.n}   ·   מספר השם ${P.nameN}   ·   יום הלידה ${P.bday}   ·   שנה אישית ${P.py}`,PW-70,PH-140);
+  x.font='24px HeeboL,sans-serif';x.fillStyle='rgba(243,237,228,.5)';x.fillText(`${P.d}.${P.m}.${P.y}   ·   גימטריה ${P.g}`,PW-70,PH-90);
+  x.textAlign='left';x.font='900 26px Bamberger,sans-serif';x.fillText('נורית קוראת מספרים',70,PH-90);
+  x.fillStyle=a;x.fillRect(PW-70-64,PH-470,64,5);
+  c.toBlob(b=>{if(!b)return;posterBlob=b;const im=$('poster');if(im.src)URL.revokeObjectURL(im.src);im.src=URL.createObjectURL(b);
+    $('pHint').textContent='לחיצה ארוכה על התמונה שומרת אותה.';$('sheet').hidden=false},'image/png');
+});
+$('pClose').addEventListener('click',()=>{$('sheet').hidden=true});
+$('sheet').addEventListener('click',e=>{if(e.target===$('sheet'))$('sheet').hidden=true});
+$('pSave').addEventListener('click',async()=>{if(!posterBlob)return;const fn=`numerology-${P.lp.n}.png`;
+  if(saver){try{await saver.save({filename:fn,data:posterBlob});$('pHint').textContent='נשמר.'}catch(e){$('pHint').textContent=e&&e.code==='declined'?'ההורדה בוטלה.':'ההורדה לא זמינה כאן. לחיצה ארוכה על התמונה שומרת אותה.'}return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(posterBlob);a.download=fn;document.body.appendChild(a);a.click();a.remove();
+  $('pHint').textContent='אם ההורדה לא התחילה: לחיצה ארוכה (או קליק ימני) על התמונה שומרת אותה.'});
+
+/* ───────── boot ───────── */
+const kb=()=>{const v=window.visualViewport;if(!v)return;document.documentElement.style.setProperty('--kb',Math.max(0,innerHeight-v.height-v.offsetTop)+'px')};
+if(window.visualViewport){visualViewport.addEventListener('resize',kb);visualViewport.addEventListener('scroll',kb)}
+let rz=0;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{resize();rasterWord(curWord)},120)});
+function start(){
+  resize();showWord('');
+  const tick=()=>{document.documentElement.style.setProperty('--accent',css(colT.u1));document.documentElement.style.setProperty('--accent2',css(colT.u2))};
+  tick();setInterval(tick,300);requestAnimationFrame(loop);
+}
+greet();
+const fonts=document.fonts&&document.fonts.load?Promise.all([document.fonts.load('900 80px Bamberger','שלום'),document.fonts.load('80px AntonL','A'),document.fonts.load('16px HeeboL','א')]):Promise.resolve();
+Promise.race([fonts,new Promise(r=>setTimeout(r,2500))]).then(start,start);
+})();
+</script>
+</body>
+</html>
