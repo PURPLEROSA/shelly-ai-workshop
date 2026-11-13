@@ -616,7 +616,7 @@ var counter = new THREE.Group(), cDigits = [];
   var S = makeLetter('S', 0.22, C.green, 0.022); S.position.set(-0.4,0,0); counter.add(S);
   counter.add(coil(new V3(-0.4,-0.15,0.01), new V3(-0.4,0.15,0.01), 0.014, clay(C.green,{wob:0.3})));
   for (var i=0;i<4;i++){ var d = seg7(0.22,0.11,0.02,dm); d.position.set(-0.2+i*0.2,0,0); counter.add(d); cDigits.push(d); }
-  counter.traverse(function(o){ o.castShadow = false; o.receiveShadow = false; if (o.isMesh){ o.material.depthTest = false; o.renderOrder = o === plate ? 998 : 999; } }); camera.add(counter); })();
+  counter.traverse(function(o){ o.castShadow = false; o.receiveShadow = false; if (o.isMesh){ o.material.depthFunc = THREE.AlwaysDepth; o.renderOrder = o === plate ? 998 : 999; } }); camera.add(counter); })();
 function balance(b){
   var v = 2500, i;
   for (i=0;i<8;i++) if (b >= 8.9+i*0.75) v -= 150;
