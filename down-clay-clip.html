@@ -20,8 +20,8 @@ html,body{height:100%}
 body{background:var(--room);color:var(--text);font-family:var(--font-ui);padding-block:20px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   display:flex;justify-content:center;align-items:flex-start;box-sizing:border-box}
-.wrap{width:100%;max-width:1100px;display:flex;flex-direction:column;gap:12px}
-.stage{position:relative;width:100%;max-width:100%;aspect-ratio:16/9;background:#0c0b0e;border-radius:6px;overflow:hidden}
+.wrap{width:100%;max-width:560px;display:flex;flex-direction:column;gap:12px}
+.stage{position:relative;width:min(100%,430px);max-width:100%;margin-inline:auto;aspect-ratio:9/16;background:#0c0b0e;border-radius:6px;overflow:hidden}
 .stage canvas{display:block;width:100%;height:100%}
 .fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:var(--muted)}
 .controls,.song{display:flex;flex-wrap:wrap;align-items:center;gap:12px 14px}
@@ -156,7 +156,7 @@ function clay(hex, opt){
 function shadowed(m, receive){ m.castShadow = true; m.receiveShadow = receive!==false; return m; }
 
 /* ---------- palette ---------- */
-var C = {back:'#5a45c8', pink:'#f28db2', must:'#f6c445', lilac:'#b094e8', cream:'#f6ead2', coral:'#ee6352', wood:'#8b5d40', cyan:'#39c6d6', green:'#58c27d'};
+var C = {back:'#e3b9a6', pink:'#f28db2', must:'#f6c445', lilac:'#b094e8', cream:'#f6ead2', coral:'#ee6352', wood:'#8b5d40', cyan:'#39c6d6', green:'#58c27d'};
 
 var scene = new THREE.Scene();
 scene.background = lin('#121015');
@@ -261,12 +261,12 @@ function makeWord(text, h, rad, gap, colors, x0, y, z, parent){
   return out;
 }
 /* ---------- camera, depth of field, exposure flicker, lens smudge ---------- */
-var camera = new THREE.PerspectiveCamera(30, 16/9, 0.5, 90);
+var camera = new THREE.PerspectiveCamera(40, 9/16, 0.5, 90);
 var CAM_A0 = new V3(0,1.45,6.3), LOOK_A = new V3(0,1.15,0), CAM_B0 = new V3(7.2,5.2,19.5), LOOK_B0 = new V3(-0.2,1.7,0.6);
 var rt = null, post = new THREE.Scene(), postCam = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
 var postMat = new THREE.ShaderMaterial({
   uniforms: {tC:{value:null}, tD:{value:null}, uNear:{value:0.5}, uFar:{value:90}, uFocus:{value:6.2}, uBlur:{value:0.25},
-    uExp:{value:1}, uSeed:{value:0}, uBts:{value:0}, uAspect:{value:16/9}, uWp:{value:-1}, uWs:{value:0}, uWc:{value:new THREE.Color(1,1,1)}},
+    uExp:{value:1}, uSeed:{value:0}, uBts:{value:0}, uAspect:{value:9/16}, uWp:{value:-1}, uWs:{value:0}, uWc:{value:new THREE.Color(1,1,1)}},
   vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }',
   fragmentShader: [
   'precision highp float; varying vec2 vUv; uniform sampler2D tC; uniform sampler2D tD;',
@@ -279,7 +279,7 @@ var postMat = new THREE.ShaderMaterial({
   'vec3 aces(vec3 x){ return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.); }',
   'void main(){',
   ' float wd = -1.; vec2 sUv = vUv;',
-  ' if(uWp>=0.){ float e1 = n1(vUv.x*4.+uWs)*.55+n1(vUv.x*11.+uWs*2.)*.3+n1(vUv.x*27.+uWs)*.15;',
+  ' if(uWp>=0.){ float e1 = n1(vUv.x*3.+uWs)*.55+n1(vUv.x*8.+uWs*2.)*.3+n1(vUv.x*19.+uWs)*.15;',
   '  wd = uWp<1. ? vUv.y-(1.-uWp*1.5+e1*.5) : (1.-(uWp-1.)*1.5+e1*.5)-vUv.y;',
   '  if(wd<0. && wd>-.18) sUv.y = clamp(sUv.y+(uWp<1.?1.:-1.)*(.18+wd)*.6, 0., 1.); }',
   ' float z0 = zAt(sUv); float Rc = coc(z0);',
@@ -297,7 +297,7 @@ var postMat = new THREE.ShaderMaterial({
   ' float ridge = 0.5+0.5*sin(length(w2*vec2(1.,.78))*330.);',
   ' col = mix(col, mix(col, vec3(.86,.42,.5), .5), sm*(0.2+0.5*ridge));',
   ' if(uWp>=0.){ col *= 1.-.45*smoothstep(-.04,0.,wd);',
-  '  float rdg = sin((vUv.x*.8+vUv.y*.45+n1(vUv.y*6.+uWs)*.05)*420.);',
+  '  float rdg = sin((vUv.x*.45+vUv.y*.8+n1(vUv.y*6.+uWs)*.05)*420.);',
   '  vec3 cc = uWc*(.74+.26*smoothstep(0.,.07,wd)) + .25*exp(-pow((wd-.024)/.013,2.)) + rdg*.022;',
   '  col = mix(col, cc, smoothstep(0.,.004,wd)); }',
   ' col *= uExp*1.02;',
@@ -328,6 +328,7 @@ function resize(){
 /* ---------- helpers for this film ---------- */
 FONT.D = [{p:[[0,0],[0,1]]},{p:[[0,1],[.62,.94],[1,.5],[.62,.06],[0,0]],s:1}];
 FONT.W = [{p:[[0,1],[.25,0],[.5,.72],[.75,0],[1,1]]}];
+FONT.C = [{p:[[.95,.8],[.5,1],[.08,.76],[0,.5],[.08,.24],[.5,0],[.95,.2]],s:1}];
 function pulse(b){ var f = b-Math.floor(b); return Math.exp(-f*5); }
 function at(b,a,c){ return b>=a && b<c; }
 function coil(a, b, rad, mat){
@@ -336,6 +337,8 @@ function coil(a, b, rad, mat){
   [a,b].forEach(function(e){ var c = shadowed(new THREE.Mesh(new THREE.SphereGeometry(rad*1.04,8,6), mat)); c.position.copy(e); g.add(c); });
   return g;
 }
+function ball(r, mat, sx, sy, sz, x, y, z){ var m = shadowed(new THREE.Mesh(new THREE.SphereGeometry(r,28,20), mat)); m.scale.set(sx,sy,sz); m.position.set(x,y,z); return m; }
+function box(w, h, d, mat, x, y, z){ var m = shadowed(new THREE.Mesh(new THREE.BoxGeometry(w,h,d,Math.max(2,Math.round(w*5)),Math.max(2,Math.round(h*5)),Math.max(2,Math.round(d*5))), mat)); m.position.set(x,y,z); return m; }
 var DIG = ['abcdef','bc','abged','abgcd','fgbc','afgcd','afgecd','abc','abcdefg','abcdfg'];
 function seg7(h, w, rad, mat){
   var g = new THREE.Group(), y = h/2, x = w/2, i = 0.82;
@@ -347,56 +350,175 @@ function seg7(h, w, rad, mat){
   return g;
 }
 function setDigit(g, d){ Object.keys(g.segs).forEach(function(k){ g.segs[k].visible = DIG[d].indexOf(k) >= 0; }); }
+var eyeMat = new THREE.MeshStandardMaterial({color: lin('#1a1215'), roughness: 0.22});
 
-/* ---------- supermarket dressing: shelves, bulbs ---------- */
-var PROD = [C.pink, C.must, C.cyan, C.coral, C.green, C.cream, C.lilac];
-[-3.5, 3.5].forEach(function(sx, si){
-  var wood = clay('#e9d6b8', {wob:0.5}), g = new THREE.Group(); g.position.set(sx, 0, -1.9); g.rotation.y = sx<0 ? 0.28 : -0.28;
-  [0.62, 1.34, 2.06].forEach(function(y, r){
-    var b = shadowed(new THREE.Mesh(new THREE.BoxGeometry(2.3,0.09,0.55,8,1,3), wood)); b.position.y = y; g.add(b);
-    for (var i=0;i<6;i++){
-      var k = si*40+r*7+i, hh = 0.26+hash(k)*0.26, m = clay(PROD[Math.floor(hash(k+.5)*PROD.length)], {wob:0.6});
-      var it = shadowed(new THREE.Mesh(hash(k+.2)>0.5 ? new THREE.BoxGeometry(0.24,hh,0.24,3,3,3) : new THREE.CylinderGeometry(0.12,0.13,hh,14,3), m));
-      it.position.set(-0.95+i*0.38+(hash(k+.7)-.5)*0.08, y+0.045+hh/2, 0.02); it.rotation.y = hash(k+.9); g.add(it);
-    }
-  });
-  [-1.15, 1.15].forEach(function(x){ var s = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.09,2.6,0.55,1,8,3), wood)); s.position.set(x,1.3,0); g.add(s); });
-  scene.add(g);
+/* ---------- Tel Aviv at sunset: sky, sun, sea, Jaffa ---------- */
+key.color.copy(lin('#ffd2a6')); rim.color.copy(lin('#ff7a4a')); rim.position.set(2.2, 2.4, -3);
+hemi.color.copy(lin('#ffc4d6')); hemi.groundColor.copy(lin('#ffb38a'));
+var skyMat = new THREE.MeshBasicMaterial({vertexColors: true});
+(function(){
+  var g = new THREE.PlaneGeometry(15, 9, 1, 24), p = g.attributes.position, col = new Float32Array(p.count*3);
+  var stops = [[0,'#ffd58c'],[0.12,'#ffad72'],[0.3,'#f98aa6'],[0.55,'#c780d6'],[1,'#7f69cf']];
+  for (var i=0;i<p.count;i++){
+    var t = (p.getY(i)+4.5)/9, k = 0; while (k < stops.length-2 && t > stops[k+1][0]) k++;
+    var a = lin(stops[k][1]), bb = lin(stops[k+1][1]); a.lerp(bb, clamp01((t-stops[k][0])/(stops[k+1][0]-stops[k][0])));
+    col[i*3] = a.r; col[i*3+1] = a.g; col[i*3+2] = a.b;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  var sky = new THREE.Mesh(g, skyMat); sky.position.set(0, 5.9, -2.75); scene.add(sky);
+})();
+var sunMat = new THREE.MeshBasicMaterial({color: new THREE.Color(3.4, 2.3, 1.1)});
+var sun = new THREE.Mesh(new THREE.CircleGeometry(0.4, 40), sunMat); scene.add(sun);
+var clouds = [];
+[[-1.2,4.4,1.1],[0.9,5.2,0.9],[-0.3,3.4,0.7],[1.5,3.7,0.6]].forEach(function(q, n){
+  var g = new THREE.Group(), m = clay(n%2 ? '#c78ad0' : '#f7a3b8', {wob:0.7});
+  for (var i=0;i<4;i++) g.add(ball(0.26, m, 1.5-i*0.15, 0.55, 0.4, (i-1.5)*0.3*q[2]*1.6, hash(n*5+i)*0.1, 0));
+  g.scale.setScalar(q[2]); g.position.set(q[0], q[1], -2.6); g.userData.x = q[0]; scene.add(g); clouds.push(g);
+});
+var seaMat = clay('#6d86d8', {rough:0.4});
+scene.add(box(15, 1.5, 0.3, seaMat, 0, 0.75, -2.35));
+var waves = [], waveMat = clay('#ffd9c2', {wob:0.5});
+for (var wv=0; wv<16; wv++){
+  var wx = (hash(wv*3.3)-0.5)*5, wy = 0.25+hash(wv*1.9)*1.1, wl = 0.18+hash(wv*7.1)*0.3;
+  var w = coil(new V3(-wl,0,0), new V3(wl,0,0), 0.022, waveMat); w.position.set(wx, wy, -2.18); w.userData = {x: wx, y: wy}; scene.add(w); waves.push(w);
+}
+(function(){ /* Jaffa on the horizon */
+  var m = clay('#74518f', {wob:0.6}), g = new THREE.Group();
+  [[-0.5,0.22],[-0.25,0.3],[0,0.42],[0.25,0.28],[0.5,0.2],[0.72,0.14]].forEach(function(q){ g.add(box(0.26, q[1], 0.2, m, q[0], q[1]/2, 0)); });
+  g.add(box(0.09, 0.5, 0.09, m, 0.05, 0.6, 0)); g.position.set(-0.75, 1.5, -2.42); scene.add(g);
+  var rm = clay('#3b3350', {wob:0.4});
+  scene.add(coil(new V3(-7,0.62,-2.05), new V3(7,0.62,-2.05), 0.03, rm));
+  for (var i=-9;i<=9;i++) scene.add(coil(new V3(i*0.7,0,-2.05), new V3(i*0.7,0.62,-2.05), 0.028, rm));
+  var cm = [clay(C.coral,{wob:0.4}), clay(C.cream,{wob:0.4})];
+  for (i=-12;i<=12;i++) scene.add(box(0.5, 0.12, 0.2, cm[(i+12)%2], i*0.5, 0.06, -1.5));
+})();
+
+/* ---------- Bauhaus tower and palms ---------- */
+var tower = new THREE.Group();
+(function(){
+  var wm = clay('#fbefe0'), bm = clay('#f3dcc6'), win = clay('#5d6aa8', {rough:0.3, wob:0.4});
+  tower.add(shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.62,4.6,28,10), wm))); tower.children[0].position.y = 2.3;
+  tower.add(box(1.5, 4.6, 0.9, wm, -0.95, 2.3, -0.1));
+  for (var f=0; f<5; f++){
+    var bal = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.8,0.8,0.14,28,1), bm)); bal.position.y = 0.95+f*0.85; tower.add(bal);
+    var rl = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.8,0.8,0.18,28,1,true), bm)); rl.material.side = THREE.DoubleSide; rl.position.y = 1.1+f*0.85; tower.add(rl);
+    tower.add(box(0.2, 0.36, 0.05, win, 0.0, 1.42+f*0.85, 0.62)); tower.add(box(0.2, 0.36, 0.05, win, 0.33, 1.42+f*0.85, 0.53));
+  }
+  tower.position.set(-1.6, 0, -1.3); scene.add(tower);
+})();
+var palms = [];
+[[1.45,-1.2,3.9],[-0.55,-1.85,3.0]].forEach(function(q, n){
+  var g = new THREE.Group(), tm = clay('#8a6248'), fm = clay('#3f9a63', {wob:0.8}), top = new THREE.Group(), fr = [];
+  for (var i=0;i<9;i++){ var s = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.125,q[2]/9+0.03,12,1), tm));
+    s.position.set(Math.sin(i/9*1.2)*0.25*(n?-1:1), (i+0.5)*q[2]/9, 0); g.add(s); }
+  for (i=0;i<8;i++){
+    var a = i/8*Math.PI*2, cx = Math.cos(a), cz = Math.sin(a)*0.5;
+    var cur = new THREE.CatmullRomCurve3([new V3(0,0,0), new V3(cx*0.45,0.22,cz*0.45), new V3(cx*0.95,0.05,cz*0.95), new V3(cx*1.25,-0.4,cz*1.25)]);
+    var fd = shadowed(new THREE.Mesh(new THREE.TubeGeometry(cur, 16, 0.07, 6, false), fm)); fd.scale.y = 1; top.add(fd); fr.push(fd);
+  }
+  top.add(ball(0.16, tm, 1, 0.8, 1, 0, 0, 0));
+  top.position.set(Math.sin(1.2)*0.25*(n?-1:1), q[2], 0); g.add(top); g.position.set(q[0], 0, q[1]); g.userData = {top: top}; scene.add(g); palms.push(g);
 });
 var bulbs = [];
-for (var bi=0; bi<15; bi++){
-  var bm = new THREE.MeshBasicMaterial({color: lin([C.pink, C.must, C.cyan, '#ffffff'][bi%4]).multiplyScalar(3)});
-  var bl = new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8), bm);
-  bl.position.set(-5.2+bi*0.74, 2.95-Math.sin(bi/14*Math.PI)*0.38+((bi%2)*0.06), -3.2); scene.add(bl); bulbs.push(bl);
+for (var bi=0; bi<11; bi++){
+  var bl = new THREE.Mesh(new THREE.SphereGeometry(0.05,10,8), new THREE.MeshBasicMaterial({color: lin([C.pink, C.must, C.cyan, '#ffffff'][bi%4]).multiplyScalar(3)}));
+  bl.position.set(-2.6+bi*0.52, 3.2-Math.sin(bi/10*Math.PI)*0.4, -1.4); scene.add(bl); bulbs.push(bl);
 }
-var clubA = new THREE.DirectionalLight(lin('#ff3fa4'), 0); clubA.position.set(-4.5, 2.6, 1.5); scene.add(clubA);
-var clubB = new THREE.DirectionalLight(lin('#27d7ff'), 0); clubB.position.set(4.5, 2.6, 1.5); scene.add(clubB);
+var clubA = new THREE.DirectionalLight(lin('#ff3fa4'), 0); clubA.position.set(-4.5, 2.6, 2.5); scene.add(clubA);
+var clubB = new THREE.DirectionalLight(lin('#27d7ff'), 0); clubB.position.set(4.5, 2.6, 2.5); scene.add(clubB);
+
+/* ---------- cars ---------- */
+function wheel(x, z){ var g = new THREE.Group(), t = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,0.15,18,1), clay('#1c1a20',{wob:0.4})));
+  var h = new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,0.17,12,1), clay('#b9b6c4',{rough:0.3,wob:0.3})); g.add(t, h); g.rotation.x = Math.PI/2; g.position.set(x,0.2,z); return g; }
+var blackCar = new THREE.Group();
+(function(){ var bm = clay('#17151c', {rough:0.28, wob:0.6}), gl = clay('#2a3552', {rough:0.15, wob:0.4});
+  blackCar.add(ball(0.5, bm, 2.0, 0.44, 0.84, 0, 0.36, 0), ball(0.4, gl, 1.25, 0.56, 0.74, -0.1, 0.64, 0));
+  blackCar.add(wheel(-0.62,0.4), wheel(0.62,0.4), wheel(-0.62,-0.4), wheel(0.62,-0.4));
+  blackCar.position.set(1.5, 0, -0.75); blackCar.rotation.y = 0.35; scene.add(blackCar); })();
+var retro = new THREE.Group(), headlights = [];
+(function(){ var bm = clay('#4b4760', {rough:0.4}), gl = clay('#2a3552', {rough:0.15, wob:0.4});
+  retro.add(box(2.0, 0.34, 0.86, bm, 0, 0.42, 0), box(1.0, 0.3, 0.76, gl, -0.15, 0.74, 0), box(2.02, 0.05, 0.88, clay(C.cyan,{wob:0.3}), 0, 0.36, 0));
+  retro.add(wheel(-0.62,0.42), wheel(0.62,0.42), wheel(-0.62,-0.42), wheel(0.62,-0.42));
+  [-0.28,0.28].forEach(function(z){ var h = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.14,0.22), new THREE.MeshBasicMaterial({color: new THREE.Color(3,2.6,1.4)})); h.position.set(1.02,0.46,z); retro.add(h); headlights.push(h); });
+  scene.add(retro); })();
+
+/* ---------- the SHOTCALLER garage ---------- */
+var garage = new THREE.Group(), door, signMat, boom = [];
+(function(){
+  var wm = clay('#bdb4ae'), dm = clay('#d9d5d2', {rough:0.4});
+  garage.add(box(3.6, 3.0, 0.3, wm, 0, 1.5, 0));
+  var inner = new THREE.Mesh(new THREE.PlaneGeometry(2.1,1.65), new THREE.MeshBasicMaterial({color: lin('#6a35c9')})); inner.position.set(0.25, 0.83, 0.16); garage.add(inner);
+  door = new THREE.Group(); for (var i=0;i<9;i++) door.add(box(2.1, 0.17, 0.06, dm, 0, -0.09-i*0.183, 0)); door.position.set(0.25, 1.66, 0.2); garage.add(door);
+  signMat = clay('#fff1dc', {wob:0.3}); signMat.emissive = lin('#ffd9a8'); signMat.emissiveIntensity = 0.9;
+  garage.add(box(2.3, 0.44, 0.1, signMat, 0.25, 2.12, 0.2));
+  var lm = clay('#e0246e', {wob:0.3}); lm.emissive = lin('#e0246e'); lm.emissiveIntensity = 0.5;
+  var sl = makeWord('SHOTCALLER', 0.22, 0.024, 0.07, ['#e0246e'], 0.25, 2.12, 0.27, garage);
+  sl.forEach(function(L){ L.traverse(function(o){ if (o.isMesh) o.material = lm; }); });
+  var lamp = new THREE.Mesh(new THREE.SphereGeometry(0.09,12,10), new THREE.MeshBasicMaterial({color: new THREE.Color(3.2,2.6,1.6)})); lamp.position.set(-0.6, 2.62, 0.4); garage.add(lamp);
+  garage.add(shadowed(new THREE.Mesh(new THREE.ConeGeometry(0.2,0.18,16,1,true), clay('#2b2833',{wob:0.3})))); garage.children[garage.children.length-1].position.set(-0.6,2.7,0.4);
+  var bb = new THREE.Group(); bb.add(box(0.5, 0.26, 0.14, clay('#8d8aa0',{wob:0.4}), 0, 0, 0));
+  [-0.14,0.14].forEach(function(x){ var s = new THREE.Mesh(new THREE.CylinderGeometry(0.085,0.085,0.04,16), eyeMat); s.rotation.x = Math.PI/2; s.position.set(x,0,0.08); bb.add(s); boom.push(s); });
+  bb.position.set(-0.5, 1.15, 0.24); garage.add(bb);
+  garage.position.set(0.15, 0, -1.25); scene.add(garage);
+})();
 
 /* ---------- title ---------- */
-var title = makeWord('DOWN', 0.92, 0.085, 0.2, [C.must, C.coral, C.cyan, C.cream], 0, 0, 0.15, scene);
+var title = makeWord('DOWN', 0.62, 0.06, 0.13, [C.must, C.coral, C.cyan, C.cream], 0, 0, 0.9, scene);
 
-/* ---------- hero ---------- */
+/* ---------- her ---------- */
+var holo = [clay(C.lilac, {rough:0.26}), clay(C.lilac, {rough:0.26}), clay(C.lilac, {rough:0.26})];
+var she = new THREE.Group(), sheParts = {};
+(function(){
+  var skin = clay('#e3aa86'), top = clay('#e0246e'), hair = clay('#5b3524', {wob:0.9}), white = clay('#fbf7f0');
+  [-1,1].forEach(function(s, i){
+    she.add(ball(0.14, white, 1, 0.6, 1.5, s*0.19, 0.08, 0.05));
+    var leg = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.25,0.66,18,5), holo[i])); leg.position.set(s*0.19, 0.43, 0); she.add(leg);
+    she.add(box(0.1, 0.2, 0.2, holo[2], s*0.43, 0.42, 0));
+  });
+  she.add(ball(0.38, holo[2], 1.08, 0.56, 0.82, 0, 0.8, 0));
+  she.add(ball(0.3, skin, 1.02, 0.5, 0.78, 0, 1.0, 0));
+  she.add(ball(0.34, top, 1.04, 0.72, 0.82, 0, 1.24, 0));
+  var head = new THREE.Group(); head.position.y = 1.72;
+  head.add(ball(0.28, skin, 1, 1, 0.96, 0, 0, 0));
+  var cap = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.305,28,20, Math.PI*0.86, Math.PI*1.28), hair)); hair.side = THREE.DoubleSide; cap.position.set(0,0.03,-0.01); head.add(cap);
+  head.add(ball(0.2, hair, 1.2, 0.5, 1.1, 0, 0.2, 0.0));
+  [-1,1].forEach(function(s){
+    var e = new THREE.Mesh(new THREE.SphereGeometry(0.036,12,10), eyeMat); e.position.set(s*0.1, 0.02, 0.255); head.add(e);
+    var br = new THREE.Mesh(new THREE.CylinderGeometry(0.01,0.01,0.09,6), eyeMat); br.rotation.z = Math.PI/2+s*0.2; br.position.set(s*0.1, 0.1, 0.262); head.add(br);
+    var ch = new THREE.Mesh(new THREE.SphereGeometry(0.05,12,10), clay('#f08a8a',{wob:0.3})); ch.scale.set(1,0.7,0.3); ch.position.set(s*0.17,-0.06,0.215); head.add(ch);
+    var st = new THREE.CatmullRomCurve3([new V3(s*0.2,0.18,0.14), new V3(s*0.3,-0.1,0.12), new V3(s*0.3,-0.45,0.14), new V3(s*0.26,-0.72,0.16)]);
+    head.add(shadowed(new THREE.Mesh(new THREE.TubeGeometry(st, 16, 0.06, 8, false), hair)));
+  });
+  var mo = new THREE.Mesh(new THREE.SphereGeometry(0.04,12,10), clay('#c8345c',{wob:0.2})); mo.scale.set(1.5,0.5,0.4); mo.position.set(0,-0.11,0.262); head.add(mo);
+  var back = new THREE.Group(); back.add(box(0.5, 1.0, 0.14, hair, 0, -0.5, 0)); back.position.set(0, 0.1, -0.24); head.add(back);
+  she.add(head);
+  var arms = [-1,1].map(function(s){
+    var g = new THREE.Group(); g.position.set(s*0.37, 1.36, 0);
+    var a = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.065,0.5,12,3), skin)); a.position.y = -0.25; g.add(a);
+    g.add(ball(0.085, skin, 1,1,1, 0,-0.54,0)); she.add(g); return g;
+  });
+  sheParts = {head: head, back: back, arms: arms};
+  scene.add(she);
+})();
+
+/* ---------- the spender ---------- */
 var R = 0.42, UP = new V3(0,1,0);
-var eyeMat = new THREE.MeshStandardMaterial({color: lin('#1a1215'), roughness: 0.22});
 var heroMat = clay(C.pink);
 var hero = (function(){
-  var c = {root: new THREE.Group(), sq: new THREE.Group(), eyes: [], brows: [], arms: []};
+  var c = {root: new THREE.Group(), sq: new THREE.Group(), eyes: [], brows: [], arms: [], cheeks: [], feet: []};
   c.body = shadowed(new THREE.Mesh(new THREE.SphereGeometry(R,52,36), heroMat));
   c.sq.add(c.body); c.root.add(c.sq); scene.add(c.root);
+  var chm = clay(C.coral, {wob:0.3}), ftm = clay('#e2709f');
   for (var i=0;i<2;i++){
     var e = new THREE.Mesh(new THREE.SphereGeometry(0.052,14,10), eyeMat); c.root.add(e); c.eyes.push(e);
     var br = new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.014,0.13,6), eyeMat); br.geometry.rotateZ(Math.PI/2); c.root.add(br); c.brows.push(br);
     var arm = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.088,1,12,4), heroMat));
     var hand = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.118,16,12), heroMat));
     scene.add(arm); scene.add(hand); c.arms.push({arm: arm, hand: hand});
-  }
-  c.mouth = new THREE.Mesh(new THREE.SphereGeometry(0.05,14,10), eyeMat); c.root.add(c.mouth);
-  c.cheeks = []; c.feet = [];
-  var chm = clay(C.coral, {wob:0.3}), ftm = clay('#e2709f');
-  for (var q=0;q<2;q++){
     var ch = new THREE.Mesh(new THREE.SphereGeometry(0.075,14,10), chm); c.root.add(ch); c.cheeks.push(ch);
     var ft = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.14,16,12), ftm)); c.root.add(ft); c.feet.push(ft);
   }
+  c.mouth = new THREE.Mesh(new THREE.SphereGeometry(0.05,14,10), eyeMat); c.root.add(c.mouth);
   c.belly = new THREE.Mesh(new THREE.SphereGeometry(0.2,20,14), clay('#f9bdd3', {wob:0.3})); c.root.add(c.belly);
   return c;
 })();
@@ -421,16 +543,13 @@ function poseHero(p, f){
     e.scale.set(p.eye, p.eye*(p.blink?0.15:1), p.eye);
     br.position.set(Math.sin(a)*rr*0.97, ey+0.085+0.03*p.eye+(p.browUp||0), Math.cos(a)*rr*0.97+0.02);
     br.rotation.set(0, a, (i?1:-1)*p.brow);
+    var ca = p.turn + (i?0.72:-0.72), ch = c.cheeks[i], ft = c.feet[i];
+    ch.visible = face; ch.position.set(Math.sin(ca)*rx*0.95, hy*1.2, Math.cos(ca)*rx*0.95); ch.rotation.y = ca; ch.scale.set(1,0.7,0.3);
+    ft.visible = p.form > 0.5 && p.sq > 0.5; ft.position.set((i?1:-1)*rx*0.48, 0.07, 0.1+rx*0.6); ft.scale.set(1.1*p.form,0.55*p.form,1.5*p.form);
   }
   c.mouth.visible = face;
-  var my = hy*1.1, mr = rx*0.985;
-  c.mouth.position.set(Math.sin(p.turn)*mr, my, Math.cos(p.turn)*mr);
+  c.mouth.position.set(Math.sin(p.turn)*rx*0.985, hy*1.1, Math.cos(p.turn)*rx*0.985);
   c.mouth.rotation.y = p.turn; c.mouth.scale.set(p.mouth[0]*1.6, p.mouth[1], 0.35);
-  for (var q=0;q<2;q++){
-    var ca = p.turn + (q?0.72:-0.72), ch = c.cheeks[q], ft = c.feet[q];
-    ch.visible = face; ch.position.set(Math.sin(ca)*rx*0.95, hy*1.2, Math.cos(ca)*rx*0.95); ch.rotation.y = ca; ch.scale.set(1,0.7,0.3);
-    ft.visible = p.form > 0.5 && p.sq > 0.5; ft.position.set((q?1:-1)*rx*0.48, 0.07, 0.1+rx*0.6); ft.scale.set(1.1*p.form,0.55*p.form,1.5*p.form);
-  }
   c.belly.visible = face && p.form > 0.8;
   c.belly.position.set(Math.sin(p.turn)*rx*0.93, hy*0.66, Math.cos(p.turn)*rx*0.93); c.belly.rotation.y = p.turn; c.belly.scale.set(rx/0.4, hy/0.62, 0.3);
   c.root.updateMatrixWorld(true);
@@ -446,96 +565,47 @@ function poseHero(p, f){
     A.hand.position.copy(tgt); A.hand.scale.setScalar(Math.max(p.arms,0.001));
   }
 }
-/* the little ball that leaves the puddle and starts the loop again */
 var ball2 = shadowed(new THREE.Mesh(new THREE.SphereGeometry(R,40,28), heroMat)); scene.add(ball2);
 
 /* ---------- props ---------- */
-var card = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.3,0.19,0.03,3,3,1), clay(C.must,{wob:0.5}))); scene.add(card);
+var bills = []; for (var bq=0; bq<10; bq++){ var bm2 = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.26,0.02,0.14,3,1,2), clay(C.green,{wob:0.8}))); scene.add(bm2); bills.push(bm2); }
 var roll = new THREE.Group();
-(function(){ var g = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,0.3,20,4), clay(C.green)));
-  var b = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.158,0.158,0.08,20,1), clay(C.cream,{wob:0.5})));
-  roll.add(g, b); roll.rotation.z = Math.PI/2; scene.add(roll); })();
-
-var cart = new THREE.Group(), cartMouth, cartPile = [];
-(function(){
-  var cm = clay(C.cyan), dk = clay('#2a2530', {wob:0.5});
-  var body = shadowed(new THREE.Mesh(new THREE.BoxGeometry(1.0,0.62,0.72,7,5,5), cm)); body.position.y = 0.62; cart.add(body);
-  var rim = shadowed(new THREE.Mesh(new THREE.BoxGeometry(1.08,0.08,0.8,7,1,5), cm)); rim.position.y = 0.95; cart.add(rim);
-  [[-0.36,0.38],[0.36,0.38],[-0.36,-0.38],[0.36,-0.38]].forEach(function(q){ var w = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.13,0.08,16,1), dk));
-    w.rotation.x = Math.PI/2; w.position.set(q[0],0.13,q[1]); cart.add(w); });
-  var handle = new THREE.CatmullRomCurve3([new V3(0.5,0.9,0.3), new V3(0.78,1.2,0.3), new V3(0.78,1.2,-0.3), new V3(0.5,0.9,-0.3)], false, 'catmullrom', 0.2);
-  cart.add(shadowed(new THREE.Mesh(new THREE.TubeGeometry(handle, 30, 0.035, 8, false), dk)));
-  [-0.2,0.2].forEach(function(x){
-    var w = new THREE.Mesh(new THREE.SphereGeometry(0.095,16,12), clay('#fbf7f0',{wob:0.3})); w.position.set(x,0.74,0.34); w.scale.z = 0.6; cart.add(w);
-    var pu = new THREE.Mesh(new THREE.SphereGeometry(0.045,12,10), eyeMat); pu.position.set(x,0.735,0.4); cart.add(pu);
-    for (var l=0;l<3;l++){ var a = (l-1)*0.5 + (x<0?-0.25:0.25);
-      cart.add(coil(new V3(x+Math.sin(a)*0.09,0.74+Math.cos(a)*0.09,0.37), new V3(x+Math.sin(a)*0.17,0.74+Math.cos(a)*0.17,0.37), 0.012, dk)); }
-  });
-  cartMouth = new THREE.Mesh(new THREE.SphereGeometry(0.1,16,12), eyeMat); cartMouth.position.set(0,0.5,0.35); cart.add(cartMouth);
-  for (var i=0;i<8;i++){ var it = shadowed(new THREE.Mesh(i%2 ? new THREE.SphereGeometry(0.13,14,10) : new THREE.BoxGeometry(0.2,0.2,0.2,3,3,3), clay(PROD[i%PROD.length],{wob:0.7})));
-    it.userData.slot = new V3(-0.32+(i%4)*0.21, 1.02+Math.floor(i/4)*0.15, (i%2?0.12:-0.12)); scene.add(it); cartPile.push(it); }
-  scene.add(cart);
-})();
-
+(function(){ roll.add(shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,0.3,20,4), clay(C.green))), shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.158,0.158,0.08,20,1), clay(C.cream,{wob:0.5}))));
+  roll.rotation.z = Math.PI/2; scene.add(roll); })();
 var crown = new THREE.Group();
-(function(){ var gm = clay(C.must, {rough:0.45, wob:0.5});
-  var ring = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.22,0.13,24,2,true), gm)); gm.side = THREE.DoubleSide; ring.position.y = 0.065; crown.add(ring);
+(function(){ var gm = clay(C.must, {rough:0.45, wob:0.5}); gm.side = THREE.DoubleSide;
+  var ring = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.22,0.13,24,2,true), gm)); ring.position.y = 0.065; crown.add(ring);
   for (var i=0;i<6;i++){ var a = i/6*Math.PI*2, sp = shadowed(new THREE.Mesh(new THREE.ConeGeometry(0.06,0.2,10,2), gm));
     sp.position.set(Math.cos(a)*0.2,0.22,Math.sin(a)*0.2); crown.add(sp);
-    var j = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.035,10,8), clay(i%2?C.coral:C.cyan,{wob:0.4}))); j.position.set(Math.cos(a)*0.2,0.33,Math.sin(a)*0.2); crown.add(j); }
+    crown.add(ball(0.035, clay(i%2?C.coral:C.cyan,{wob:0.4}), 1,1,1, Math.cos(a)*0.2,0.33,Math.sin(a)*0.2)); }
   scene.add(crown); })();
-
 var disco = new THREE.Group();
 (function(){ var m = new THREE.MeshStandardMaterial({color: lin('#f4f1ff'), roughness: 0.25, metalness: 0.1, flatShading: true, emissive: lin('#3a3460')});
-  disco.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 2), m));
-  var w = new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,4,6), eyeMat); w.position.y = 2.4; disco.add(w); scene.add(disco); })();
-
+  disco.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 2), m));
+  var w = new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,5,6), eyeMat); w.position.y = 2.8; disco.add(w); scene.add(disco); })();
 var bottles = [];
 for (var bo=0; bo<3; bo++){ (function(i){
   var g = new THREE.Group(), gm = clay([C.green, C.lilac, C.coral][i]);
   var b = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.115,0.125,0.44,18,4), gm)); b.position.y = 0.22; g.add(b);
-  var sh = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.115,16,10), gm)); sh.position.y = 0.44; sh.scale.y = 0.7; g.add(sh);
+  g.add(ball(0.115, gm, 1, 0.7, 1, 0, 0.44, 0));
   var n = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.042,0.05,0.2,12,2), gm)); n.position.y = 0.6; g.add(n);
   var lab = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.128,0.128,0.16,18,1), clay(C.cream,{wob:0.4}))); lab.position.y = 0.22; g.add(lab);
-  g.position.set(-2.0+i*0.38, 0, 0.5-i*0.12); g.userData.base = g.position.clone(); scene.add(g);
+  g.position.set(-1.15+i*0.36, 0, 1.25-i*0.1); g.userData.base = g.position.clone(); scene.add(g);
   var cork = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.04,0.09,10,1), clay('#c99a66',{wob:0.5}))); scene.add(cork);
-  var foam = []; for (var k=0;k<5;k++){ var fm = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.06,10,8), clay('#fbf7f0',{wob:0.6}))); scene.add(fm); foam.push(fm); }
+  var foam = []; for (var k=0;k<5;k++){ var fm = ball(0.06, clay('#fbf7f0',{wob:0.6}), 1,1,1, 0,0,0); scene.add(fm); foam.push(fm); }
   bottles.push({g: g, cork: cork, foam: foam});
 })(bo); }
-
-var models = [];
-[[1.3,-0.15],[2.0,-0.4]].forEach(function(q){
-  var g = new THREE.Group(), wm = clay('#f3eee6');
-  var base = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.22,0.06,18,1), wm)); base.position.y = 0.03; g.add(base);
-  var pole = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.55,8,1), wm)); pole.position.y = 0.3; g.add(pole);
-  var torso = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.3,24,18), wm)); torso.scale.set(1.3,1.35,0.95); torso.position.y = 0.92; g.add(torso);
-  var head = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.14,18,14), wm)); head.scale.y = 1.2; head.position.y = 1.5; g.add(head);
-  g.position.set(q[0],0,q[1]); scene.add(g); models.push(g);
-});
-
-var signs = [];
-[-1.75, 0, 1.75].forEach(function(x, i){
-  var g = new THREE.Group(), cm = clay(C.coral, {wob:0.4});
-  g.add(shadowed(new THREE.Mesh(new THREE.BoxGeometry(1.2,0.6,0.07,8,5,1), clay(C.cream))));
-  var w = new THREE.Mesh(new THREE.CylinderGeometry(0.01,0.01,4,6), eyeMat); w.position.y = 2.3; g.add(w);
-  g.add(coil(new V3(-0.47,0,0.05), new V3(-0.35,0,0.05), 0.026, cm));
-  var d1 = seg7(0.34,0.17,0.026,cm), d2 = seg7(0.34,0.17,0.026,cm); d1.position.set(-0.17,0,0.05); d2.position.set(0.08,0,0.05); g.add(d1, d2);
-  var t1 = shadowed(new THREE.Mesh(new THREE.TorusGeometry(0.045,0.018,8,14), cm)); t1.position.set(0.3,0.1,0.05);
-  var t2 = t1.clone(); t2.position.set(0.46,-0.1,0.05); g.add(t1, t2, coil(new V3(0.3,-0.16,0.05), new V3(0.46,0.16,0.05), 0.018, cm));
-  g.userData = {x: x, d1: d1, d2: d2, i: i}; scene.add(g); signs.push(g);
-});
-
 var dancers = [];
-[[-2.7,C.green],[2.75,'#ff9a3c']].forEach(function(q){
-  var g = new THREE.Group(), m = clay(q[1]);
-  var b = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.5,36,26), m)); b.position.y = 0.5; g.add(b); g.userData.body = b;
+[[-1.3,1.0,C.green],[1.4,0.0,'#ff9a3c']].forEach(function(q){
+  var g = new THREE.Group(), m = clay(q[2]);
+  var b = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.42,36,26), m)); b.position.y = 0.42; g.add(b); g.userData.body = b;
   [-1,1].forEach(function(s){
-    var e = new THREE.Mesh(new THREE.SphereGeometry(0.05,12,10), eyeMat); e.position.set(s*0.15,0.74,0.47); g.add(e);
-    var ch = new THREE.Mesh(new THREE.SphereGeometry(0.07,12,10), clay(C.coral,{wob:0.3})); ch.position.set(s*0.32,0.6,0.43); ch.scale.set(1,0.7,0.3); g.add(ch);
-    var ft = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.13,12,10), m)); ft.position.set(s*0.24,0.06,0.4); ft.scale.set(1.1,0.55,1.5); g.add(ft);
+    var e = new THREE.Mesh(new THREE.SphereGeometry(0.045,12,10), eyeMat); e.position.set(s*0.13,0.62,0.4); g.add(e);
+    var ch = new THREE.Mesh(new THREE.SphereGeometry(0.06,12,10), clay(C.coral,{wob:0.3})); ch.position.set(s*0.27,0.5,0.37); ch.scale.set(1,0.7,0.3); g.add(ch);
+    g.add(ball(0.11, m, 1.1,0.55,1.5, s*0.2,0.05,0.34));
   });
-  var mo = new THREE.Mesh(new THREE.SphereGeometry(0.05,12,10), eyeMat); mo.position.set(0,0.56,0.53); mo.scale.set(1.8,0.6,0.3); g.add(mo);
-  g.position.set(q[0],0,-0.9); scene.add(g); dancers.push(g);
+  var mo = new THREE.Mesh(new THREE.SphereGeometry(0.045,12,10), eyeMat); mo.position.set(0,0.47,0.45); mo.scale.set(1.8,0.6,0.3); g.add(mo);
+  g.position.set(q[0],0,q[1]); scene.add(g); dancers.push(g);
 });
 
 /* the bank balance, hung in front of the lens */
@@ -546,155 +616,186 @@ var counter = new THREE.Group(), cDigits = [];
   var S = makeLetter('S', 0.22, C.green, 0.022); S.position.set(-0.4,0,0); counter.add(S);
   counter.add(coil(new V3(-0.4,-0.15,0.01), new V3(-0.4,0.15,0.01), 0.014, clay(C.green,{wob:0.3})));
   for (var i=0;i<4;i++){ var d = seg7(0.22,0.11,0.02,dm); d.position.set(-0.2+i*0.2,0,0); counter.add(d); cDigits.push(d); }
-  counter.traverse(function(o){ o.castShadow = false; o.receiveShadow = false; }); camera.add(counter); })();
+  counter.traverse(function(o){ o.castShadow = false; o.receiveShadow = false; if (o.isMesh){ o.material.depthTest = false; o.renderOrder = o === plate ? 998 : 999; } }); camera.add(counter); })();
 function balance(b){
   var v = 2500, i;
-  for (i=0;i<8;i++) if (b >= 10.4+i*0.7) v -= 150;
+  for (i=0;i<8;i++) if (b >= 8.9+i*0.75) v -= 150;
   if (b >= 19.7) v = 480; if (b >= 24.6) v = 360;
   for (i=0;i<3;i++) if (b >= 33+i) v -= 40;
   if (b >= 38) v = 120;
   if (b >= 48) v = Math.max(0, 120-10*(Math.floor(b-48)+1));
-  if (b < 4) v = 0;
+  if (b < 4) v = 2500;
   return v;
 }
-var CHANGE = [10.4,11.1,11.8,12.5,13.2,13.9,14.6,15.3,19.7,24.6,33,34,35,38,4];
+var CHANGE = [8.9,9.65,10.4,11.15,11.9,12.65,13.4,14.15,19.7,24.6,33,34,35,38];
 
 /* ---------- the story, in beats ---------- */
+var HX = 0.92, HZ = 0.5, SX = -0.32, HS = 0.78;
 function heroPose(b){
-  var p = {x:0, y:0, z:0.15, hL:null, hR:null, scale:1, form:1, sq:1, eye:1, arms:1, turn:0, lean:0, nod:0, brow:0, mouth:[1,0.25], roll:0};
+  var p = {x:HX, y:0, z:HZ, hL:null, hR:null, scale:HS, form:1, sq:1, eye:1, arms:1, turn:0, lean:0, nod:0, brow:0, mouth:[1,0.25], roll:0};
   var bp = pulse(b), fr = b-Math.floor(b), t;
-  if (b < 4){ p.form = 0; p.sq = 0.13; p.eye = 0; p.arms = 0; p.scale = 1-span(b,0.4,2.2); return p; }
-  if (b < 7){ t = span(b,4,6.8); p.x = -6.4+4.1*(1-(1-t)*(1-t)); p.form = 0; p.eye = 0; p.arms = 0; p.roll = -p.x/R; return p; }
-  p.x = tr(b,[[8,-2.3],[9.6,-0.5],[36,-0.5],[37,0.5],[39,0.5],[40,0]]);
-  p.y = hop(b,8,9.6,2,0.3)+hop(b,36,37,1,0.3)+hop(b,39,40,1,0.22);
+  if (b < 4){ p.scale = 0; return p; }
+  if (b < 7){ t = span(b,4,6.8); p.x = 3.4-(3.4-HX)*(1-(1-t)*(1-t)); p.form = 0; p.eye = 0; p.arms = 0; p.roll = -p.x/R; return p; }
   p.form = tr(b,[[7.1,0],[7.8,1]]); p.sq = tr(b,[[7,0.6],[7.3,0.7],[7.7,1.15],[8,1]],true);
-  p.eye = tr(b,[[7.6,0],[7.75,1.4],[8,1]],true); p.arms = tr(b,[[7.8,0],[8.1,1]]); p.roll = -p.x/R;
-  var x = p.x, z = p.z, T = TOP0;
+  p.eye = tr(b,[[7.6,0],[7.75,1.4],[8,1]],true); p.arms = tr(b,[[7.8,0],[8.1,1]]);
+  var x = p.x, z = p.z, T = TOP0*HS;
   if (at(b,8,16)){
-    p.turn = 0.55; p.mouth = [1.3,0.55]; p.brow = -0.15; p.eye = 1.1+0.15*bp; p.sq *= 1+0.05*bp;
-    if (b >= 9.6){ var sw = Math.min((b*1.43%1)*2.2,1); p.hR = new V3(x+0.5, 1.2-0.5*sw, z+0.28); }
+    var hb = Math.floor(b*2)%2; p.turn = -0.35; p.mouth = [1.3,0.6]; p.brow = -0.15; p.eye = 1.1+0.15*bp; p.sq *= 1+0.05*bp; p.y = 0.08*bp;
+    p.hL = new V3(x-0.42, hb?1.1:0.55, z+0.1); p.hR = new V3(x+0.42, hb?0.55:1.1, z+0.1);
   } else if (at(b,16,19.5)){
-    p.turn = 0.5; p.mouth = [1.4,0.5]; p.brow = 0.25; p.hR = new V3(x+0.48, 1.32+0.06*bp, z+0.22); p.sq *= 1+0.04*bp;
+    p.turn = -0.5; p.mouth = [1.4,0.5]; p.brow = 0.25; p.hL = new V3(x-0.42, 1.08+0.06*bp, z+0.2); p.sq *= 1+0.04*bp;
   } else if (at(b,19.5,22)){
-    p.turn = 0.65; p.eye = 1.45; p.mouth = [0.6,1.2]; p.brow = -0.5; p.sq *= 1.06-0.05*bp;
-    p.hL = new V3(x-0.3, T+0.02, z+0.12); p.hR = new V3(x+0.3, T+0.02, z+0.12);
+    p.turn = -0.6; p.eye = 1.45; p.mouth = [0.6,1.2]; p.brow = -0.5; p.sq *= 1.06-0.05*bp;
+    p.hL = new V3(x-0.32, T+0.02, z+0.12); p.hR = new V3(x+0.32, T+0.02, z+0.12);
   } else if (at(b,22,24)){
     p.brow = -0.6; p.mouth = [0.8,0.8]; p.nod = 0.15; p.eye = 1.2;
-    p.hR = new V3(x+0.12, 1.02, z+1.2+0.25*bp); p.hL = new V3(x-0.42, 0.85, z+0.5);
+    p.hR = new V3(x+0.12, 0.9, z+1.1+0.25*bp); p.hL = new V3(x-0.45, 0.8, z+0.5);
   } else if (at(b,24,32)){
-    var ev = Math.floor(b)%2; p.lean = 0.2*Math.sin(b*Math.PI); p.y += Math.abs(Math.sin(b*Math.PI))*0.13;
-    p.brow = 0.38; p.mouth = [1.3,0.3]; p.sq *= 1+0.05*bp; p.turn = 0.15*Math.sin(b*Math.PI/2);
-    p.hL = new V3(x-0.52, ev?1.5:0.85, z+0.12); p.hR = new V3(x+0.52, ev?0.85:1.5, z+0.12);
+    var bow = Math.abs(Math.sin(b*Math.PI/2)); p.turn = -0.8; p.lean = 0.5*bow; p.sq *= 1-0.12*bow; p.brow = -0.3; p.mouth = [1.1,0.4];
+    p.hL = new V3(x-0.55-0.2*bow, 0.95-0.5*bow, z+0.15); p.hR = new V3(x-0.2-0.3*bow, 1.0-0.5*bow, z+0.3);
   } else if (at(b,32,36)){
-    p.turn = -0.75; p.mouth = [1.3,0.6]; p.brow = -0.1;
-    if (b >= 33 && fr < 0.55){ p.y += Math.sin(fr/0.55*Math.PI)*0.2; p.hL = new V3(x-0.42, T+0.25+p.y, z); p.hR = new V3(x+0.42, T+0.25+p.y, z); p.mouth = [1.1,1]; }
-  } else if (at(b,36,38)){
-    p.turn = 0.75; p.mouth = [1.2,0.4];
-    if (b >= 37) p.hR = new V3(1.02, 1.02+0.14*Math.abs(Math.sin(b*2*Math.PI)), 0.1);
-  } else if (at(b,38,39)){
-    p.eye = 1.55; p.mouth = [0.35,0.4]; p.brow = -0.35; p.sq = 0.94; p.turn = 0;
-  } else if (at(b,39,40)){
-    p.turn = -0.8; p.mouth = [0.35,0.55]; p.browUp = 0.02;
-  } else if (at(b,40,48)){
-    p.turn = 0.6*Math.sin((b-40)*Math.PI/2); p.eye = 1.5+0.25*bp; p.mouth = [0.5,0.7]; p.brow = -0.2; p.lean = 0.05*Math.sin(b*Math.PI);
+    p.turn = -0.6; p.mouth = [1.3,0.6]; p.brow = -0.1;
+    if (b >= 33 && fr < 0.55){ p.y += Math.sin(fr/0.55*Math.PI)*0.2; p.hL = new V3(x-0.45, T+0.25+p.y, z); p.hR = new V3(x+0.45, T+0.25+p.y, z); p.mouth = [1.1,1]; }
+  } else if (at(b,36,48)){
+    p.turn = -0.55+0.3*Math.sin(b*Math.PI); p.eye = 1.5+0.25*bp; p.mouth = [0.5,0.7]; p.brow = -0.2; p.lean = 0.1*Math.sin(b*Math.PI);
   } else if (at(b,48,60)){
     var k = Math.floor(b-48), e = span(fr,0,0.3); e = e*e*(3-2*e);
     p.y = -0.085*(k+e); p.sq *= 1-0.1*Math.exp(-fr*6); p.brow = -0.2-0.04*k; p.mouth = [0.6,0.35+0.06*k]; p.eye = 1.15;
     p.lean = 0.06*Math.sin(k*2.1);
-    p.hL = new V3(x-0.4, Math.max(p.y+T+0.32, 0.28), z+0.1); p.hR = new V3(x+0.4, Math.max(p.y+T+0.32, 0.28), z+0.1);
+    p.hL = new V3(x-0.42, Math.max(p.y+T+0.32, 0.28), z+0.1); p.hR = new V3(x+0.42, Math.max(p.y+T+0.32, 0.28), z+0.1);
   } else if (b >= 60){
     p.y = tr(b,[[60,-1.02],[61,0]]); p.form = tr(b,[[60,1],[60.8,0]]); p.sq = tr(b,[[60,1],[61.2,0.13]]);
-    p.eye = tr(b,[[60,1],[60.5,0]]); p.arms = tr(b,[[60,1],[60.4,0]]); p.roll = 0;
+    p.eye = tr(b,[[60,1],[60.5,0]]); p.arms = tr(b,[[60,1],[60.4,0]]);
   }
   return p;
 }
+function shePose(b){
+  var s = {rot: Math.PI, sway: 0, bob: 0, aL: 0.12, aR: 0.12, aLx: 0, aRx: 0, hair: 0, x: SX, head: 0}, bp = pulse(b), ev = Math.floor(b)%2;
+  s.bob = bp; s.sway = 0.07*Math.sin(b*Math.PI);
+  if (at(b,8,16)){ s.rot = tr(b,[[13.5,Math.PI],[14.5,2.25],[15.6,2.25],[16,Math.PI]]); s.hair = 0.12*Math.sin(b*Math.PI); }
+  else if (at(b,16,24)){ s.rot = 0.5; s.aL = tr(b,[[18.5,0.12],[19.5,1.7],[20,2.6]]); if (b >= 20) s.aL = 2.5+0.25*bp; s.aR = 0.5; }
+  else if (at(b,24,32)){ s.rot = -Math.PI/2+0.25; s.aR = 0.55; s.aL = 0.2; s.head = 0.1*bp; }
+  else if (at(b,32,36)){ s.rot = 0.08; s.aR = 0.5; s.hair = at(b,35.3,36) ? 0.6*Math.sin((b-35.3)/0.7*Math.PI) : 0; }
+  else if (at(b,36,40)){ var e = span(b,36,40); e = e*e*(3-2*e); s.rot = e*Math.PI*4; s.aL = s.aR = 1.2+0.4*Math.sin(e*Math.PI); s.hair = 0.35; s.sway = 0; }
+  else if (at(b,40,48)){ s.rot = (b-40)/8*Math.PI*2; s.aL = 0.5+0.4*bp; s.aR = 0.5+0.4*bp; s.hair = 0.2; }
+  else if (at(b,48,60)){ s.rot = 0.15*Math.sin(b*Math.PI/2); s.aL = ev ? 2.7 : 0.5; s.aR = ev ? 0.5 : 2.7; s.sway = 0.12*(ev?1:-1); }
+  else if (b >= 60){ s.rot = tr(b,[[60,0],[61,Math.PI]]); }
+  return s;
+}
 
+var WIDE = [[0,2.3,9.2],[0,2.0,0]];
 var SHOTS = [
-  [0,  [0,1.45,6.3],   [0,1.15,0]],
-  [7,  [-1.9,1.0,3.3], [-2.3,0.7,0]],
-  [8,  [0,1.45,6.3],   [0,1.15,0]],
-  [12, [1.1,1.15,4.0], [0.6,0.9,0]],
-  [16, [0,1.45,6.3],   [0,1.15,0]],
-  [18, [0.3,1.1,4.1],  [0.2,0.9,0]],
-  [22, [-0.5,1.05,2.9],[-0.5,0.95,0.2]],
-  [24, [-1.5,0.3,3.3], [-0.35,1.2,0]],
-  [28, [0,1.45,6.3],   [0,1.15,0]],
-  [32, [-1.9,1.0,4.0], [-1.2,0.85,0.2]],
-  [36, [1.3,1.15,4.3], [1.1,0.9,0]],
-  [38, [0.5,1.05,2.7], [0.5,0.95,0.2]],
-  [39, [0,1.45,6.3],   [0,1.15,0]],
-  [44, [0,1.05,2.9],   [0,0.98,0.2]],
-  [48, [0,1.45,6.3],   [0,1.15,0]],
-  [52, [0,1.0,3.0],    [0,0.8,0.2]],
-  [56, [0,4.4,3.6],    [0,0.25,0]],
-  [60, [0,1.45,6.3],   [0,1.15,0]]
+  [0,  [0,3.2,9.4],     [0,2.1,0]],
+  [7,  [HX+0.2,0.9,4.2],[HX,0.6,HZ], 1],
+  [8,  [-0.15,1.55,5.6],[-0.15,1.45,-1]],
+  [12, [0.2,1.3,6.4],   [0.15,1.25,0]],
+  [16, [0.15,1.75,7.6], [0.15,1.5,-0.5]],
+  [22, [HX,0.85,3.9],   [HX,0.72,HZ], 1],
+  [24, [-0.2,1.45,5.0], [-0.25,1.35,0]],
+  [28, [0.5,0.45,4.8],  [0,1.5,0]],
+  [32, [0,1.5,7.0],     [0,1.25,0]],
+  [36, [-0.1,1.35,5.4], [-0.2,1.15,0]],
+  [40, WIDE[0],         WIDE[1]],
+  [44, [-0.25,1.55,4.2],[-0.3,1.5,0]],
+  [48, WIDE[0],         WIDE[1]],
+  [52, [HX,0.9,4.0],    [HX,0.65,HZ], 1],
+  [56, [0,5.6,5.4],     [0,0.7,0]],
+  [60, WIDE[0],         WIDE[1]]
 ];
 function shotAt(b){
   var i = 0; while (i < SHOTS.length-1 && SHOTS[i+1][0] <= b) i++;
   var s = SHOTS[i], end = i < SHOTS.length-1 ? SHOTS[i+1][0] : BEATS, k = (b-s[0])/(end-s[0])*0.05;
   var pos = new V3(s[1][0],s[1][1],s[1][2]), look = new V3(s[2][0],s[2][1],s[2][2]);
   pos.lerp(look, k);
-  return {pos: pos, look: look};
+  return {pos: pos, look: look, hero: s[3] === 1 || b < 8};
 }
+var NIGHT = new THREE.Color(0.16,0.13,0.4), WHITE = new THREE.Color(1,1,1), tmpC = new THREE.Color();
+var RIM_DAY = lin('#ff7a4a'), RIM_NIGHT = lin('#7a5cff');
 
 function update(b, f){
   SEED.value.set(hash(f)*40, hash(f+.31)*40, hash(f+.73)*40);
-  var P = heroPose(b), bp = pulse(b), i;
+  var P = heroPose(b), S = shePose(b), bp = pulse(b), ev = Math.floor(b)%2, i;
+  var inGarage = at(b,16,24);
 
-  /* title: four letters drop, bounce on the beat, then sink */
+  /* sky, sun, light */
+  var night = tr(b,[[42,0],[56,1],[63.2,1],[64,0]]), club = tr(b,[[23.9,0],[24,1],[59,1],[60,0.4],[64,0]],true);
+  var sunY = 2.2;
+  if (b >= 40) sunY -= 0.07*Math.min(Math.floor((b-40)/2)+1, 4);
+  if (b >= 48) sunY -= 0.105*Math.min(Math.floor(b-48)+1, 12);
+  if (b >= 63.2) sunY = lerp(sunY, 2.2, span(b,63.2,64));
+  sun.position.set(0.72, sunY-(b>=48?0.04*Math.exp(-(b-Math.floor(b))*6):0), -2.6); sun.scale.setScalar(1+0.03*bp);
+  skyMat.color.copy(WHITE).lerp(NIGHT, night);
+  sunMat.color.setRGB(2.6-night*0.6, 1.6-night*0.8, 0.7-night*0.2);
+  key.intensity = (0.9-0.3*club)*(1-night*0.7); hemi.intensity = 0.55-0.38*night; fill.intensity = 0.25*(1-night);
+  rim.intensity = 0.9-0.3*night; rim.color.copy(RIM_DAY).lerp(RIM_NIGHT, night);
+  clubA.intensity = club*(0.3+0.8*bp*(ev?1:0.25)); clubB.intensity = club*(0.3+0.8*bp*(ev?0.25:1));
+  bulbs.forEach(function(m, n){ m.visible = (club > 0.3 || night > 0.3) && hash(n*3.1+Math.floor(b*2)) > 0.2; });
+  clouds.forEach(function(g, n){ g.position.x = g.userData.x + ((f*0.004*(n%2?1:-1))%0.6); g.position.y += 0; });
+  waves.forEach(function(w, n){ w.visible = hash(n*2.7+Math.floor(f/2)) > 0.3; w.position.x = w.userData.x + jit(Math.floor(f/2),n,1)*0.12; });
+  palms.forEach(function(g, n){ g.userData.top.rotation.z = 0.1*Math.sin(b*Math.PI+n)+jit(f,45+n,1)*0.03; g.userData.top.scale.y = 1+0.08*bp-(b>=48?0.02*Math.min(b-48,12):0);
+    g.visible = !(inGarage && n === 1); });
+  tower.visible = !inGarage; blackCar.visible = !inGarage && b >= 8;
+  blackCar.position.y = 0.03*bp - (b>=48 ? 0.012*Math.min(Math.floor(b-48)+1,12) : 0); blackCar.rotation.z = jit(f,46,1)*0.01;
+
+  /* the garage and the retro car */
+  garage.visible = inGarage;
+  door.scale.y = Math.max(1-span(b,16.3,18.3)*0.86, 0.14);
+  signMat.emissiveIntensity = inGarage ? (hash(Math.floor(b*4)) > 0.2 ? 0.9+0.5*bp : 0.25) : 0;
+  boom.forEach(function(s){ s.scale.set(1+0.25*bp, 1, 1+0.25*bp); });
+  if (b < 8){ var d = span(b,1.5,7.6); retro.visible = d > 0 && d < 1; retro.position.set(-3.2+6.4*d, 0.03*bp, -0.95); retro.rotation.y = 0; }
+  else { retro.visible = inGarage; retro.position.set(0.55, 0.03*bp, -0.55); retro.rotation.y = -1.05; }
+  headlights.forEach(function(h){ h.visible = b < 8 || ev === 0 || bp > 0.4; });
+
+  /* title */
   title.forEach(function(L, n){
     var base = L.userData.base, land = span(b, n*0.5, n*0.5+0.45), sink = span(b, 5.4+n*0.4, 6.1+n*0.4);
     L.visible = b >= n*0.5 && sink < 1;
     if (!L.visible) return;
-    var y = lerp(4.6, 0.56, land*land) - sink*sink*1.7;
+    var y = lerp(6.2, 0.4, land*land) - sink*sink*1.4;
     var sqz = land >= 1 ? 1-0.16*Math.exp(-(b-(n*0.5+0.45))*4)-0.07*bp : 1.1;
-    L.position.set(base.x+jit(f,30+n,1)*0.012, y-(1-sqz)*0.46, base.z);
+    L.position.set(base.x+jit(f,30+n,1)*0.012, y-(1-sqz)*0.31, base.z);
     L.scale.set(1/Math.sqrt(sqz), sqz, 1); L.rotation.z = jit(f,30+n,2)*0.06;
   });
 
-  /* lights */
-  var club = tr(b,[[23.9,0],[24,1],[50,1],[51,0]],true), dim = tr(b,[[48,0],[60,0.55],[62,0.55],[64,0]]);
-  if (b < 1) dim = 0;
-  key.intensity = (0.95-0.5*club)*(1-dim); hemi.intensity = (0.5-0.22*club)*(1-dim*0.8); fill.intensity = 0.28*(1-club)*(1-dim);
-  var ev = Math.floor(b)%2;
-  clubA.intensity = club*(0.45+0.9*bp*(ev?1:0.25)); clubB.intensity = club*(0.45+0.9*bp*(ev?0.25:1));
-  bulbs.forEach(function(m, n){ m.visible = hash(n*3.1+Math.floor(b*2)) > 0.18; });
-
-  /* cart, flying shopping, the bank roll */
-  var cx = tr(b,[[8,6.5],[10,1.25],[18.2,1.25],[19.3,0.45],[20.2,0.45],[21.2,1.25],[30,1.25],[32,6.5]]);
-  cart.visible = cx < 6.3;
-  cart.position.set(cx+jit(f,40,1)*0.01, (b>10?0.06*bp:0), 0);
-  cart.rotation.z = jit(f,40,2)*0.02 + (at(b,18.2,19.3)?0.08:0); cart.rotation.y = jit(f,40,3)*0.03;
-  var mo = at(b,18.3,20) ? tr(b,[[18.3,0.15],[19.2,1.6],[19.7,1.6],[19.95,0.1]]) : at(b,20,22.5) ? 0.15+0.5*Math.abs(Math.sin(b*2*Math.PI)) : 0.18+0.1*bp;
-  cartMouth.scale.set(1.5, mo, 0.4);
-  cartPile.forEach(function(it, n){
-    var t0 = 9.8+n*0.7, t = span(b, t0, t0+0.6), slot = it.userData.slot;
-    it.visible = b >= t0 && cart.visible;
-    if (!it.visible) return;
-    var from = new V3(P.x+0.5, 0.9, 0.4), to = new V3(cart.position.x+slot.x, cart.position.y+slot.y, slot.z);
-    var pos = mix3(from, to, t); pos.y += Math.sin(t*Math.PI)*0.9;
-    it.position.copy(pos); it.rotation.set(t*5+n, t*3, n); it.scale.setScalar(t<1?0.8:1);
-  });
-  card.visible = at(b,9.6,16);
-  if (card.visible && P.hR){ card.position.set(P.hR.x+0.05, P.hR.y+0.1, P.hR.z+0.05); card.rotation.set(0.2, 0.3, 0.5+jit(f,41,1)*0.2); }
-  roll.visible = at(b,16,19.9);
-  if (roll.visible){
-    var hold = new V3(P.x+0.5, 1.5+0.06*bp, 0.4), mouth = new V3(cart.position.x, 0.5, 0.4), e = span(b,19.3,19.8);
-    roll.position.copy(mix3(hold, mouth, e)); roll.scale.setScalar(pop(b*4,64)*(1-e*0.75)); roll.rotation.set(jit(f,42,1)*0.1, 0.4, Math.PI/2+jit(f,42,2)*0.1+e*2);
+  /* her */
+  she.visible = b >= 8;
+  if (she.visible){
+    var sb = 1-0.05*S.bob;
+    she.position.set(S.x+jit(f,2,1)*0.008, 0, 0); she.rotation.set(0, S.rot+jit(f,2,2)*0.03, S.sway+jit(f,2,3)*0.015);
+    she.scale.set(1/Math.sqrt(sb), sb, 1/Math.sqrt(sb));
+    sheParts.head.rotation.set(S.head, 0, -S.sway*0.6+jit(f,2,4)*0.03);
+    sheParts.back.rotation.set(0.06+Math.abs(S.hair)*0.5, 0, S.hair+jit(f,2,5)*0.04);
+    sheParts.arms[0].rotation.set(S.aLx, 0, -S.aL+jit(f,2,6)*0.05); sheParts.arms[1].rotation.set(S.aRx, 0, S.aR+jit(f,2,7)*0.05);
+    holo.forEach(function(m, n){ tmpC.setHSL((0.68+0.4*hash(f*1.7+n*5.3))%1, 0.8, 0.74); m.color.copy(tmpC).convertSRGBToLinear(); });
   }
 
-  /* crown and disco ball */
-  crown.visible = b >= 24 || b < 2.2;
+  /* money */
+  bills.forEach(function(m, n){
+    var t0 = 8.4+n*0.75, t = span(b, t0, t0+2.2);
+    m.visible = b >= t0 && t < 1 && b < 16.6;
+    if (!m.visible) return;
+    var side = n%2 ? 1 : -1;
+    m.position.set(P.x+side*0.5+side*0.5*t+Math.sin(t*9+n)*0.15, 1.3+2.6*t-3.6*t*t+0.02, P.z+0.1-t*0.5);
+    m.rotation.set(t*7+n, t*5, t*9+n*2);
+  });
+  roll.visible = at(b,16,24);
+  if (roll.visible){
+    she.updateMatrixWorld(true);
+    var hold = new V3(P.x-0.42, 1.26+0.06*bp, P.z+0.2), hers = new V3(0,-0.75,0); sheParts.arms[0].localToWorld(hers);
+    var e2 = span(b,19.3,20), toss = b >= 20 ? Math.abs(Math.sin((b-20)*Math.PI))*0.5 : 0;
+    roll.position.copy(mix3(hold, hers, e2)); roll.position.y += toss;
+    roll.scale.setScalar(pop(b*4,64)); roll.rotation.set(jit(f,42,1)*0.1+toss*6, 0.4, Math.PI/2+jit(f,42,2)*0.1);
+  }
+
+  /* crown on her, disco ball */
+  crown.visible = b >= 24;
   if (crown.visible){
-    var top = P.y+TOP0*P.sq, kx = 0, tilt = P.lean, cs = 1, cy;
-    if (b < 2.2){ cy = 0.1; tilt = 0.3; cs = Math.max(1-span(b,0.4,2.2),0.001); }
-    else if (b >= 60){ cy = tr(b,[[60,0.1],[61,0.12]]); tilt = 0.3; }
-    else { cy = top-0.02+(1-span(b,24,24.6))*3; if (b >= 48){ var k = Math.floor(b-48); tilt += 0.035*k; kx = 0.012*k; cy = Math.max(cy, 0.08); } }
-    crown.position.set(P.x+kx-Math.sin(P.lean)*TOP0+jit(f,43,1)*0.006, cy, 0.15);
-    crown.rotation.set(0, f*0.05, tilt); crown.scale.setScalar(cs*(at(b,24.6,25.2)?1.15:1));
+    var hp = new V3(0,0.27,0); sheParts.head.localToWorld(hp);
+    crown.position.set(hp.x, hp.y+(1-span(b,24,24.6))*3.5, hp.z); crown.rotation.set(0, f*0.05, S.sway*-0.6);
+    crown.scale.setScalar(at(b,24.6,25.2)?1.2:1.05);
   }
   disco.visible = at(b,24,51.2);
-  disco.position.set(1.15, tr(b,[[24,4.8],[26,2.8],[50,2.8],[51.2,-0.8]]), -0.9); disco.rotation.y = f*0.3;
+  disco.position.set(-0.9, tr(b,[[24,6.5],[26,3.5],[50,3.5],[51.2,-0.8]]), -0.4); disco.rotation.y = f*0.3;
 
   /* bottles */
   bottles.forEach(function(B, n){
@@ -705,37 +806,16 @@ function update(b, f){
     B.g.position.set(base.x+jit(f,50+n,1)*0.006, 0, base.z); B.g.scale.set(s*(1+kick*0.12), s*(1-kick*0.15), s*(1+kick*0.12));
     var t = span(b, 33+n, 34.3+n);
     B.cork.visible = t < 1;
-    B.cork.position.set(base.x+0.45*t*(n-1.3), b >= 33+n ? 0.74+3.4*t-3.6*t*t : 0.74*s, base.z+0.5*t); B.cork.rotation.set(t*9, 0, t*6);
+    B.cork.position.set(base.x+0.45*t*(n-1.3), b >= 33+n ? 0.74+3.6*t-3.6*t*t : 0.74*s, base.z+0.3*t); B.cork.rotation.set(t*9, 0, t*6);
     B.foam.forEach(function(m, q){ var a = q/5*Math.PI*2+n, ft = span(b, 33+n, 33.9+n);
       m.visible = b >= 33+n && ft < 1;
       m.position.set(base.x+Math.cos(a)*0.4*ft, 0.72+1.5*ft-2.2*ft*ft, base.z+Math.sin(a)*0.3*ft); m.scale.setScalar(1.1-ft*0.7); });
   });
 
-  /* the models */
-  models.forEach(function(g, n){
-    var on = at(b,36,40); g.visible = on; if (!on) return;
-    var s = pop((b-36)*6, n)*(1-span(b,39.6,40)), sq = n===0 ? tr(b,[[38,1],[38.2,0.26]],true) : 1;
-    g.scale.set(s*(1+(1-sq)*0.7), s*sq, s*(1+(1-sq)*0.7)); g.rotation.z = jit(f,60+n,1)*0.02 + (n===0&&at(b,37,38)?0.05*Math.sin(b*4*Math.PI):0);
-  });
-
-  /* price signs */
-  var VAL = [[50,60,70],[60,70,80],[70,80,90],[80,90,99]];
-  signs.forEach(function(g, n){
-    var on = at(b,40,51); g.visible = on; if (!on) return;
-    var st = Math.min(Math.floor((b-40)/2),3), ph = (b-40)-st*2, spin = st>0 && b<48 ? span(ph,0,0.5) : 1;
-    var v = VAL[(spin < 0.5 && st > 0) ? st-1 : st][n];
-    setDigit(g.userData.d1, Math.floor(v/10)); setDigit(g.userData.d2, v%10);
-    var y = lerp(4.8, 2.28, span(b,40+n*0.2,40.6+n*0.2));
-    if (b >= 48+n){ var ft = span(b,48+n,48.7+n); y = 2.28-ft*ft*3.6; }
-    g.position.set(g.userData.x+jit(f,70+n,1)*0.008, y, -0.5);
-    g.rotation.set(spin*Math.PI*2, 0, jit(f,70+n,2)*0.03+0.03*Math.sin(b*Math.PI+n));
-    g.scale.setScalar(1+0.06*bp*(b<48?1:0));
-  });
-
   dancers.forEach(function(g, n){
     var on = at(b,24,49.6); g.visible = on; if (!on) return;
     var ph = Math.abs(Math.sin((b+n*0.5)*Math.PI)), sink = span(b,48+n*0.5,49+n*0.5), body = g.userData.body;
-    body.scale.set(1.2-ph*0.1, 0.95+ph*0.14, 1.1-ph*0.08); body.position.y = 0.5*(0.95+ph*0.14);
+    body.scale.set(1.2-ph*0.1, 0.95+ph*0.14, 1.1-ph*0.08); body.position.y = 0.42*(0.95+ph*0.14);
     g.position.y = ph*0.1-sink*sink*1.5; g.rotation.z = 0.12*Math.sin(b*Math.PI+n)+jit(f,80+n,1)*0.03; g.scale.setScalar(Math.max(pop((b-24)*6,n*2),0.001));
   });
 
@@ -743,8 +823,8 @@ function update(b, f){
   var out = span(b,62.2,64);
   ball2.visible = b >= 61.6 && out < 0.97;
   if (ball2.visible){
-    var gs = tr(b,[[61.6,0.2],[62.2,1]]), bx = 7.2*Math.pow(out,1.4);
-    ball2.position.set(bx, R*gs+hop(b,61.6,62.2,1,0.35), 0.15+out*0.6); ball2.scale.setScalar(gs); ball2.rotation.z = -bx/R;
+    var gs = tr(b,[[61.6,0.2],[62.2,HS]]), bx = HX+3.2*Math.pow(out,1.4);
+    ball2.position.set(bx, R*gs+hop(b,61.6,62.2,1,0.35), HZ+out*0.3); ball2.scale.setScalar(gs); ball2.rotation.z = -bx/R;
   }
 
   /* balance */
@@ -752,7 +832,7 @@ function update(b, f){
   for (i=0;i<4;i++) setDigit(cDigits[i], +str[i]);
   CHANGE.forEach(function(c){ if (b >= c && b < c+0.4) bump = 1; });
   if (b >= 48 && b < 60 && b-Math.floor(b) < 0.3) bump = 1;
-  counter.userData.bump = bump;
+  counter.userData.bump = bump; counter.userData.on = b >= 7;
 
   poseHero(P, f);
 }
@@ -760,7 +840,7 @@ function update(b, f){
 var bpm = 120, startAt = 0, playing = false, tPause = 3*60/120, dirty = true, lastFi = -1;
 var ctx = null, master = null, t0 = 0, songBuf = null, src = null, timer = null, nextHalf = 0, noiseBuf = null;
 var btsT = 0, btsTarget = 0, btsClock = 0, lastNow = 0;
-var CAM_B = new V3(7.2,5.2,19.5), LOOK_B = new V3(-0.2,1.7,0.6);
+var CAM_B = new V3(9,6.5,24), LOOK_B = new V3(0,2.4,0.4);
 var WIPES = [0,8,16,24,32,40,48,60,64], WCOL = [C.pink,C.must,C.cyan,C.coral,C.green,C.lilac,C.pink,C.must];
 function LEN(){ return BEATS*60/bpm; }
 function curTime(){ var L = LEN(); if (playing && ctx) return (((ctx.currentTime-t0)%L)+L)%L; return tPause; }
@@ -900,14 +980,16 @@ function draw(){
   camera.lookAt(new V3().lerpVectors(S.look, LOOK_B, e));
   camProp.visible = e > 0.3;
   var D = S.pos.distanceTo(S.look), u = postMat.uniforms;
-  counter.visible = e < 0.25;
-  var sc = D/5.2*(1+0.14*(counter.userData.bump||0));
-  counter.position.set(-0.476*D*0.7, -0.268*D*0.74, -D); counter.scale.setScalar(sc); counter.rotation.z = jit(fi,92,1)*0.03;
+  var FD = b < 7 ? camera.position.distanceTo(new V3(0,1,0.5)) : camera.position.distanceTo(S.hero ? new V3(HX,0.6,HZ) : new V3(SX,1.2,0));
+  counter.visible = e < 0.25 && counter.userData.on;
+  var hh = FD*Math.tan(camera.fov*Math.PI/360), hw = hh*camera.aspect;
+  var sc = hw*0.84/1.06*(1+0.14*(counter.userData.bump||0));
+  counter.position.set(-hw*0.5, -hh*0.84, -FD); counter.scale.setScalar(sc); counter.rotation.z = jit(fi,92,1)*0.03;
   var wp = -1;
   WIPES.forEach(function(wb, i){ var df = fi-Math.round(wb*60/bpm*FPS);
     if (df >= -2 && df < 2){ wp = [0.5,0.9,1.25,1.65][df+2]; u.uWs.value = (i%8)*7.3; u.uWc.value.copy(lin(WCOL[i%8])); } });
   u.uWp.value = wp;
-  u.uFocus.value = lerp(D, 20.5, e); u.uBlur.value = lerp(0.3, 0.2, e);
+  u.uFocus.value = lerp(FD, 26, e); u.uBlur.value = 0.2;
   u.uExp.value = 1 + jit(fi,91,1)*0.09; u.uSeed.value = hash(fi+.5)*10; u.uBts.value = e;
   renderer.setRenderTarget(rt); renderer.render(scene, camera);
   renderer.setRenderTarget(null); renderer.render(post, postCam);
