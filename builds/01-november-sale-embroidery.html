@@ -34,18 +34,18 @@ button.alt{background:#0b0b0dcc;color:var(--thread-cream);box-shadow:0 0 0 1px #
 button:hover{filter:brightness(1.15)}
 button:focus-visible{outline:2px solid var(--thread-red);outline-offset:3px}
 #hint,#credit{position:absolute;pointer-events:none;opacity:0;transition:opacity .9s;text-shadow:0 1px 3px #000,0 0 12px #000}
-#hint{left:50%;top:13.5%;transform:translateX(-50%);font:400 clamp(11px,1.5vw,19px)/1 var(--display);letter-spacing:.24em;color:var(--thread-cream);white-space:nowrap}
-#credit{left:50%;transform:translateX(-50%);bottom:12.5%;white-space:nowrap;font-size:clamp(9px,.85vw,11px);letter-spacing:.1em;text-transform:uppercase}
+#hint{left:50%;top:5.5%;transform:translateX(-50%);font:400 clamp(11px,1.5vw,19px)/1 var(--display);letter-spacing:.24em;color:var(--thread-cream);white-space:nowrap}
+#credit{left:max(16px,env(safe-area-inset-left,0px));bottom:14px;font-size:clamp(9px,.85vw,11px);letter-spacing:.1em;text-transform:uppercase}
 #credit b{color:var(--thread-yellow);font-weight:600}
 #hint.on{opacity:.8}
 #credit.on{opacity:.75}
 </style>
 
 <div id="wrap">
-  <div id="stage" aria-label="A macro film of embroidery on black cloth: November Sale, they're playing us. Click the cloth to stitch a price finding.">
+  <div id="stage" aria-label="A macro film of embroidery on black cloth: November Sale, they're playing us. Click the cloth to stitch a small motif.">
     <canvas id="gl"></canvas>
     <div id="msg" hidden></div>
-    <div id="hint">CLICK THE CLOTH TO STITCH A FINDING</div>
+    <div id="hint">CLICK THE CLOTH TO STITCH SOMETHING SWEET</div>
     <div id="credit"><b>Shelly Or Gisser</b> · Israeli sale index · prices as of 12 Nov 2026</div>
     <div class="bar off" id="bar">
       <button id="bFilm" type="button">PLAY FILM</button>
@@ -73,17 +73,18 @@ const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ---------- the design, in millimetres (x right, y down, origin at the centre of the hoop) ---------- */
 const FONT='"AntonLocal","Anton",Impact,"Arial Narrow",sans-serif';
-const D={W:420,H:250}, HOOP={hx:184,hy:99.5,r:60}, PITCH=0.85, ASPECT=16/9, WIDE=2*(HOOP.hx+9.5)+14;
-const PAL=[[1.0,0.60,0.012],[0.82,0.016,0.02],[0.84,0.76,0.60]];           // yellow, red, cream (linear)
+const D={W:420,H:250}, PITCH=0.85, ASPECT=16/9, WIDE=414;
+const lin=(r,g,b,k)=>[Math.pow(r/255,2.2)*k,Math.pow(g/255,2.2)*k,Math.pow(b/255,2.2)*k];
+const PAL=[[1.0,0.60,0.012],[0.82,0.016,0.02],[0.84,0.76,0.60],                          // 0 yellow, 1 red, 2 cream (linear)
+  lin(255,170,195,.95),lin(236,110,150,.95),lin(255,186,140,.95),lin(255,226,130,.95),    // 3 blush, 4 rose, 5 peach, 6 butter
+  lin(150,230,190,.95),lin(96,176,130,.9),lin(140,205,250,.95),lin(196,168,245,.95),      // 7 mint, 8 sage, 9 sky, 10 lilac
+  lin(250,244,232,.9),lin(150,120,220,.9),lin(90,160,230,.9),lin(250,130,120,.95)];       // 11 white, 12 violet, 13 blue, 14 coral
 const FINDINGS=[
   ["96%","OF PRICES DIDN'T","MOVE ON 11.11"],
   ["7 IN 10","CROSSED-OUT PRICES","ARE INFLATED"],
   ["10 OF 107","STORES CUT PRICES","ON 11.11"],
-  ["30% NOT 58%","THE REAL DISCOUNT","VS THE ONE ON THE TAG"],
-  ["98.91","SALE INDEX TODAY","BEFORE THE SALES: 100"],
-  ["48","STORES RAISED","A PRICE"]
+  ["58% OFF","REALLY: 30%"]
 ];
-const SPOTS=[[-130,-55],[130,-55],[-130,0],[130,0],[-130,55],[130,55]];
 let seed=11; const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), lerp=(a,b,t)=>a+(b-a)*t;
 
@@ -121,17 +122,17 @@ function glyphStitches(out,ch,gx,gy,em,cap,rot,o,ci){
     for(const sg of segs){
       const X1=((row%2?sg[1]:sg[0])-M/2)/ppm, X2=((row%2?sg[0]:sg[1])-M/2)/ppm, Y=(yf-M/2)/ppm, j=()=>(rnd()-.5)*0.2;
       const x1=X1*ct-Y*st+j(), y1=X1*st+Y*ct+j(), x2=X2*ct-Y*st+j(), y2=X2*st+Y*ct+j();
-      out.push([gx+x1*cr-y1*sr, gy+x1*sr+y1*cr, gx+x2*cr-y2*sr, gy+x2*sr+y2*cr, o.w, ci]);
+      out.push([gx+x1*cr-y1*sr, gy+x1*sr+y1*cr, gx+x2*cr-y2*sr, gy+x2*sr+y2*cr, o.w, ci, o.ci2, 0, o.lift||0]);
     }
   }
 }
 function textStitches(out,str,cx,cy,cap,ci,o){ eachGlyph(str,cx,cy,cap,o,(ch,gx,gy,em,rot)=>glyphStitches(out,ch,gx,gy,em,cap,rot,o,ci)); }
-function lineStitches(out,pts,L,cover,w,ci){
+function lineStitches(out,pts,L,cover,w,ci,lift){
   let carry=0;
   for(let i=0;i<pts.length-1;i++){
     const a=pts[i], b=pts[i+1], len=Math.hypot(b[0]-a[0],b[1]-a[1]); if(len<0.01) continue;
     const ux=(b[0]-a[0])/len, uy=(b[1]-a[1])/len; let t=carry;
-    while(t<len){ const e=Math.min(len,t+L*cover); if(e-t>w*0.9) out.push([a[0]+ux*t,a[1]+uy*t,a[0]+ux*e,a[1]+uy*e,w,ci]); t+=L; }
+    while(t<len){ const e=Math.min(len,t+L*cover); if(e-t>w*0.9) out.push([a[0]+ux*t,a[1]+uy*t,a[0]+ux*e,a[1]+uy*e,w,ci,undefined,0,lift||0]); t+=L; }
     carry=t-len;
   }
 }
@@ -212,7 +213,7 @@ void main(){
 const THREAD_FS=COMMON+`
 varying vec3 vW; varying vec3 vN; varying vec3 vT; varying vec3 vCol; varying vec3 vUV; varying float vSeed;
 void main(){
-  vec3 N=normalize(vN), Tn=normalize(vT); vec3 B=normalize(cross(N,Tn)); vec3 Lc=uLCol*0.46;
+  vec3 N=normalize(vN), Tn=normalize(vT); vec3 B=normalize(cross(N,Tn)); vec3 Lc=uLCol*0.46*(1.-0.38*smoothstep(120.,330.,length(vW.xy)));
   float s=vUV.x, ee=vUV.z;
   float mini=smoothstep(0.3,1.3,fwidth(vUV.y));
   float ph=vUV.y/6.2832*5.+s*0.5+vSeed*9.;
@@ -238,7 +239,7 @@ void main(){
 }`;
 const CLOTH_VS=`varying vec3 vW; void main(){ vW=position; gl_Position=projectionMatrix*viewMatrix*vec4(position,1.); }`;
 const CLOTH_FS=COMMON+`
-varying vec3 vW; uniform sampler2D tChalk; uniform vec2 uD; uniform vec3 uHoop; uniform float uPitch;
+varying vec3 vW; uniform sampler2D tChalk; uniform vec2 uD; uniform float uPitch;
 float weave(vec2 g, out float dir, out vec2 tc){
   vec2 c=floor(g), f=fract(g)-0.5; float s=mod(c.x+c.y,2.)*2.-1.;
   float nx=vn(vec2(c.x*7.31,g.y*0.33)), ny=vn(vec2(c.y*5.17+17.,g.x*0.33));
@@ -266,8 +267,7 @@ void main(){
   vec3 alb=vec3(0.0095,0.0095,0.012)*(0.75+0.5*h11(tid))*(0.62+0.5*ridge*det)*(0.72+0.5*fuzz)*(0.8+0.4*big);
   vec2 cuv=(vW.xy+uD*0.5)/uD; float ck=texture2D(tChalk,cuv).r;
   alb+=vec3(0.13,0.13,0.125)*ck*(0.12+0.88*smoothstep(0.35,0.95,mix(0.8,h,det)))*(0.35+0.9*fuzz);
-  vec2 q=abs(vW.xy)-(uHoop.xy-uHoop.z); float sd=length(max(q,0.))+min(max(q.x,q.y),0.)-uHoop.z;
-  float ring=mix(0.28,1.,smoothstep(-7.,-26.,sd)); if(sd>0.) ring=0.42;
+  float ring=1.-0.42*smoothstep(120.,330.,length(vW.xy));
   vec3 V=normalize(uCam-vW), H=normalize(uL+V);
   float sh=shadowAt(vW+vec3(0.,0.,0.05));
   float ndl=max(dot(N,uL),0.);
@@ -323,24 +323,8 @@ const casters=[];
 function caster(mesh,depthMat){ mesh.userData.depth=depthMat; casters.push(mesh); }
 
 const chalkTex=new T.CanvasTexture(chalk); chalkTex.anisotropy=renderer.capabilities.getMaxAnisotropy(); chalkTex.minFilter=T.LinearMipmapLinearFilter;
-const cloth=new T.Mesh(new T.PlaneGeometry(1800,1400), mat(CLOTH_VS,CLOTH_FS,{tChalk:{value:chalkTex},uD:{value:new T.Vector2(D.W,D.H)},uHoop:{value:new T.Vector3(HOOP.hx,HOOP.hy,HOOP.r)},uPitch:{value:PITCH}}));
+const cloth=new T.Mesh(new T.PlaneGeometry(1800,1400), mat(CLOTH_VS,CLOTH_FS,{tChalk:{value:chalkTex},uD:{value:new T.Vector2(D.W,D.H)},uPitch:{value:PITCH}}));
 scene.add(cloth);
-
-function hoopPath(){
-  const r=HOOP.r, ax=HOOP.hx-r, ay=HOOP.hy-r, C=[[ax,ay,0],[-ax,ay,Math.PI/2],[-ax,-ay,Math.PI],[ax,-ay,1.5*Math.PI]], pts=[]; let s=0, prev=null;
-  for(const c of C) for(let i=0;i<=22;i++){ const a=c[2]+i/22*Math.PI/2, p={x:c[0]+Math.cos(a)*r,y:c[1]+Math.sin(a)*r,nx:Math.cos(a),ny:Math.sin(a)};
-    if(prev) s+=Math.hypot(p.x-prev.x,p.y-prev.y); p.s=s; pts.push(p); prev=p; }
-  const p0=Object.assign({},pts[0]); p0.s=s+Math.hypot(p0.x-prev.x,p0.y-prev.y); pts.push(p0); return pts;
-}
-function sweep(path,prof){
-  const pos=[],uv=[],idx=[],m=prof.length;
-  path.forEach(p=>prof.forEach((q,j)=>{ pos.push(p.x+p.nx*q[0],p.y+p.ny*q[0],q[1]); uv.push(p.s,j/(m-1)); }));
-  for(let i=0;i<path.length-1;i++) for(let j=0;j<m-1;j++){ const a=i*m+j,b=a+1,c=a+m,d=c+1; idx.push(a,c,b,b,c,d); }
-  const g=new T.BufferGeometry(); g.setAttribute("position",new T.Float32BufferAttribute(pos,3)); g.setAttribute("uv",new T.Float32BufferAttribute(uv,2)); g.setIndex(idx); g.computeVertexNormals(); return g;
-}
-{ const path=hoopPath(), woodDepth=new T.ShaderMaterial({vertexShader:WOOD_VS,fragmentShader:DEPTH_FS,side:T.DoubleSide});
-  const outer=[[1.2,-3],[1.2,5.6],[1.8,7],[3.2,7.6],[7.2,7.6],[8.6,7],[9.2,5.6],[9.2,-3]], inner=[[-7.4,-3],[-7.4,4.2],[-6.8,5.5],[-5.6,6],[-2.2,6],[-1,5.5],[-0.4,4.2],[-0.4,-3]];
-  for(const pr of [outer,inner]){ const m=new T.Mesh(sweep(path,pr),mat(WOOD_VS,WOOD_FS,{uTot:{value:path[path.length-1].s}})); scene.add(m); caster(m,woodDepth); } }
 
 function tubeBase(xs,a0,a1,rn){
   const pos=[],uv=[],idx=[];
@@ -348,21 +332,21 @@ function tubeBase(xs,a0,a1,rn){
   for(let i=0;i<xs.length-1;i++) for(let j=0;j<rn-1;j++){ const a=i*rn+j,b=a+1,c=a+rn,d=c+1; idx.push(a,c,b,b,c,d); }
   return {pos:new T.Float32BufferAttribute(pos,3),uv:new T.Float32BufferAttribute(uv,2),idx:new T.Uint16BufferAttribute(idx,1)};
 }
-const SB=tubeBase([0,.35,.7,1,1.5,2,2.3,2.65,3],-0.9,Math.PI+0.9,7);
+const SB=tubeBase([0,.35,.7,1,1.5,2,2.3,2.65,3],-0.9,Math.PI+0.9,7), SB2=tubeBase([0,.5,1,1.5,2,2.5,3],-0.9,Math.PI+0.9,5), meshes=[];
 function buildMesh(st){
   const n=st.length, A=new Float32Array(n*4), B=new Float32Array(n*4), C=new Float32Array(n*3);
   let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
-  for(let i=0;i<n;i++){ const s=st[i], p=PAL[s[5]], tone=0.82+0.3*rnd(), warm=0.9+0.2*rnd();
+  for(let i=0;i<n;i++){ const s=st[i], pa=PAL[s[5]], pb=s[6]!=null?PAL[s[6]]:pa, k=s[7]||0, tone=0.84+0.26*rnd(), warm=0.92+0.16*rnd();
     A[i*4]=s[0]; A[i*4+1]=-s[1]; A[i*4+2]=s[2]; A[i*4+3]=-s[3];
-    B[i*4]=s[4]; B[i*4+1]=rnd(); B[i*4+2]=i; B[i*4+3]=rnd()*0.05;
-    C[i*3]=p[0]*tone; C[i*3+1]=p[1]*tone*warm; C[i*3+2]=p[2]*tone*(s[5]===2?warm:1);
+    B[i*4]=s[4]; B[i*4+1]=rnd(); B[i*4+2]=i; B[i*4+3]=(s[8]||0)+rnd()*0.05;
+    C[i*3]=lerp(pa[0],pb[0],k)*tone; C[i*3+1]=lerp(pa[1],pb[1],k)*tone*warm; C[i*3+2]=lerp(pa[2],pb[2],k)*tone;
     x0=Math.min(x0,s[0],s[2]); x1=Math.max(x1,s[0],s[2]); y0=Math.min(y0,-s[1],-s[3]); y1=Math.max(y1,-s[1],-s[3]); }
-  const g=new T.InstancedBufferGeometry(); g.setIndex(SB.idx); g.setAttribute("position",SB.pos); g.setAttribute("uv",SB.uv);
+  const bs=st[0][4]<0.5?SB2:SB, g=new T.InstancedBufferGeometry(); g.setIndex(bs.idx); g.setAttribute("position",bs.pos); g.setAttribute("uv",bs.uv);
   g.setAttribute("iA",new T.InstancedBufferAttribute(A,4)); g.setAttribute("iB",new T.InstancedBufferAttribute(B,4)); g.setAttribute("iC",new T.InstancedBufferAttribute(C,3));
   g.instanceCount=0; g.boundingSphere=new T.Sphere(new T.Vector3((x0+x1)/2,(y0+y1)/2,0),Math.hypot(x1-x0,y1-y0)/2+3);
   const u={value:0}, mesh=new T.Mesh(g,mat(STITCH_VS,THREAD_FS,{uProg:u}));
   mesh.userData.depth=new T.ShaderMaterial({uniforms:{uProg:u},vertexShader:STITCH_VS,fragmentShader:DEPTH_FS,side:T.DoubleSide});
-  scene.add(mesh); return {mesh,u};
+  scene.add(mesh); meshes.push(mesh); return {mesh,u};
 }
 const WU={uP0:{value:new T.Vector3()},uP1:{value:new T.Vector3()},uP2:{value:new T.Vector3()},uP3:{value:new T.Vector3()},uLen:{value:0},uRad:{value:0.25},uTCol:{value:new T.Vector3(1,0.6,0.012)}};
 { const xs=[]; for(let i=0;i<=64;i++) xs.push(Math.pow(i/64,1.7)); const b=tubeBase(xs,0,Math.PI*2,9);
@@ -400,10 +384,138 @@ const wp={x:0,y:0,w:0.6,c:0,on:false}, wps={x:0,y:0};
 const C={tx:0,ty:0,lf:Math.log(WIDE),tilt:0.13,yaw:0,roll:0,v:{tx:0,ty:0,lf:0,tilt:0,yaw:0,roll:0}};
 const ptr={x:0,y:0}; let hudT=0;
 function addJob(st,o){ const m=st.length?buildMesh(st):null; const job=Object.assign({st,n:st.length,t:0,p:1.6,dur:3,mesh:m&&m.mesh,u:m&&m.u,cam:{}},o); S.jobs.push(job); return job; }
-function clearJobs(){ for(const j of S.jobs) if(j.mesh){ scene.remove(j.mesh); j.mesh.geometry.dispose(); j.mesh.material.dispose(); j.mesh.userData.depth.dispose(); }
+function addGroup(items,o){
+  const subs=items.filter(it=>it.st.length).map(it=>{ const m=buildMesh(it.st), d=Math.min(1,Math.hypot(it.x,it.y)/230); return {mesh:m.mesh,u:m.u,n:it.st.length,delay:(d*0.55+rnd()*0.12)*o.dur,dur:0.33*o.dur}; });
+  S.jobs.push(Object.assign({subs,n:0,t:0,cam:{}},o));
+}
+function clearJobs(){ for(const m of meshes){ scene.remove(m); m.geometry.dispose(); m.material.dispose(); m.userData.depth.dispose(); } meshes.length=0;
   S.jobs=[]; S.cur=0; S.time=0; S.tagN=0; wp.on=false; WU.uLen.value=0; }
 
-function buildIntro(){
+/* ---------- stitch vocabulary for the pastel world ---------- */
+const xf=(x,y,rot)=>{ const c=Math.cos(rot), s=Math.sin(rot); return (u,v)=>[x+u*c-v*s,y+u*s+v*c]; };
+const circle=(x,y,r,n)=>{ const p=[]; for(let i=0;i<=n;i++){ const a=6.2832*i/n; p.push([x+Math.cos(a)*r,y+Math.sin(a)*r]); } return p; };
+function polyFill(out,pts,th,o){
+  const c=Math.cos(th), s=Math.sin(th), q=pts.map(p=>[p[0]*c+p[1]*s,-p[0]*s+p[1]*c]); let y0=1e9, y1=-1e9, row=0;
+  for(const p of q){ y0=Math.min(y0,p[1]); y1=Math.max(y1,p[1]); }
+  for(let y=y0+o.gap/2; y<y1; y+=o.gap, row++){
+    const xs=[], segs=[];
+    for(let i=0;i<q.length;i++){ const a=q[i], b=q[(i+1)%q.length]; if((a[1]<=y)!==(b[1]<=y)) xs.push(a[0]+(y-a[1])/(b[1]-a[1])*(b[0]-a[0])); }
+    xs.sort((m,n)=>m-n);
+    for(let k=0;k+1<xs.length;k+=2){ const a=xs[k], b=xs[k+1]; if(b-a<o.w*0.8) continue;
+      const cuts=[a]; let t=a, first=o.maxLen*(0.45+0.55*rnd()); while(b-t>first+o.maxLen*0.3){ t+=first; cuts.push(t); first=o.maxLen; } cuts.push(b);
+      for(let m=0;m<cuts.length-1;m++) segs.push([cuts[m]-(m?0.35:0),cuts[m+1]+(m<cuts.length-2?0.35:0)]); }
+    if(row%2) segs.reverse();
+    for(const g of segs){ const xa=row%2?g[1]:g[0], xb=row%2?g[0]:g[1], j=()=>(rnd()-.5)*0.1;
+      out.push([xa*c-y*s+j(),xa*s+y*c+j(),xb*c-y*s+j(),xb*s+y*c+j(),o.w,o.ci,o.ci2,0,o.lift||0]); }
+  }
+}
+function fanFill(out,cx,cy,bp,r0,o){
+  let k=0;
+  for(let i=0;i<bp.length-1;i++){ const a=bp[i], b=bp[i+1], len=Math.hypot(b[0]-a[0],b[1]-a[1]), n=Math.max(1,Math.round(len/o.gap));
+    for(let m=0;m<n;m++,k++){ const t=m/n, x=a[0]+(b[0]-a[0])*t, y=a[1]+(b[1]-a[1])*t, d=Math.hypot(x-cx,y-cy); if(d<r0*2.2) continue;
+      const rr=r0*(k%2?1.9:0.9)*(0.85+0.3*rnd()); out.push([cx+(x-cx)/d*rr,cy+(y-cy)/d*rr,x,y,o.w,o.ci,o.ci2,0,o.lift||0]); } }
+}
+function tint(out,i0,ci2,ax,ay,bx,by){ const dx=bx-ax, dy=by-ay, L=dx*dx+dy*dy; for(let i=i0;i<out.length;i++){ const s=out[i]; s[6]=ci2; s[7]=clamp((((s[0]+s[2])/2-ax)*dx+((s[1]+s[3])/2-ay)*dy)/L,0,1); } }
+function mixIn(out,i0,ci2,amt){ for(let i=i0;i<out.length;i++){ out[i][6]=ci2; out[i][7]=rnd()*amt; } }
+function resample(pts,L){ const out=[pts[0]]; let carry=L; for(let i=0;i<pts.length-1;i++){ const a=pts[i], b=pts[i+1], len=Math.hypot(b[0]-a[0],b[1]-a[1]); let t=carry; while(t<=len){ out.push([a[0]+(b[0]-a[0])*t/len,a[1]+(b[1]-a[1])*t/len]); t+=L; } carry=t-len; } return out; }
+function chain(out,pts,L,w,ci,lift){ const q=resample(pts,L);
+  for(let i=0;i<q.length-1;i++){ const a=q[i], b=q[i+1], dx=b[0]-a[0], dy=b[1]-a[1], d=Math.hypot(dx,dy)||1, nx=-dy/d*L*0.34, ny=dx/d*L*0.34;
+    out.push([a[0],a[1],b[0]+dx*0.12+nx,b[1]+dy*0.12+ny,w,ci,undefined,0,lift||0],[a[0],a[1],b[0]+dx*0.12-nx,b[1]+dy*0.12-ny,w,ci,undefined,0,lift||0]); } }
+function stem(out,pts,L,w,ci,lift){ const q=resample(pts,L); for(let i=0;i<q.length-1;i++){ const a=q[i], b=q[i+1]; out.push([a[0],a[1],b[0]+(b[0]-a[0])*0.18,b[1]+(b[1]-a[1])*0.18,w,ci,undefined,0,lift||0]); } }
+function knot(out,x,y,r,ci,lift){ const a0=rnd()*6.283; for(let i=0;i<3;i++){ const a=a0+i*2.094; out.push([x+Math.cos(a)*r,y+Math.sin(a)*r,x+Math.cos(a+2.5)*r,y+Math.sin(a+2.5)*r,r*1.15,ci,undefined,0,(lift||0)+i*0.1]); } }
+function ringFlower(out,x,y,r,ci,ci2,cc){
+  const n=Math.round(6.2832*r/0.3);
+  for(let i=0;i<n;i++){ const a=i/n*6.2832, ri=r*(i%2?0.52:0.32)*(0.9+0.2*rnd()), ro=r*(0.96+0.08*rnd()); out.push([x+Math.cos(a)*ri,y+Math.sin(a)*ri,x+Math.cos(a)*ro,y+Math.sin(a)*ro,0.34,ci,ci2,0.5+0.5*Math.sin(a*3+1),0]); }
+  knot(out,x,y,r*0.085,cc,0.1); for(let i=0;i<6;i++){ const a=i/6*6.2832; knot(out,x+Math.cos(a)*r*0.19,y+Math.sin(a)*r*0.19,r*0.08,cc,0.05); }
+  chain(out,circle(x,y,r*1.1,40),1.5,0.26,ci2);
+  for(let i=0;i<10;i++){ const a=i/10*6.2832+0.3, e=1.6+0.2*(i%2); out.push([x+Math.cos(a)*r*1.32,y+Math.sin(a)*r*1.32,x+Math.cos(a)*r*e,y+Math.sin(a)*r*e,0.3,i%3?ci:cc,undefined,0,0]); }
+}
+function daisy(out,x,y,r,ci,ci2,cc,np){ np=np||6; const a0=rnd()*6.28;
+  for(let k=0;k<np;k++){ const a=a0+k/np*6.2832, P=xf(x,y,a), pts=[]; for(let i=0;i<16;i++){ const t=i/16*6.2832; pts.push(P(r*0.62+Math.cos(t)*r*0.4,Math.sin(t)*r*0.2*(1+0.25*Math.cos(t)))); }
+    const i0=out.length; polyFill(out,pts,a,{w:0.32,gap:0.27,maxLen:99,ci}); mixIn(out,i0,ci2,0.7); }
+  for(let i=0;i<5;i++){ const a=i/5*6.2832; knot(out,x+Math.cos(a)*r*0.1,y+Math.sin(a)*r*0.1,r*0.075,cc,0.05); } }
+function leaf(out,x,y,len,wid,rot,w){ const P=xf(x,y,rot), n=Math.max(8,Math.round(len/(w*0.5)));
+  for(let i=0;i<n;i++){ const t=i/(n-1), hw=wid*Math.pow(Math.sin(Math.PI*(0.05+0.92*t)),0.75), e=P(t*len,(i%2?1:-1)*hw), c=P(Math.min(len,t*len+len*0.17),0); out.push([e[0],e[1],c[0],c[1],w,8,7,t*0.9,0]); } }
+function sprig(out,x,y,ang,len,bend,nl,bud){ const pts=[[x,y]], dirs=[], N=16; let px=x, py=y;
+  for(let i=0;i<N;i++){ const a=ang+bend*i/N; dirs.push(a); px+=Math.cos(a)*len/N; py+=Math.sin(a)*len/N; pts.push([px,py]); }
+  stem(out,pts,1.8,0.3,8);
+  for(let k=1;k<=nl;k++){ const i=Math.round(k/(nl+0.6)*N), sz=len*(0.22-0.07*k/nl); leaf(out,pts[i][0],pts[i][1],sz,sz*0.3,dirs[Math.min(N-1,i)]+(k%2?0.8:-0.8),0.3); }
+  if(bud!=null) for(let i=0;i<3;i++) knot(out,px+(rnd()-.5)*2.4,py+(rnd()-.5)*2.4,0.55,bud,0.05);
+  return [px,py]; }
+function sparkle(out,x,y,r,ci){ const a=rnd()*0.5; for(let i=0;i<4;i++){ const b=a+i*Math.PI/4, rr=i%2?r*0.5:r; out.push([x-Math.cos(b)*rr,y-Math.sin(b)*rr,x+Math.cos(b)*rr,y+Math.sin(b)*rr,0.26,ci,undefined,0,i*0.08]); } }
+function star(out,x,y,r,rot,ci,ci2){ const b=[]; for(let i=0;i<=10;i++){ const a=rot-Math.PI/2+i*Math.PI/5, rr=i%2?r*0.45:r; b.push([x+Math.cos(a)*rr,y+Math.sin(a)*rr]); }
+  const i0=out.length; fanFill(out,x,y,b,r*0.08,{w:0.32,gap:0.3,ci}); mixIn(out,i0,ci2,0.6); }
+function heart(out,x,y,sz,rot,ci,ci2){ const P=xf(x,y,rot), pts=[];
+  for(let i=0;i<40;i++){ const t=i/40*6.2832; pts.push(P(Math.pow(Math.sin(t),3)*sz,-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))*sz/16)); }
+  const i0=out.length; polyFill(out,pts,rot+0.7,{w:0.34,gap:0.29,maxLen:3.6,ci}); tint(out,i0,ci2,...P(0,-sz),...P(0,sz)); }
+function bow(out,x,y,s,rot,ci,ci2){ const P=xf(x,y,rot), c=P(0,0);
+  for(const sd of [-1,1]){ const ax=sd<0?Math.PI+0.42:-0.42, b=[];
+    for(let i=0;i<=22;i++){ const t=i/22, ph=ax+(t-0.5)*1.5, rr=s*Math.pow(Math.sin(Math.PI*t),0.55); b.push(P(Math.cos(ph)*rr,Math.sin(ph)*rr)); }
+    let i0=out.length; fanFill(out,c[0],c[1],b,s*0.14,{w:0.34,gap:0.3,ci,lift:0.5}); mixIn(out,i0,ci2,0.5);
+    const d=[sd*0.36,0.8], da=Math.atan2(d[1],d[0]);
+    i0=out.length; polyFill(out,[P(-0.07*s,0.04*s),P(0.07*s,0.04*s),P((d[0]+0.13)*s,d[1]*s),P(d[0]*s,(d[1]-0.16)*s),P((d[0]-0.13)*s,(d[1]+0.02)*s)],rot+da+Math.PI/2,{w:0.34,gap:0.3,maxLen:99,ci,lift:0.5}); mixIn(out,i0,ci2,0.4); }
+  polyFill(out,[P(-0.13*s,-0.13*s),P(0.13*s,-0.13*s),P(0.15*s,0.13*s),P(-0.15*s,0.13*s)],rot+Math.PI/2,{w:0.36,gap:0.3,maxLen:99,ci:ci2,lift:0.78}); }
+function gift(out,x,y,w,h,rot,cb,cb2,cr,cr2){ const P=xf(x,y,rot), lh=h*0.24, f=0.36, g=0.31; let i0=out.length;
+  polyFill(out,[P(-w/2,-h/2+lh),P(w/2,-h/2+lh),P(w/2,h/2),P(-w/2,h/2)],rot+Math.PI/2,{w:f,gap:g,maxLen:4.4,ci:cb}); tint(out,i0,cb2,...P(0,-h/2+lh),...P(0,h/2+h*0.3));
+  i0=out.length; polyFill(out,[P(-w/2-1.5,-h/2),P(w/2+1.5,-h/2),P(w/2+1.5,-h/2+lh),P(-w/2-1.5,-h/2+lh)],rot,{w:f,gap:g,maxLen:4.8,ci:cb}); mixIn(out,i0,11,0.4);
+  const rw=Math.max(3,w*0.15); i0=out.length; polyFill(out,[P(-rw/2,-h/2-0.2),P(rw/2,-h/2-0.2),P(rw/2,h/2),P(-rw/2,h/2)],rot,{w:f,gap:g,maxLen:99,ci:cr,lift:0.32}); mixIn(out,i0,cr2,0.35);
+  lineStitches(out,[P(-w/2-1.5,-h/2+lh),P(-rw/2-0.4,-h/2+lh)],2.2,0.9,0.28,cb2,0.3); lineStitches(out,[P(rw/2+0.4,-h/2+lh),P(w/2+1.5,-h/2+lh)],2.2,0.9,0.28,cb2,0.3);
+  bow(out,...P(0,-h/2-0.6),Math.max(7,w*0.34),rot,cr,cr2); }
+function percent(out,x,y,cap,rot,ci,ci2){ const i0=out.length; textStitches(out,"%",x,y,cap,ci,{rot,th:0.6,w:0.4,gap:0.33,maxLen:4.2}); tint(out,i0,ci2,x,y-cap/2,x,y+cap/2); }
+function ptag(out,x,y,rot,f,co,cn,strike){ const tw=54, th=25, c=6.5, P=xf(x,y,rot);
+  chain(out,[P(-tw/2+c,-th/2),P(tw/2,-th/2),P(tw/2,th/2),P(-tw/2+c,th/2),P(-tw/2,th/2-c),P(-tw/2,-th/2+c),P(-tw/2+c,-th/2)],1.7,0.28,co);
+  const hx=-tw/2+c*0.95, hc=P(hx,0), cord=[]; stem(out,circle(hc[0],hc[1],1.7,14),1.1,0.3,co);
+  for(let i=0;i<=16;i++){ const t=i/16; cord.push(P(hx-t*11,-t*12+Math.sin(t*3.14)*5)); } lineStitches(out,cord,2,0.55,0.26,11);
+  const inner=tw-c*1.5-5, ox=c*0.55, one=!f[2], capN=Math.min(8.6,inner/textW(f[0],1,0.035)), capC=Math.min(one?4.6:3.3,inner/textW(f[1],1,0.07),one?99:inner/textW(f[2],1,0.07));
+  const p0=P(ox,-th*0.17), p1=P(ox,th*(one?0.27:0.2)), p2=P(ox,th*0.2+capC*1.6), oc={rot,th:-0.6,w:0.3,gap:0.27,maxLen:2.2,track:0.07};
+  const i0=out.length; textStitches(out,f[0],p0[0],p0[1],capN,cn,{rot,th:0.5,w:0.4,gap:0.34,maxLen:3.6}); mixIn(out,i0,11,0.3);
+  textStitches(out,f[1],p1[0],p1[1],capC,11,oc); if(!one) textStitches(out,f[2],p2[0],p2[1],capC,11,oc);
+  if(strike){ const wN=textW(f[0],capN,0.035)/2+2.5; for(const dv of [-0.45,0.45]){ const a=P(ox-wN,-th*0.17+capN*0.4+dv), b=P(ox+wN,-th*0.17-capN*0.4+dv); out.push([a[0],a[1],b[0],b[1],0.5,1,undefined,0,0.5]); } } }
+
+function buildWorld(){
+  const items=[], add=(x,y,fn)=>{ const st=[]; fn(st); const it={st,x,y}; items.push(it); return it; };
+  const g1=add(-150,42,o=>gift(o,-150,42,46,36,-0.04,3,4,11,6));
+  const f1=add(-166,-6,o=>ringFlower(o,-166,-6,8,3,4,6));
+  const p1=add(-122,-32,o=>percent(o,-122,-32,28,-0.18,6,5));
+  add(142,44,o=>gift(o,142,44,48,40,0.05,9,13,6,5));
+  add(-104,62,o=>gift(o,-104,62,22,18,0.1,10,12,3,4));
+  add(178,66,o=>gift(o,178,66,26,22,-0.09,5,14,7,8));
+  add(100,66,o=>gift(o,100,66,18,15,0.06,6,5,10,12));
+  add(150,-30,o=>percent(o,150,-30,36,0.16,3,10));
+  add(-180,-36,o=>percent(o,-180,-36,12,0.25,10,9));
+  add(106,-50,o=>percent(o,106,-50,12,-0.2,7,9));
+  add(-146,-78,o=>ptag(o,-146,-78,-0.1,FINDINGS[0],7,14));
+  add(146,-78,o=>ptag(o,146,-78,0.07,FINDINGS[1],9,6));
+  add(-146,86,o=>ptag(o,-146,86,0.05,FINDINGS[2],10,5));
+  add(138,90,o=>ptag(o,138,90,-0.05,FINDINGS[3],3,4,true));
+  add(188,-46,o=>ringFlower(o,188,-46,7.5,9,13,6));
+  add(-100,6,o=>daisy(o,-100,6,7,6,11,5));
+  add(104,4,o=>daisy(o,104,4,7,3,11,6));
+  add(-186,66,o=>daisy(o,-186,66,6.5,9,11,6,7));
+  add(186,12,o=>daisy(o,186,12,6.5,10,11,6,7));
+  add(-194,10,o=>sprig(o,-196,24,-1.45,32,0.25,5,3));
+  add(196,-14,o=>sprig(o,197,-2,-1.62,26,-0.2,4,6));
+  add(-84,-90,o=>{ const e=sprig(o,-100,-84,-0.28,36,0.38,5); daisy(o,e[0]+3,e[1]-1,5,10,11,6); });
+  add(84,-90,o=>{ const e=sprig(o,100,-84,Math.PI+0.28,36,-0.38,5); daisy(o,e[0]-3,e[1]-1,5,5,11,6); });
+  add(0,-95,o=>heart(o,0,-95,5.5,0,3,4));
+  add(-30,-97,o=>percent(o,-30,-97,8,0.15,6,5)); add(30,-97,o=>percent(o,30,-97,8,-0.15,9,10));
+  add(-60,97,o=>sprig(o,-88,98,-0.12,46,0.3,6,3)); add(60,97,o=>sprig(o,88,98,Math.PI+0.12,46,-0.3,6,9));
+  add(0,96,o=>star(o,0,96,6.5,0,6,5));
+  add(-104,-62,o=>{ const i0=o.length; textStitches(o,"-50%",-104,-62,7.5,10,{rot:0.1,th:0.6,w:0.36,gap:0.3,maxLen:3.4}); mixIn(o,i0,9,0.8); });
+  add(110,-22,o=>{ const i0=o.length; textStitches(o,"-70%",110,-22,7.5,6,{rot:-0.08,th:-0.6,w:0.36,gap:0.3,maxLen:3.4}); mixIn(o,i0,5,0.8); });
+  add(-102,86,o=>heart(o,-102,86,4.2,-0.2,14,3)); add(104,88,o=>heart(o,104,88,4,0.2,10,12));
+  add(-190,-84,o=>star(o,-190,-84,5,0.3,6,5)); add(190,-88,o=>star(o,190,-88,4.5,-0.2,7,9)); add(-60,82,o=>star(o,-60,82,3.6,0.5,3,11)); add(58,84,o=>star(o,58,84,3.6,0.2,9,11));
+  for(const c of [[-178,-62,1],[176,24,-1],[-120,22,-1]]) add(c[0],c[1],o=>{ const pts=[]; for(let i=0;i<=40;i++){ const t=i/40, a=t*9*c[2], r=1+t*6; pts.push([c[0]+Math.cos(a)*r+t*10,c[1]+Math.sin(a)*r]); } stem(o,pts,1.5,0.3,c[2]>0?5:7); });
+  const boxes=[[-88,-80,88,78]]; for(const it of items){ let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; for(const s of it.st){ x0=Math.min(x0,s[0],s[2]); x1=Math.max(x1,s[0],s[2]); y0=Math.min(y0,s[1],s[3]); y1=Math.max(y1,s[1],s[3]); } boxes.push([x0-4,y0-4,x1+4,y1+4]); }
+  const placed=[], quad=[[],[],[],[]], pc=[3,5,6,7,9,10,11];
+  for(let tries=0; tries<1400 && placed.length<110; tries++){ const x=(rnd()*2-1)*198, y=(rnd()*2-1)*108;
+    if(boxes.some(b=>x>b[0]&&x<b[2]&&y>b[1]&&y<b[3]) || placed.some(p=>Math.hypot(p[0]-x,p[1]-y)<8)) continue;
+    placed.push([x,y]); const o=quad[(x>0?1:0)+(y>0?2:0)], col=pc[Math.floor(rnd()*pc.length)];
+    if(placed.length%4===0) sparkle(o,x,y,1.6+rnd()*1.8,col); else knot(o,x,y,0.45+rnd()*0.3,col,0); }
+  quad.forEach((st,i)=>items.push({st,x:(i%2?1:-1)*150,y:(i>1?1:-1)*80}));
+  return {items,g1,f1,p1};
+}
+function buildFilm(){
   seed=11; cx2.clearRect(0,0,chalk.width,chalk.height);
   const tr=0.035, maxW=162; let capN=maxW/textW("NOVEMBER",1,tr), capS=maxW/textW("SALE",1,tr), gNS=capN*0.27, tot=capN+gNS+capS;
   if(tot>124){ const k=124/tot; capN*=k; capS*=k; gNS*=k; tot=124; }
@@ -411,9 +523,8 @@ function buildIntro(){
   const TL="THEY'RE PLAYING US", capT=Math.min(11.5,150/textW(TL,1,0.09)), yT=yS+capS/2+7.5+capT/2, tw=textW(TL,capT,0.09), yU=yT+capT/2+4.8;
   const oN={th:0.62,w:0.66,gap:0.56,maxLen:10.5}, oS={th:-0.62,w:0.72,gap:0.62,maxLen:9}, oT={th:1.15,w:0.46,gap:0.42,maxLen:4.2,rot:-0.03,track:0.09};
   chalkText("NOVEMBER",0,yN,capN,oN); chalkText("SALE",0,yS,capS,oS); chalkText(TL,0,yT,capT,oT);
-  chalkLine([[-bw/2-5,yN-capN/2],[bw/2+5,yN-capN/2]],0.22,0.12); chalkLine([[-bw/2-5,yN+capN/2],[bw/2+5,yN+capN/2]],0.22,0.12);
-  chalkLine([[-bw/2-5,yS-capS/2],[bw/2+5,yS-capS/2]],0.22,0.12); chalkLine([[-bw/2-5,yS+capS/2],[bw/2+5,yS+capS/2]],0.22,0.12);
-  for(const s of SPOTS){ chalkLine([[s[0]-2,s[1]],[s[0]+2,s[1]]],0.5); chalkLine([[s[0],s[1]-2],[s[0],s[1]+2]],0.5); }
+  chalkLine([[-bw/2-4,yN-capN/2],[bw/2+4,yN-capN/2]],0.12,0.1); chalkLine([[-bw/2-4,yN+capN/2],[bw/2+4,yN+capN/2]],0.12,0.1);
+  chalkLine([[-bw/2-4,yS-capS/2],[bw/2+4,yS-capS/2]],0.12,0.1); chalkLine([[-bw/2-4,yS+capS/2],[bw/2+4,yS+capS/2]],0.12,0.1);
   chalkTex.needsUpdate=true;
   const nov=[],rule=[],sale=[],tag=[],und=[];
   textStitches(nov,"NOVEMBER",0,yN,capN,0,oN);
@@ -421,45 +532,35 @@ function buildIntro(){
   textStitches(sale,"SALE",0,yS,capS,1,oS);
   textStitches(tag,TL,0,yT,capT,2,oT);
   lineStitches(und,[[tw/2+2,yU-0.9],[-tw/2-2,yU+0.9]],3.6,0.88,0.72,1);
-  addJob([],{dur:1.8,cam:{fixed:[-146,66],fw:[76,66],tilt:0.46,yaw:-0.5,k:3}});
-  addJob(nov,{dur:11,p:2.2,cam:{fw:[36,64],tilt:0.33,yaw:[-0.30,0.26],k:3.0}});
-  addJob(rule,{dur:1.4,p:1,cam:{fw:[74,70],tilt:0.36,yaw:[0.2,-0.16],k:3.4}});
-  addJob(sale,{dur:12,p:1.7,cam:{fw:[56,104],tilt:0.35,yaw:[-0.28,0.26],k:2.6}});
-  addJob(tag,{dur:7,p:1.5,cam:{fw:[42,60],tilt:0.32,yaw:[-0.24,0.2],k:3.0}});
-  addJob(und,{dur:1.2,p:1,cam:{fw:[78,84],tilt:0.34,yaw:[0.16,-0.1],k:3.2}});
-  addJob([],{dur:4.6,cam:{fixed:[0,0],fw:[WIDE,WIDE],tilt:0.13,yaw:0,k:1.5}});
+  const W=buildWorld(), rest=W.items.filter(it=>it!==W.g1&&it!==W.f1&&it!==W.p1);
+  addJob([],{dur:1.2,cam:{fixed:[-bw/2+4,-yN],fw:[66,40],tilt:0.36,yaw:-0.34,k:3}});
+  addJob(nov,{dur:9.5,p:2.2,cam:{fw:[36,64],tilt:0.33,yaw:[-0.30,0.26],k:3.0}});
+  addJob(rule,{dur:1.3,p:1,cam:{fw:[74,70],tilt:0.36,yaw:[0.2,-0.16],k:3.4}});
+  addJob(sale,{dur:10.5,p:1.7,cam:{fw:[56,104],tilt:0.35,yaw:[-0.28,0.26],k:2.6}});
+  addJob(W.g1.st,{dur:4.6,p:1.25,cam:{fixed:[-150,-37],fw:[92,62],tilt:0.34,yaw:[-0.28,0.18],k:2.6}});
+  addJob(W.f1.st.concat(W.p1.st),{dur:4.2,p:1.15,cam:{fixed:[-146,20],fw:[54,72],tilt:0.32,yaw:[0.2,-0.2],k:2.8}});
+  addGroup(rest,{dur:9,cam:{fixed:[0,0],fw:[170,WIDE],tilt:0.24,yaw:[-0.32,0.3],k:1.6}});
+  addJob(tag,{dur:5,p:1.4,cam:{fixed:[0,-58],fw:[150,128],tilt:0.27,yaw:[0.16,-0.08],k:2.2}});
+  addJob(und,{dur:1.1,p:1,cam:{fixed:[0,-58],fw:[128,136],tilt:0.27,yaw:[-0.08,-0.14],k:2.2}});
+  addJob([],{dur:7,cam:{fixed:[0,0],fw:[WIDE,WIDE],tilt:0.13,yaw:0,k:1.3}});
   const j=S.jobs[0].cam; C.tx=j.fixed[0]; C.ty=j.fixed[1]; C.lf=Math.log(j.fw[0]); C.tilt=j.tilt; C.yaw=j.yaw; C.roll=0; for(const k in C.v) C.v[k]=0;
   wps.x=C.tx; wps.y=C.ty; wp.x=nov[0][0]; wp.y=-nov[0][1];
 }
-function addTag(x,y){
-  const f=FINDINGS[S.tagN%FINDINGS.length], side=S.tagN%2; S.tagN++;
-  const tw=62, th=28.5, c=7.4; x=clamp(x,-HOOP.hx+46,HOOP.hx-46); y=clamp(y,-HOOP.hy+27,HOOP.hy-27);
-  const rot=(rnd()-.5)*0.14+(x<0?-0.025:0.025), cr=Math.cos(rot), sr=Math.sin(rot), P=(u,v)=>[x+u*cr-v*sr,y+u*sr+v*cr], st=[];
-  const outline=[P(-tw/2+c,-th/2),P(tw/2,-th/2),P(tw/2,th/2),P(-tw/2+c,th/2),P(-tw/2,th/2-c),P(-tw/2,-th/2+c),P(-tw/2+c,-th/2)];
-  chalkLine(outline,0.55,0.2); chalkTex.needsUpdate=true;
-  lineStitches(st,outline,2.5,0.86,0.52,0);
-  const hx=-tw/2+c*0.95, ring=[]; for(let i=0;i<=10;i++){ const a=i/10*6.2832; ring.push(P(hx+Math.cos(a)*1.9,Math.sin(a)*1.9)); }
-  lineStitches(st,ring,1.25,0.92,0.42,0);
-  const cord=[]; for(let i=0;i<=16;i++){ const t=i/16; cord.push(P(hx-t*13,-t*14+Math.sin(t*3.14)*6)); }
-  lineStitches(st,cord,2.3,0.55,0.4,2);
-  const inner=tw-c*1.5-5, ox=c*0.55, capNum=Math.min(9.6,inner/textW(f[0],1,0.035)), capC=Math.min(3.7,inner/textW(f[1],1,0.07),inner/textW(f[2],1,0.07));
-  const p0=P(ox,-th*0.17), p1=P(ox,th*0.2), p2=P(ox,th*0.2+capC*1.6);
-  textStitches(st,f[0],p0[0],p0[1],capNum,1,{rot,th:0.5,w:0.44,gap:0.4,maxLen:4});
-  textStitches(st,f[1],p1[0],p1[1],capC,2,{rot,th:-0.6,w:0.32,gap:0.29,maxLen:2.2,track:0.07});
-  textStitches(st,f[2],p2[0],p2[1],capC,2,{rot,th:-0.6,w:0.32,gap:0.29,maxLen:2.2,track:0.07});
-  const y0=side?0.24:-0.24;
-  addJob(st,{dur:3.8,p:1.25,tag:true,cam:{fixed:[x,-y],fw:[84,66],tilt:0.36,yaw:[y0,-y0*0.6],k:2.8}});
+function addDoodle(x,y){
+  const st=[], k=S.tagN++%5, pc=[3,6,7,9,10,5][Math.floor(rnd()*6)]; x=clamp(x,-195,195); y=clamp(y,-106,106);
+  if(k===0) ringFlower(st,x,y,5+rnd()*2,pc,4,6); else if(k===1) daisy(st,x,y,5+rnd()*2,pc,11,6); else if(k===2) star(st,x,y,5.5,rnd(),6,5); else if(k===3) heart(st,x,y,5,(rnd()-.5)*0.5,3,4); else percent(st,x,y,10,(rnd()-.5)*0.5,pc,11);
+  addJob(st,{dur:1.7,p:1.2,cam:{fixed:[x*0.4,-y*0.4],fw:[WIDE*0.72,WIDE*0.72],tilt:0.2,yaw:x>0?0.12:-0.12,k:2}});
 }
-function film(){ clearJobs(); buildIntro(); for(const s of SPOTS) addTag(s[0],s[1]); addJob([],{dur:6,cam:{fixed:[0,0],fw:[WIDE,WIDE],tilt:0.13,yaw:0,k:1.4}}); S.film=true; S.paused=false;
-  clearTimeout(hudT); $("bar").classList.add("off"); stage.classList.add("quiet"); }
-function restart(){ clearJobs(); buildIntro(); S.film=false; S.paused=false; }
+function film(){ clearJobs(); buildFilm(); S.film=true; S.paused=false; clearTimeout(hudT); $("bar").classList.add("off"); stage.classList.add("quiet"); }
+function restart(){ clearJobs(); buildFilm(); S.film=false; S.paused=false; }
 
 function spring(key,target,k,dt){ const a=k*k*(target-C[key])-2*k*C.v[key]; C.v[key]+=a*dt; C[key]+=C.v[key]*dt; }
 function step(dt){
   S.time+=dt; const job=S.jobs[S.cur]; let des, k=1.5;
   if(job){
     job.t+=dt; const x=Math.min(1,job.t/job.dur), c=job.cam;
-    if(job.n){
+    if(job.subs){ wp.on=false; for(const q of job.subs){ const pr=q.n*Math.pow(clamp((job.t-q.delay)/q.dur,0,1),1.3); q.u.value=pr; q.mesh.geometry.instanceCount=Math.min(q.n,Math.ceil(pr)); } }
+    else if(job.n){
       const prog=job.n*Math.pow(x,job.p); job.u.value=prog; job.mesh.geometry.instanceCount=Math.min(job.n,Math.ceil(prog));
       const i=Math.min(job.n-1,Math.floor(prog)), g=Math.min(1,prog-i), s=job.st[i];
       wp.x=lerp(s[0],s[2],g); wp.y=-lerp(s[1],s[3],g); wp.w=s[4]; wp.c=s[5]; wp.on=true;
@@ -468,7 +569,7 @@ function step(dt){
     const yw=Array.isArray(c.yaw)?lerp(c.yaw[0],c.yaw[1],x):c.yaw;
     des={tx:c.fixed?c.fixed[0]:wps.x, ty:c.fixed?c.fixed[1]:wps.y, lf:Math.log(lerp(c.fw[0],c.fw[1],x*x*(3-2*x))), tilt:c.tilt, yaw:yw, roll:Math.sin(S.time*0.5)*0.012};
     k=c.k||3;
-    if(x>=1){ if(job.n){ job.u.value=job.n; job.mesh.geometry.instanceCount=job.n; } S.cur++; if(S.cur>=S.jobs.length) wp.on=false; }
+    if(x>=1){ if(job.n){ job.u.value=job.n; job.mesh.geometry.instanceCount=job.n; } if(job.subs) for(const q of job.subs){ q.u.value=q.n; q.mesh.geometry.instanceCount=q.n; } S.cur++; if(S.cur>=S.jobs.length) wp.on=false; }
   } else {
     wp.on=false; const t=S.time, m=reduce?0:1;
     des={tx:(Math.sin(t*0.13)*6+ptr.x*9)*m, ty:(Math.cos(t*0.1)*3+ptr.y*5)*m, lf:Math.log(WIDE), tilt:0.13, yaw:(Math.sin(t*0.08)*0.09+ptr.x*0.06)*m, roll:Math.sin(t*0.09)*0.006*m};
@@ -489,7 +590,7 @@ function applyCam(){
   shared.uFoc.value.x=d; shared.uFoc.value.y=2.6*RH;
   const z0=wp.w*0.34, P0=WU.uP0.value.set(wp.x,wp.y,z0), sw=Math.sin(t*1.7)*1.5, sw2=Math.cos(t*1.1)*2;
   WU.uP1.value.set(P0.x-3.2,P0.y+1.6,z0+1.4); WU.uP2.value.set(P0.x+7+sw,P0.y+27+sw2,10+sw*0.5); WU.uP3.value.set(P0.x-64+sw*5,P0.y+240+sw2*4,72);
-  const S2=clamp(fw*1.5,60,480); lightCam.left=-S2/2; lightCam.right=S2/2; lightCam.top=S2/2; lightCam.bottom=-S2/2;
+  const S2=clamp(fw*1.5,60,560); lightCam.left=-S2/2; lightCam.right=S2/2; lightCam.top=S2/2; lightCam.bottom=-S2/2;
   tmp.set(tgt.x,tgt.y+fw*0.04,0); lightCam.position.copy(tmp).addScaledVector(Lv,420); lightCam.up.set(0,0,1); lightCam.lookAt(tmp);
   lightCam.updateProjectionMatrix(); lightCam.updateMatrixWorld(); lightCam.matrixWorldInverse.copy(lightCam.matrixWorld).invert();
   shared.uShadowMat.value.multiplyMatrices(lightCam.projectionMatrix,lightCam.matrixWorldInverse);
@@ -497,7 +598,7 @@ function applyCam(){
 }
 function render(){
   applyCam();
-  const all=casters.concat(S.jobs.filter(j=>j.mesh).map(j=>j.mesh));
+  const all=casters.concat(meshes);
   for(const m of all){ m.userData.main=m.material; m.material=m.userData.depth; } cloth.visible=false;
   renderer.setRenderTarget(shadowRT); renderer.clear(); renderer.render(scene,lightCam);
   for(const m of all) m.material=m.userData.main; cloth.visible=true;
@@ -521,7 +622,7 @@ function wake(){ bar.classList.remove("off"); stage.classList.remove("quiet"); c
 function pick(e){ const r=canvas.getBoundingClientRect(); tmp.set(((e.clientX-r.left)/r.width)*2-1,-(((e.clientY-r.top)/r.height)*2-1),0.5).unproject(cam).sub(cam.position).normalize();
   const t=-cam.position.z/tmp.z; return [cam.position.x+tmp.x*t,-(cam.position.y+tmp.y*t)]; }
 stage.addEventListener("pointermove",e=>{ const r=canvas.getBoundingClientRect(); ptr.x=((e.clientX-r.left)/r.width)*2-1; ptr.y=-(((e.clientY-r.top)/r.height)*2-1); wake(); });
-stage.addEventListener("pointerdown",e=>{ wake(); if(e.target.closest("button")||(S.film&&S.cur<S.jobs.length)) return; S.film=false; const p=pick(e); addTag(p[0],p[1]); });
+stage.addEventListener("pointerdown",e=>{ wake(); if(e.target.closest("button")||(S.film&&S.cur<S.jobs.length)) return; S.film=false; const p=pick(e); addDoodle(p[0],p[1]); });
 $("bFilm").addEventListener("click",film);
 $("bReset").addEventListener("click",restart);
 $("bSpeed").addEventListener("click",e=>{ S.speed=S.speed===1?2:S.speed===2?4:1; e.currentTarget.textContent="SPEED "+S.speed+"X"; });
