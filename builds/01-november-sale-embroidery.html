@@ -51,6 +51,7 @@ button:focus-visible{outline:2px solid var(--thread-red);outline-offset:3px}
       <button id="bFilm" type="button">PLAY FILM</button>
       <button id="bReset" type="button" class="alt">RESTART</button>
       <button id="bSpeed" type="button" class="alt">SPEED 1X</button>
+      <button id="bCloth" type="button" class="alt">CLOTH</button>
       <button id="bFull" type="button" class="alt">FULL SCREEN</button>
     </div>
   </div>
@@ -73,12 +74,13 @@ const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ---------- the design, in millimetres (x right, y down, origin at the centre of the hoop) ---------- */
 const FONT='"AntonLocal","Anton",Impact,"Arial Narrow",sans-serif';
-const D={W:420,H:250}, PITCH=0.85, ASPECT=16/9, WIDE=414;
+const D={W:190,H:110}, PITCH=1.0, ASPECT=16/9, WIDE=168;
 const lin=(r,g,b,k)=>[Math.pow(r/255,2.2)*k,Math.pow(g/255,2.2)*k,Math.pow(b/255,2.2)*k];
 const PAL=[[1.0,0.60,0.012],[0.82,0.016,0.02],[0.84,0.76,0.60],                          // 0 yellow, 1 red, 2 cream (linear)
   lin(255,170,195,.95),lin(236,110,150,.95),lin(255,186,140,.95),lin(255,226,130,.95),    // 3 blush, 4 rose, 5 peach, 6 butter
   lin(150,230,190,.95),lin(96,176,130,.9),lin(140,205,250,.95),lin(196,168,245,.95),      // 7 mint, 8 sage, 9 sky, 10 lilac
-  lin(250,244,232,.9),lin(150,120,220,.9),lin(90,160,230,.9),lin(250,130,120,.95)];       // 11 white, 12 violet, 13 blue, 14 coral
+  lin(250,244,232,.9),lin(150,120,220,.9),lin(90,160,230,.9),lin(250,130,120,.95),
+  lin(245,150,8,1),lin(165,8,34,1)];                                                      // 15 deep gold, 16 crimson       // 11 white, 12 violet, 13 blue, 14 coral
 const FINDINGS=[
   ["96%","OF PRICES DIDN'T","MOVE ON 11.11"],
   ["7 IN 10","CROSSED-OUT PRICES","ARE INFLATED"],
@@ -100,7 +102,7 @@ function eachGlyph(str,cx,cy,cap,o,fn){
   for(const ch of str){ const w=charW(ch)*em; if(ch!==" "){ const lx=x+w/2; fn(ch,cx+lx*cr,cy+lx*sr,em,rot); } x+=w+tk; }
 }
 function glyphStitches(out,ch,gx,gy,em,cap,rot,o,ci){
-  const ppm=clamp(3.3/o.gap,5,44), size=em*ppm, M=Math.ceil(size*1.55)+12;
+  const ppm=clamp(8/o.gap,10,44), size=em*ppm, M=Math.ceil(size*1.55)+12;
   mc.width=M; mc.height=M;
   mx.translate(M/2,M/2); mx.rotate(-o.th); mx.font=`${size}px ${FONT}`; mx.textAlign="center"; mx.textBaseline="alphabetic"; mx.fillStyle="#fff";
   mx.fillText(ch,0,cap*ppm/2);
@@ -120,7 +122,7 @@ function glyphStitches(out,ch,gx,gy,em,cap,rot,o,ci){
     }
     if(row%2) segs.reverse();
     for(const sg of segs){
-      const X1=((row%2?sg[1]:sg[0])-M/2)/ppm, X2=((row%2?sg[0]:sg[1])-M/2)/ppm, Y=(yf-M/2)/ppm, j=()=>(rnd()-.5)*0.2;
+      const X1=((row%2?sg[1]:sg[0])-M/2)/ppm, X2=((row%2?sg[0]:sg[1])-M/2)/ppm, Y=(yf-M/2)/ppm, j=()=>(rnd()-.5)*0.07;
       const x1=X1*ct-Y*st+j(), y1=X1*st+Y*ct+j(), x2=X2*ct-Y*st+j(), y2=X2*st+Y*ct+j();
       out.push([gx+x1*cr-y1*sr, gy+x1*sr+y1*cr, gx+x2*cr-y2*sr, gy+x2*sr+y2*cr, o.w, ci, o.ci2, 0, o.lift||0]);
     }
@@ -138,7 +140,7 @@ function lineStitches(out,pts,L,cover,w,ci,lift){
 }
 
 /* ---------- chalk transfer lines on the cloth ---------- */
-const CK=7, chalk=document.createElement("canvas"); chalk.width=D.W*CK; chalk.height=D.H*CK; const cx2=chalk.getContext("2d");
+const CK=16, chalk=document.createElement("canvas"); chalk.width=D.W*CK; chalk.height=D.H*CK; const cx2=chalk.getContext("2d");
 const cpx=(x,y)=>[(x+D.W/2)*CK,(y+D.H/2)*CK];
 function chalkText(str,cx,cy,cap,o){
   eachGlyph(str,cx,cy,cap,o,(ch,gx,gy,em,rot)=>{
@@ -178,8 +180,8 @@ attribute vec4 iA; attribute vec4 iB; attribute vec3 iC; uniform float uProg;
 varying vec3 vW; varying vec3 vN; varying vec3 vT; varying vec3 vCol; varying vec3 vUV; varying float vSeed;
 float zAt(float s,float L,float zone,float w,float open){
   float e=clamp(min(s,L-s)/zone,0.,1.); if(open>0.5&&s>L*0.5) e=1.;
-  float ee=e*e*(3.-2.*e); float rh=0.34*w*(0.45+0.55*ee);
-  return rh*(-2.3+3.3*ee)+0.012*L*sin(3.14159*clamp(s/L,0.,1.));
+  float ee=e*e*(3.-2.*e); float rh=0.41*w*(0.45+0.55*ee);
+  return rh*(-2.3+3.3*ee)+min(0.035*L,0.26)*sin(3.14159*clamp(s/L,0.,1.));
 }
 void main(){
   vec2 a=iA.xy, b=iA.zw; float w=iB.x; float grow=clamp(uProg-iB.z,0.,1.);
@@ -189,7 +191,7 @@ void main(){
   if(px<1.) s=px*zone; else if(px<2.) s=zone+(px-1.)*(L-2.*zone); else s=L-(3.-px)*zone;
   float e=clamp(min(s,L-s)/zone,0.,1.); if(open>0.5&&s>L*0.5) e=1.;
   float ee=e*e*(3.-2.*e);
-  float rw=0.5*w*(0.72+0.28*ee), rh=0.34*w*(0.45+0.55*ee);
+  float rw=0.5*w*(0.72+0.28*ee), rh=0.41*w*(0.45+0.55*ee);
   float zc=iB.w+zAt(s,L,zone,w,open);
   float dz=(zAt(s+0.02,L,zone,w,open)-zAt(s-0.02,L,zone,w,open))/0.04;
   vec3 T3=normalize(vec3(t,dz)); vec3 S3=vec3(n,0.); vec3 U3=cross(T3,S3);
@@ -213,7 +215,7 @@ void main(){
 const THREAD_FS=COMMON+`
 varying vec3 vW; varying vec3 vN; varying vec3 vT; varying vec3 vCol; varying vec3 vUV; varying float vSeed;
 void main(){
-  vec3 N=normalize(vN), Tn=normalize(vT); vec3 B=normalize(cross(N,Tn)); vec3 Lc=uLCol*0.46*(1.-0.38*smoothstep(120.,330.,length(vW.xy)));
+  vec3 N=normalize(vN), Tn=normalize(vT); vec3 B=normalize(cross(N,Tn)); vec3 Lc=uLCol*0.46*(1.-0.38*smoothstep(55.,150.,length(vW.xy)));
   float s=vUV.x, ee=vUV.z;
   float mini=smoothstep(0.3,1.3,fwidth(vUV.y));
   float ph=vUV.y/6.2832*5.+s*0.5+vSeed*9.;
@@ -230,16 +232,21 @@ void main(){
   float t1=dot(normalize(Tf+N2*0.10),H), t2=dot(normalize(Tf-N2*0.22),H);
   float sp1=pow(sqrt(max(0.,1.-t1*t1)),48.), sp2=pow(sqrt(max(0.,1.-t2*t2)),12.);
   float sm=smoothstep(-0.05,0.4,ndl);
-  float ao=mix(0.35,1.,ee)*mix(mix(0.42,1.,smoothstep(0.,0.8,N.z)),0.9,mini);
+  float ao=mix(0.35,1.,ee)*mix(mix(0.26,1.,smoothstep(0.,0.85,N.z)),0.88,mini);
+  float spN=pow(max(dot(N2,H),0.),34.);
   vec3 amb=mix(uGnd,uSky,N2.z*0.5+0.5)*1.6;
-  vec3 col=alb*(Lc*wrap*sh+amb)*ao;
-  col+=Lc*sh*sm*ao*(sp1*0.16*(1.-mini)+sp2*alb*0.7);
+  vec3 col=mix(alb*alb*1.2,alb,wrap)*(Lc*wrap*sh+amb)*ao;
+  col+=Lc*sh*sm*ao*(sp1*0.16*(1.-mini)+sp2*alb*0.7+spN*0.3*(0.35+0.65*alb)*(1.-0.6*mini));
   col+=alb*Lc*pow(1.-max(dot(N2,V),0.),3.)*0.3*sh*ao;
   gl_FragColor=finish(col,vW);
 }`;
 const CLOTH_VS=`varying vec3 vW; void main(){ vW=position; gl_Position=projectionMatrix*viewMatrix*vec4(position,1.); }`;
 const CLOTH_FS=COMMON+`
-varying vec3 vW; uniform sampler2D tChalk; uniform vec2 uD; uniform float uPitch;
+varying vec3 vW; uniform sampler2D tChalk; uniform vec2 uD; uniform float uPitch; uniform vec3 uClothA; uniform vec3 uChalkC; uniform float uChalkK;
+uniform sampler2D tAo; uniform mat4 uAoMat; uniform float uAoR;
+float aoAt(vec3 W){ vec4 c=uAoMat*vec4(W.xy,0.,1.); vec2 uv=c.xy*0.5+0.5; float rot=ign(gl_FragCoord.xy+17.)*6.2832, acc=0.;
+  for(int i=0;i<10;i++){ float fi=float(i); float r=sqrt((fi+0.5)/10.); float a=fi*2.39996+rot; acc+=step(texture2D(tAo,uv+vec2(cos(a),sin(a))*r*uAoR).r,0.9995); }
+  return acc/10.; }
 float weave(vec2 g, out float dir, out vec2 tc){
   vec2 c=floor(g), f=fract(g)-0.5; float s=mod(c.x+c.y,2.)*2.-1.;
   float nx=vn(vec2(c.x*7.31,g.y*0.33)), ny=vn(vec2(c.y*5.17+17.,g.x*0.33));
@@ -259,15 +266,15 @@ void main(){
   float ridge=0.5+0.5*sin((tc.y*3.4+tc.x*0.55*sg)*6.2832);
   float fuzz=vn(vW.xy*9.)*0.6+vn(vW.xy*27.)*0.4;
   float big=vn(vW.xy*0.045)*0.6+vn(vW.xy*0.011)*0.4;
-  vec3 N=normalize(vec3(-(hx-h)/e*0.34*det,-(hy-h)/e*0.34*det,1.));
+  vec3 N=normalize(vec3(-(hx-h)/e*0.48*det,-(hy-h)/e*0.48*det,1.));
   vec3 td=dir<0.5?vec3(0.,1.,0.):vec3(1.,0.,0.);
   N=normalize(N+td*(ridge-0.5)*0.35*det+vec3(vn(vW.xy*0.06)-0.5,vn(vW.yx*0.06+9.)-0.5,0.)*0.07);
   float tid=dir<0.5?floor(g.x)*1.7:floor(g.y)*2.3+50.;
   float occl=mix(0.75,smoothstep(0.02,0.55,h),det);
-  vec3 alb=vec3(0.0095,0.0095,0.012)*(0.75+0.5*h11(tid))*(0.62+0.5*ridge*det)*(0.72+0.5*fuzz)*(0.8+0.4*big);
+  vec3 alb=uClothA*(0.75+0.5*h11(tid))*(0.62+0.5*ridge*det)*(0.72+0.5*fuzz)*(0.8+0.4*big);
   vec2 cuv=(vW.xy+uD*0.5)/uD; float ck=texture2D(tChalk,cuv).r;
-  alb+=vec3(0.13,0.13,0.125)*ck*(0.12+0.88*smoothstep(0.35,0.95,mix(0.8,h,det)))*(0.35+0.9*fuzz);
-  float ring=1.-0.42*smoothstep(120.,330.,length(vW.xy));
+  alb=mix(alb,uChalkC,clamp(ck*uChalkK*(0.12+0.88*smoothstep(0.35,0.95,mix(0.8,h,det)))*(0.35+0.9*fuzz),0.,1.));
+  float ring=(1.-0.42*smoothstep(55.,150.,length(vW.xy)))*(1.-0.62*aoAt(vW));
   vec3 V=normalize(uCam-vW), H=normalize(uL+V);
   float sh=shadowAt(vW+vec3(0.,0.,0.05));
   float ndl=max(dot(N,uL),0.);
@@ -317,13 +324,17 @@ const scene=new T.Scene(), cam=new T.PerspectiveCamera(26,ASPECT,1,4000);
 const Lv=new T.Vector3(-0.58,0.46,0.67).normalize();
 const shared={ uCam:{value:new T.Vector3()}, uFwd:{value:new T.Vector3()}, uL:{value:Lv}, uLCol:{value:new T.Vector3(3.3,3.05,2.7)},
   uSky:{value:new T.Vector3(0.085,0.10,0.135)}, uGnd:{value:new T.Vector3(0.045,0.036,0.03)}, tShadow:{value:null}, uShadowMat:{value:new T.Matrix4()},
-  uPen:{value:0.002}, uSBias:{value:0.0003}, uFoc:{value:new T.Vector4(100,3000,13,HDR?0:1)} };
+  uPen:{value:0.002}, uSBias:{value:0.0003}, uFoc:{value:new T.Vector4(100,3000,13,HDR?0:1)},
+  tAo:{value:null}, uAoMat:{value:new T.Matrix4()}, uAoR:{value:0.01} };
+const CL={uClothA:{value:new T.Vector3()},uChalkC:{value:new T.Vector3()},uChalkK:{value:0.9}}, CLOTHS=[[0.0105,0.0105,0.013,0.15,0.15,0.145,0.9],[0.235,0.195,0.148,0.035,0.032,0.03,0.6]]; let clothI=0;
+function setCloth(i){ clothI=i%CLOTHS.length; const c=CLOTHS[clothI]; CL.uClothA.value.set(c[0],c[1],c[2]); CL.uChalkC.value.set(c[3],c[4],c[5]); CL.uChalkK.value=c[6]; }
+setCloth(0);
 const mat=(vs,fs,extra)=>new T.ShaderMaterial({uniforms:Object.assign({},shared,extra||{}),vertexShader:vs,fragmentShader:fs,side:T.DoubleSide,extensions:{derivatives:true}});
 const casters=[];
 function caster(mesh,depthMat){ mesh.userData.depth=depthMat; casters.push(mesh); }
 
 const chalkTex=new T.CanvasTexture(chalk); chalkTex.anisotropy=renderer.capabilities.getMaxAnisotropy(); chalkTex.minFilter=T.LinearMipmapLinearFilter;
-const cloth=new T.Mesh(new T.PlaneGeometry(1800,1400), mat(CLOTH_VS,CLOTH_FS,{tChalk:{value:chalkTex},uD:{value:new T.Vector2(D.W,D.H)},uPitch:{value:PITCH}}));
+const cloth=new T.Mesh(new T.PlaneGeometry(1800,1400), mat(CLOTH_VS,CLOTH_FS,Object.assign({tChalk:{value:chalkTex},uD:{value:new T.Vector2(D.W,D.H)},uPitch:{value:PITCH}},CL)));
 scene.add(cloth);
 
 function tubeBase(xs,a0,a1,rn){
@@ -332,7 +343,7 @@ function tubeBase(xs,a0,a1,rn){
   for(let i=0;i<xs.length-1;i++) for(let j=0;j<rn-1;j++){ const a=i*rn+j,b=a+1,c=a+rn,d=c+1; idx.push(a,c,b,b,c,d); }
   return {pos:new T.Float32BufferAttribute(pos,3),uv:new T.Float32BufferAttribute(uv,2),idx:new T.Uint16BufferAttribute(idx,1)};
 }
-const SB=tubeBase([0,.35,.7,1,1.5,2,2.3,2.65,3],-0.9,Math.PI+0.9,7), SB2=tubeBase([0,.5,1,1.5,2,2.5,3],-0.9,Math.PI+0.9,5), meshes=[];
+const SB=tubeBase([0,.35,.7,1,1.5,2,2.3,2.65,3],-0.9,Math.PI+0.9,9), SB2=tubeBase([0,.5,1,1.5,2,2.5,3],-0.9,Math.PI+0.9,6), meshes=[];
 function buildMesh(st){
   const n=st.length, A=new Float32Array(n*4), B=new Float32Array(n*4), C=new Float32Array(n*3);
   let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
@@ -341,7 +352,7 @@ function buildMesh(st){
     B[i*4]=s[4]; B[i*4+1]=rnd(); B[i*4+2]=i; B[i*4+3]=(s[8]||0)+rnd()*0.05;
     C[i*3]=lerp(pa[0],pb[0],k)*tone; C[i*3+1]=lerp(pa[1],pb[1],k)*tone*warm; C[i*3+2]=lerp(pa[2],pb[2],k)*tone;
     x0=Math.min(x0,s[0],s[2]); x1=Math.max(x1,s[0],s[2]); y0=Math.min(y0,-s[1],-s[3]); y1=Math.max(y1,-s[1],-s[3]); }
-  const bs=st[0][4]<0.5?SB2:SB, g=new T.InstancedBufferGeometry(); g.setIndex(bs.idx); g.setAttribute("position",bs.pos); g.setAttribute("uv",bs.uv);
+  const bs=st[0][4]<0.35?SB2:SB, g=new T.InstancedBufferGeometry(); g.setIndex(bs.idx); g.setAttribute("position",bs.pos); g.setAttribute("uv",bs.uv);
   g.setAttribute("iA",new T.InstancedBufferAttribute(A,4)); g.setAttribute("iB",new T.InstancedBufferAttribute(B,4)); g.setAttribute("iC",new T.InstancedBufferAttribute(C,3));
   g.instanceCount=0; g.boundingSphere=new T.Sphere(new T.Vector3((x0+x1)/2,(y0+y1)/2,0),Math.hypot(x1-x0,y1-y0)/2+3);
   const u={value:0}, mesh=new T.Mesh(g,mat(STITCH_VS,THREAD_FS,{uProg:u}));
@@ -358,6 +369,8 @@ const WU={uP0:{value:new T.Vector3()},uP1:{value:new T.Vector3()},uP2:{value:new
 const SM=2048, shadowRT=new T.WebGLRenderTarget(SM,SM,{minFilter:T.NearestFilter,magFilter:T.NearestFilter});
 shadowRT.depthTexture=new T.DepthTexture(SM,SM,T.UnsignedIntType); shared.tShadow.value=shadowRT.depthTexture;
 const lightCam=new T.OrthographicCamera(-1,1,1,-1,10,900);
+const aoRT=new T.WebGLRenderTarget(1024,1024,{minFilter:T.NearestFilter,magFilter:T.NearestFilter}); aoRT.depthTexture=new T.DepthTexture(1024,1024,T.UnsignedIntType); shared.tAo.value=aoRT.depthTexture;
+const aoCam=new T.OrthographicCamera(-1,1,1,-1,1,200);
 const PU={tScene:{value:null},uPx:{value:new T.Vector2()},uMax:{value:13},uTime:{value:0},uLDR:{value:HDR?0:1},uExp:{value:1.05}};
 const postScene=new T.Scene(), postCam=new T.Camera();
 { const m=new T.Mesh(new T.PlaneGeometry(2,2),new T.ShaderMaterial({uniforms:PU,vertexShader:POST_VS,fragmentShader:POST_FS,depthTest:false,depthWrite:false})); m.frustumCulled=false; postScene.add(m); }
@@ -385,7 +398,7 @@ const C={tx:0,ty:0,lf:Math.log(WIDE),tilt:0.13,yaw:0,roll:0,v:{tx:0,ty:0,lf:0,ti
 const ptr={x:0,y:0}; let hudT=0;
 function addJob(st,o){ const m=st.length?buildMesh(st):null; const job=Object.assign({st,n:st.length,t:0,p:1.6,dur:3,mesh:m&&m.mesh,u:m&&m.u,cam:{}},o); S.jobs.push(job); return job; }
 function addGroup(items,o){
-  const subs=items.filter(it=>it.st.length).map(it=>{ const m=buildMesh(it.st), d=Math.min(1,Math.hypot(it.x,it.y)/230); return {mesh:m.mesh,u:m.u,n:it.st.length,delay:(d*0.55+rnd()*0.12)*o.dur,dur:0.33*o.dur}; });
+  const subs=items.filter(it=>it.st.length).map(it=>{ const m=buildMesh(it.st), d=Math.min(1,Math.hypot(it.x,it.y)/95); return {mesh:m.mesh,u:m.u,n:it.st.length,delay:(d*0.55+rnd()*0.12)*o.dur,dur:0.33*o.dur}; });
   S.jobs.push(Object.assign({subs,n:0,t:0,cam:{}},o));
 }
 function clearJobs(){ for(const m of meshes){ scene.remove(m); m.geometry.dispose(); m.material.dispose(); m.userData.depth.dispose(); } meshes.length=0;
@@ -415,140 +428,137 @@ function fanFill(out,cx,cy,bp,r0,o){
     for(let m=0;m<n;m++,k++){ const t=m/n, x=a[0]+(b[0]-a[0])*t, y=a[1]+(b[1]-a[1])*t, d=Math.hypot(x-cx,y-cy); if(d<r0*2.2) continue;
       const rr=r0*(k%2?1.9:0.9)*(0.85+0.3*rnd()); out.push([cx+(x-cx)/d*rr,cy+(y-cy)/d*rr,x,y,o.w,o.ci,o.ci2,0,o.lift||0]); } }
 }
-function tint(out,i0,ci2,ax,ay,bx,by){ const dx=bx-ax, dy=by-ay, L=dx*dx+dy*dy; for(let i=i0;i<out.length;i++){ const s=out[i]; s[6]=ci2; s[7]=clamp((((s[0]+s[2])/2-ax)*dx+((s[1]+s[3])/2-ay)*dy)/L,0,1); } }
+function tint(out,i0,ci2,ax,ay,bx,by,k){ const dx=bx-ax, dy=by-ay, L=dx*dx+dy*dy; for(let i=i0;i<out.length;i++){ const s=out[i]; s[6]=ci2; s[7]=clamp((((s[0]+s[2])/2-ax)*dx+((s[1]+s[3])/2-ay)*dy)/L,0,1)*(k==null?1:k); } }
 function mixIn(out,i0,ci2,amt){ for(let i=i0;i<out.length;i++){ out[i][6]=ci2; out[i][7]=rnd()*amt; } }
 function resample(pts,L){ const out=[pts[0]]; let carry=L; for(let i=0;i<pts.length-1;i++){ const a=pts[i], b=pts[i+1], len=Math.hypot(b[0]-a[0],b[1]-a[1]); let t=carry; while(t<=len){ out.push([a[0]+(b[0]-a[0])*t/len,a[1]+(b[1]-a[1])*t/len]); t+=L; } carry=t-len; } return out; }
 function chain(out,pts,L,w,ci,lift){ const q=resample(pts,L);
   for(let i=0;i<q.length-1;i++){ const a=q[i], b=q[i+1], dx=b[0]-a[0], dy=b[1]-a[1], d=Math.hypot(dx,dy)||1, nx=-dy/d*L*0.34, ny=dx/d*L*0.34;
     out.push([a[0],a[1],b[0]+dx*0.12+nx,b[1]+dy*0.12+ny,w,ci,undefined,0,lift||0],[a[0],a[1],b[0]+dx*0.12-nx,b[1]+dy*0.12-ny,w,ci,undefined,0,lift||0]); } }
 function stem(out,pts,L,w,ci,lift){ const q=resample(pts,L); for(let i=0;i<q.length-1;i++){ const a=q[i], b=q[i+1]; out.push([a[0],a[1],b[0]+(b[0]-a[0])*0.18,b[1]+(b[1]-a[1])*0.18,w,ci,undefined,0,lift||0]); } }
-function knot(out,x,y,r,ci,lift){ const a0=rnd()*6.283; for(let i=0;i<3;i++){ const a=a0+i*2.094; out.push([x+Math.cos(a)*r,y+Math.sin(a)*r,x+Math.cos(a+2.5)*r,y+Math.sin(a+2.5)*r,r*1.15,ci,undefined,0,(lift||0)+i*0.1]); } }
+function knot(out,x,y,r,ci,lift){ const a0=rnd()*6.283; for(let i=0;i<3;i++){ const a=a0+i*2.094; out.push([x+Math.cos(a)*r,y+Math.sin(a)*r,x+Math.cos(a+2.5)*r,y+Math.sin(a+2.5)*r,r*1.15,ci,undefined,0,(lift||0)+i*0.12]); } }
 function ringFlower(out,x,y,r,ci,ci2,cc){
-  const n=Math.round(6.2832*r/0.3);
-  for(let i=0;i<n;i++){ const a=i/n*6.2832, ri=r*(i%2?0.52:0.32)*(0.9+0.2*rnd()), ro=r*(0.96+0.08*rnd()); out.push([x+Math.cos(a)*ri,y+Math.sin(a)*ri,x+Math.cos(a)*ro,y+Math.sin(a)*ro,0.34,ci,ci2,0.5+0.5*Math.sin(a*3+1),0]); }
-  knot(out,x,y,r*0.085,cc,0.1); for(let i=0;i<6;i++){ const a=i/6*6.2832; knot(out,x+Math.cos(a)*r*0.19,y+Math.sin(a)*r*0.19,r*0.08,cc,0.05); }
-  chain(out,circle(x,y,r*1.1,40),1.5,0.26,ci2);
-  for(let i=0;i<10;i++){ const a=i/10*6.2832+0.3, e=1.6+0.2*(i%2); out.push([x+Math.cos(a)*r*1.32,y+Math.sin(a)*r*1.32,x+Math.cos(a)*r*e,y+Math.sin(a)*r*e,0.3,i%3?ci:cc,undefined,0,0]); }
+  const n=Math.round(6.2832*r/0.42);
+  for(let i=0;i<n;i++){ const a=i/n*6.2832, ri=r*(i%2?0.5:0.3)*(0.9+0.2*rnd()), ro=r*(0.95+0.1*rnd()); out.push([x+Math.cos(a)*ri,y+Math.sin(a)*ri,x+Math.cos(a)*ro,y+Math.sin(a)*ro,0.5,ci,ci2,0.5+0.5*Math.sin(a*3+1),0]); }
+  knot(out,x,y,Math.max(0.42,r*0.1),cc,0.15); for(let i=0;i<6;i++){ const a=i/6*6.2832; knot(out,x+Math.cos(a)*r*0.2,y+Math.sin(a)*r*0.2,Math.max(0.4,r*0.095),cc,0.08); }
+  chain(out,circle(x,y,r*1.13,40),1.25,0.3,ci2);
+  for(let i=0;i<10;i++){ const a=i/10*6.2832+0.3, e=1.62+0.2*(i%2); out.push([x+Math.cos(a)*r*1.38,y+Math.sin(a)*r*1.38,x+Math.cos(a)*r*e,y+Math.sin(a)*r*e,0.36,i%3?ci:cc,undefined,0,0]); }
 }
 function daisy(out,x,y,r,ci,ci2,cc,np){ np=np||6; const a0=rnd()*6.28;
-  for(let k=0;k<np;k++){ const a=a0+k/np*6.2832, P=xf(x,y,a), pts=[]; for(let i=0;i<16;i++){ const t=i/16*6.2832; pts.push(P(r*0.62+Math.cos(t)*r*0.4,Math.sin(t)*r*0.2*(1+0.25*Math.cos(t)))); }
-    const i0=out.length; polyFill(out,pts,a,{w:0.32,gap:0.27,maxLen:99,ci}); mixIn(out,i0,ci2,0.7); }
-  for(let i=0;i<5;i++){ const a=i/5*6.2832; knot(out,x+Math.cos(a)*r*0.1,y+Math.sin(a)*r*0.1,r*0.075,cc,0.05); } }
+  for(let k=0;k<np;k++){ const a=a0+k/np*6.2832, P=xf(x,y,a), pts=[]; for(let i=0;i<16;i++){ const t=i/16*6.2832; pts.push(P(r*0.62+Math.cos(t)*r*0.4,Math.sin(t)*r*0.23*(1+0.25*Math.cos(t)))); }
+    const i0=out.length; polyFill(out,pts,a,{w:0.44,gap:0.38,maxLen:99,ci}); mixIn(out,i0,ci2,0.7); }
+  for(let i=0;i<4;i++){ const a=i/4*6.2832; knot(out,x+Math.cos(a)*r*0.1,y+Math.sin(a)*r*0.1,Math.max(0.4,r*0.1),cc,0.08); } }
 function leaf(out,x,y,len,wid,rot,w){ const P=xf(x,y,rot), n=Math.max(8,Math.round(len/(w*0.5)));
   for(let i=0;i<n;i++){ const t=i/(n-1), hw=wid*Math.pow(Math.sin(Math.PI*(0.05+0.92*t)),0.75), e=P(t*len,(i%2?1:-1)*hw), c=P(Math.min(len,t*len+len*0.17),0); out.push([e[0],e[1],c[0],c[1],w,8,7,t*0.9,0]); } }
 function sprig(out,x,y,ang,len,bend,nl,bud){ const pts=[[x,y]], dirs=[], N=16; let px=x, py=y;
   for(let i=0;i<N;i++){ const a=ang+bend*i/N; dirs.push(a); px+=Math.cos(a)*len/N; py+=Math.sin(a)*len/N; pts.push([px,py]); }
-  stem(out,pts,1.8,0.3,8);
-  for(let k=1;k<=nl;k++){ const i=Math.round(k/(nl+0.6)*N), sz=len*(0.22-0.07*k/nl); leaf(out,pts[i][0],pts[i][1],sz,sz*0.3,dirs[Math.min(N-1,i)]+(k%2?0.8:-0.8),0.3); }
-  if(bud!=null) for(let i=0;i<3;i++) knot(out,px+(rnd()-.5)*2.4,py+(rnd()-.5)*2.4,0.55,bud,0.05);
+  stem(out,pts,1.5,0.34,8);
+  for(let k=1;k<=nl;k++){ const i=Math.round(k/(nl+0.6)*N), sz=len*(0.3-0.09*k/nl); leaf(out,pts[i][0],pts[i][1],sz,sz*0.34,dirs[Math.min(N-1,i)]+(k%2?0.8:-0.8),0.42); }
+  if(bud!=null) for(let i=0;i<3;i++) knot(out,px+(rnd()-.5)*1.6,py+(rnd()-.5)*1.6,0.5,bud,0.05);
   return [px,py]; }
-function sparkle(out,x,y,r,ci){ const a=rnd()*0.5; for(let i=0;i<4;i++){ const b=a+i*Math.PI/4, rr=i%2?r*0.5:r; out.push([x-Math.cos(b)*rr,y-Math.sin(b)*rr,x+Math.cos(b)*rr,y+Math.sin(b)*rr,0.26,ci,undefined,0,i*0.08]); } }
+function sparkle(out,x,y,r,ci){ const a=rnd()*0.5; for(let i=0;i<4;i++){ const b=a+i*Math.PI/4, rr=i%2?r*0.5:r; out.push([x-Math.cos(b)*rr,y-Math.sin(b)*rr,x+Math.cos(b)*rr,y+Math.sin(b)*rr,0.3,ci,undefined,0,i*0.1]); } }
 function star(out,x,y,r,rot,ci,ci2){ const b=[]; for(let i=0;i<=10;i++){ const a=rot-Math.PI/2+i*Math.PI/5, rr=i%2?r*0.45:r; b.push([x+Math.cos(a)*rr,y+Math.sin(a)*rr]); }
-  const i0=out.length; fanFill(out,x,y,b,r*0.08,{w:0.32,gap:0.3,ci}); mixIn(out,i0,ci2,0.6); }
+  const i0=out.length; fanFill(out,x,y,b,r*0.1,{w:0.44,gap:0.4,ci}); mixIn(out,i0,ci2,0.6); }
 function heart(out,x,y,sz,rot,ci,ci2){ const P=xf(x,y,rot), pts=[];
   for(let i=0;i<40;i++){ const t=i/40*6.2832; pts.push(P(Math.pow(Math.sin(t),3)*sz,-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))*sz/16)); }
-  const i0=out.length; polyFill(out,pts,rot+0.7,{w:0.34,gap:0.29,maxLen:3.6,ci}); tint(out,i0,ci2,...P(0,-sz),...P(0,sz)); }
+  const i0=out.length; polyFill(out,pts,rot+0.7,{w:0.46,gap:0.4,maxLen:3.4,ci}); tint(out,i0,ci2,...P(0,-sz),...P(0,sz)); }
 function bow(out,x,y,s,rot,ci,ci2){ const P=xf(x,y,rot), c=P(0,0);
   for(const sd of [-1,1]){ const ax=sd<0?Math.PI+0.42:-0.42, b=[];
     for(let i=0;i<=22;i++){ const t=i/22, ph=ax+(t-0.5)*1.5, rr=s*Math.pow(Math.sin(Math.PI*t),0.55); b.push(P(Math.cos(ph)*rr,Math.sin(ph)*rr)); }
-    let i0=out.length; fanFill(out,c[0],c[1],b,s*0.14,{w:0.34,gap:0.3,ci,lift:0.5}); mixIn(out,i0,ci2,0.5);
+    let i0=out.length; fanFill(out,c[0],c[1],b,s*0.16,{w:0.46,gap:0.42,ci,lift:0.55}); mixIn(out,i0,ci2,0.5);
     const d=[sd*0.36,0.8], da=Math.atan2(d[1],d[0]);
-    i0=out.length; polyFill(out,[P(-0.07*s,0.04*s),P(0.07*s,0.04*s),P((d[0]+0.13)*s,d[1]*s),P(d[0]*s,(d[1]-0.16)*s),P((d[0]-0.13)*s,(d[1]+0.02)*s)],rot+da+Math.PI/2,{w:0.34,gap:0.3,maxLen:99,ci,lift:0.5}); mixIn(out,i0,ci2,0.4); }
-  polyFill(out,[P(-0.13*s,-0.13*s),P(0.13*s,-0.13*s),P(0.15*s,0.13*s),P(-0.15*s,0.13*s)],rot+Math.PI/2,{w:0.36,gap:0.3,maxLen:99,ci:ci2,lift:0.78}); }
-function gift(out,x,y,w,h,rot,cb,cb2,cr,cr2){ const P=xf(x,y,rot), lh=h*0.24, f=0.36, g=0.31; let i0=out.length;
-  polyFill(out,[P(-w/2,-h/2+lh),P(w/2,-h/2+lh),P(w/2,h/2),P(-w/2,h/2)],rot+Math.PI/2,{w:f,gap:g,maxLen:4.4,ci:cb}); tint(out,i0,cb2,...P(0,-h/2+lh),...P(0,h/2+h*0.3));
-  i0=out.length; polyFill(out,[P(-w/2-1.5,-h/2),P(w/2+1.5,-h/2),P(w/2+1.5,-h/2+lh),P(-w/2-1.5,-h/2+lh)],rot,{w:f,gap:g,maxLen:4.8,ci:cb}); mixIn(out,i0,11,0.4);
-  const rw=Math.max(3,w*0.15); i0=out.length; polyFill(out,[P(-rw/2,-h/2-0.2),P(rw/2,-h/2-0.2),P(rw/2,h/2),P(-rw/2,h/2)],rot,{w:f,gap:g,maxLen:99,ci:cr,lift:0.32}); mixIn(out,i0,cr2,0.35);
-  lineStitches(out,[P(-w/2-1.5,-h/2+lh),P(-rw/2-0.4,-h/2+lh)],2.2,0.9,0.28,cb2,0.3); lineStitches(out,[P(rw/2+0.4,-h/2+lh),P(w/2+1.5,-h/2+lh)],2.2,0.9,0.28,cb2,0.3);
-  bow(out,...P(0,-h/2-0.6),Math.max(7,w*0.34),rot,cr,cr2); }
-function percent(out,x,y,cap,rot,ci,ci2){ const i0=out.length; textStitches(out,"%",x,y,cap,ci,{rot,th:0.6,w:0.4,gap:0.33,maxLen:4.2}); tint(out,i0,ci2,x,y-cap/2,x,y+cap/2); }
-function ptag(out,x,y,rot,f,co,cn,strike){ const tw=54, th=25, c=6.5, P=xf(x,y,rot);
-  chain(out,[P(-tw/2+c,-th/2),P(tw/2,-th/2),P(tw/2,th/2),P(-tw/2+c,th/2),P(-tw/2,th/2-c),P(-tw/2,-th/2+c),P(-tw/2+c,-th/2)],1.7,0.28,co);
-  const hx=-tw/2+c*0.95, hc=P(hx,0), cord=[]; stem(out,circle(hc[0],hc[1],1.7,14),1.1,0.3,co);
-  for(let i=0;i<=16;i++){ const t=i/16; cord.push(P(hx-t*11,-t*12+Math.sin(t*3.14)*5)); } lineStitches(out,cord,2,0.55,0.26,11);
-  const inner=tw-c*1.5-5, ox=c*0.55, one=!f[2], capN=Math.min(8.6,inner/textW(f[0],1,0.035)), capC=Math.min(one?4.6:3.3,inner/textW(f[1],1,0.07),one?99:inner/textW(f[2],1,0.07));
-  const p0=P(ox,-th*0.17), p1=P(ox,th*(one?0.27:0.2)), p2=P(ox,th*0.2+capC*1.6), oc={rot,th:-0.6,w:0.3,gap:0.27,maxLen:2.2,track:0.07};
-  const i0=out.length; textStitches(out,f[0],p0[0],p0[1],capN,cn,{rot,th:0.5,w:0.4,gap:0.34,maxLen:3.6}); mixIn(out,i0,11,0.3);
-  textStitches(out,f[1],p1[0],p1[1],capC,11,oc); if(!one) textStitches(out,f[2],p2[0],p2[1],capC,11,oc);
-  if(strike){ const wN=textW(f[0],capN,0.035)/2+2.5; for(const dv of [-0.45,0.45]){ const a=P(ox-wN,-th*0.17+capN*0.4+dv), b=P(ox+wN,-th*0.17-capN*0.4+dv); out.push([a[0],a[1],b[0],b[1],0.5,1,undefined,0,0.5]); } } }
+    i0=out.length; polyFill(out,[P(-0.07*s,0.04*s),P(0.07*s,0.04*s),P((d[0]+0.13)*s,d[1]*s),P(d[0]*s,(d[1]-0.16)*s),P((d[0]-0.13)*s,(d[1]+0.02)*s)],rot+da+Math.PI/2,{w:0.46,gap:0.42,maxLen:99,ci,lift:0.55}); mixIn(out,i0,ci2,0.4); }
+  polyFill(out,[P(-0.15*s,-0.15*s),P(0.15*s,-0.15*s),P(0.17*s,0.15*s),P(-0.17*s,0.15*s)],rot+Math.PI/2,{w:0.48,gap:0.42,maxLen:99,ci:ci2,lift:0.9}); }
+function gift(out,x,y,w,h,rot,cb,cb2,cr,cr2,pat){ const P=xf(x,y,rot), lh=h*0.25, f=0.5, g=0.44, cr0=Math.cos(rot), sr0=Math.sin(rot); let i0=out.length;
+  polyFill(out,[P(-w/2,-h/2+lh),P(w/2,-h/2+lh),P(w/2,h/2),P(-w/2,h/2)],rot+Math.PI/2,{w:f,gap:g,maxLen:4.4,ci:cb});
+  if(pat===1) for(let i=i0;i<out.length;i++){ const s=out[i], u=((s[0]+s[2])/2-x)*cr0+((s[1]+s[3])/2-y)*sr0; s[6]=cb2; s[7]=Math.floor((u+90)/2.3)%2?0.8:0.06; }
+  else tint(out,i0,cb2,...P(0,-h/2+lh),...P(0,h/2+h*0.3));
+  i0=out.length; polyFill(out,[P(-w/2-0.8,-h/2),P(w/2+0.8,-h/2),P(w/2+0.8,-h/2+lh),P(-w/2-0.8,-h/2+lh)],rot,{w:f,gap:g,maxLen:4.8,ci:cb}); mixIn(out,i0,11,0.4);
+  const rw=Math.max(2.2,w*0.16); i0=out.length; polyFill(out,[P(-rw/2,-h/2-0.2),P(rw/2,-h/2-0.2),P(rw/2,h/2),P(-rw/2,h/2)],rot,{w:f,gap:g,maxLen:99,ci:cr,lift:0.4}); mixIn(out,i0,cr2,0.35);
+  stem(out,[P(-w/2-0.8,-h/2+lh),P(-rw/2-0.3,-h/2+lh)],1.5,0.3,cb2,0.36); stem(out,[P(rw/2+0.3,-h/2+lh),P(w/2+0.8,-h/2+lh)],1.5,0.3,cb2,0.36);
+  if(pat===2) for(let a=-1;a<=1;a+=2) for(let r=0;r<3;r++) for(let c=0;c<2;c++){ const q=P(a*(rw/2+(w/2-rw/2)*(0.3+0.42*c)+(r%2?0.9:-0.6)),-h/2+lh+(h-lh)*(0.2+0.3*r)); knot(out,q[0],q[1],0.5,11,0.42); }
+  bow(out,...P(0,-h/2-0.5),Math.max(4.5,w*0.36),rot,cr,cr2); }
+function percent(out,x,y,cap,rot,ci,ci2){ const i0=out.length; textStitches(out,"%",x,y,cap,ci,{rot,th:0.6,w:0.5,gap:0.44,maxLen:5}); tint(out,i0,ci2,x,y-cap/2,x,y+cap/2); }
+function numText(out,str,x,y,cap,rot,ci,ci2){ const i0=out.length; textStitches(out,str,x,y,cap,ci,{rot,th:0.6,w:0.36,gap:0.31,maxLen:3}); mixIn(out,i0,ci2,0.8); }
+function strikeTag(out,x,y,rot,co){ const tw=25, th=11.5, c=2.8, P=xf(x,y,rot);
+  chain(out,[P(-tw/2+c,-th/2),P(tw/2,-th/2),P(tw/2,th/2),P(-tw/2+c,th/2),P(-tw/2,th/2-c),P(-tw/2,-th/2+c),P(-tw/2+c,-th/2)],1.25,0.3,co);
+  const hx=-tw/2+c*0.95, hc=P(hx,0), cord=[]; stem(out,circle(hc[0],hc[1],0.8,10),0.7,0.28,co);
+  for(let i=0;i<=14;i++){ const t=i/14; cord.push(P(hx-t*5,-t*5.5+Math.sin(t*3.14)*2.2)); } stem(out,cord,1.2,0.26,11);
+  const x0=-tw/2+c*1.5, x1=tw/2-0.9, mid=(x0+x1)/2, gapT=1.5, cap=Math.min(5,((x1-x0-gapT)/2)/textW("58%",1,0.035)), wN=textW("58%",cap,0.035), o={rot,th:0.5,w:0.36,gap:0.31,maxLen:3};
+  const a=P(mid-gapT/2-wN/2,0), b=P(mid+gapT/2+wN/2,0); let i0=out.length;
+  textStitches(out,"58%",a[0],a[1],cap,4,o); mixIn(out,i0,11,0.35); i0=out.length; textStitches(out,"30%",b[0],b[1],cap,6,o); mixIn(out,i0,11,0.3);
+  { const p=P(mid-gapT/2-wN-0.8,cap*0.3), q=P(mid-gapT/2+0.8,-cap*0.3); out.push([p[0],p[1],q[0],q[1],0.44,1,undefined,0,0.55]); } }
 
 function buildWorld(){
   const items=[], add=(x,y,fn)=>{ const st=[]; fn(st); const it={st,x,y}; items.push(it); return it; };
-  const g1=add(-150,42,o=>gift(o,-150,42,46,36,-0.04,3,4,11,6));
-  const f1=add(-166,-6,o=>ringFlower(o,-166,-6,8,3,4,6));
-  const p1=add(-122,-32,o=>percent(o,-122,-32,28,-0.18,6,5));
-  add(142,44,o=>gift(o,142,44,48,40,0.05,9,13,6,5));
-  add(-104,62,o=>gift(o,-104,62,22,18,0.1,10,12,3,4));
-  add(178,66,o=>gift(o,178,66,26,22,-0.09,5,14,7,8));
-  add(100,66,o=>gift(o,100,66,18,15,0.06,6,5,10,12));
-  add(150,-30,o=>percent(o,150,-30,36,0.16,3,10));
-  add(-180,-36,o=>percent(o,-180,-36,12,0.25,10,9));
-  add(106,-50,o=>percent(o,106,-50,12,-0.2,7,9));
-  add(-146,-78,o=>ptag(o,-146,-78,-0.1,FINDINGS[0],7,14));
-  add(146,-78,o=>ptag(o,146,-78,0.07,FINDINGS[1],9,6));
-  add(-146,86,o=>ptag(o,-146,86,0.05,FINDINGS[2],10,5));
-  add(138,90,o=>ptag(o,138,90,-0.05,FINDINGS[3],3,4,true));
-  add(188,-46,o=>ringFlower(o,188,-46,7.5,9,13,6));
-  add(-100,6,o=>daisy(o,-100,6,7,6,11,5));
-  add(104,4,o=>daisy(o,104,4,7,3,11,6));
-  add(-186,66,o=>daisy(o,-186,66,6.5,9,11,6,7));
-  add(186,12,o=>daisy(o,186,12,6.5,10,11,6,7));
-  add(-194,10,o=>sprig(o,-196,24,-1.45,32,0.25,5,3));
-  add(196,-14,o=>sprig(o,197,-2,-1.62,26,-0.2,4,6));
-  add(-84,-90,o=>{ const e=sprig(o,-100,-84,-0.28,36,0.38,5); daisy(o,e[0]+3,e[1]-1,5,10,11,6); });
-  add(84,-90,o=>{ const e=sprig(o,100,-84,Math.PI+0.28,36,-0.38,5); daisy(o,e[0]-3,e[1]-1,5,5,11,6); });
-  add(0,-95,o=>heart(o,0,-95,5.5,0,3,4));
-  add(-30,-97,o=>percent(o,-30,-97,8,0.15,6,5)); add(30,-97,o=>percent(o,30,-97,8,-0.15,9,10));
-  add(-60,97,o=>sprig(o,-88,98,-0.12,46,0.3,6,3)); add(60,97,o=>sprig(o,88,98,Math.PI+0.12,46,-0.3,6,9));
-  add(0,96,o=>star(o,0,96,6.5,0,6,5));
-  add(-104,-62,o=>{ const i0=o.length; textStitches(o,"-50%",-104,-62,7.5,10,{rot:0.1,th:0.6,w:0.36,gap:0.3,maxLen:3.4}); mixIn(o,i0,9,0.8); });
-  add(110,-22,o=>{ const i0=o.length; textStitches(o,"-70%",110,-22,7.5,6,{rot:-0.08,th:-0.6,w:0.36,gap:0.3,maxLen:3.4}); mixIn(o,i0,5,0.8); });
-  add(-102,86,o=>heart(o,-102,86,4.2,-0.2,14,3)); add(104,88,o=>heart(o,104,88,4,0.2,10,12));
-  add(-190,-84,o=>star(o,-190,-84,5,0.3,6,5)); add(190,-88,o=>star(o,190,-88,4.5,-0.2,7,9)); add(-60,82,o=>star(o,-60,82,3.6,0.5,3,11)); add(58,84,o=>star(o,58,84,3.6,0.2,9,11));
-  for(const c of [[-178,-62,1],[176,24,-1],[-120,22,-1]]) add(c[0],c[1],o=>{ const pts=[]; for(let i=0;i<=40;i++){ const t=i/40, a=t*9*c[2], r=1+t*6; pts.push([c[0]+Math.cos(a)*r+t*10,c[1]+Math.sin(a)*r]); } stem(o,pts,1.5,0.3,c[2]>0?5:7); });
-  const boxes=[[-88,-80,88,78]]; for(const it of items){ let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; for(const s of it.st){ x0=Math.min(x0,s[0],s[2]); x1=Math.max(x1,s[0],s[2]); y0=Math.min(y0,s[1],s[3]); y1=Math.max(y1,s[1],s[3]); } boxes.push([x0-4,y0-4,x1+4,y1+4]); }
+  const g1=add(-59,13,o=>gift(o,-59,13,21,17,-0.04,3,4,11,6,1));
+  const f1=add(-71,-13,o=>ringFlower(o,-71,-13,5,3,4,6));
+  const p1=add(-49,-24,o=>percent(o,-49,-24,13,-0.18,6,5));
+  add(59,14,o=>gift(o,59,14,22,19,0.05,9,13,6,5,2));
+  add(-43,31,o=>gift(o,-43,31,10,8.5,0.1,10,12,3,4,0));
+  add(76,30,o=>gift(o,76,30,10,8.8,-0.09,5,14,7,8,0));
+  add(39.5,31.5,o=>gift(o,39.5,31.5,8.6,7.4,0.06,6,5,10,12,0));
+  add(57,-22,o=>percent(o,57,-22,16,0.16,3,10));
+  add(-79,-35,o=>percent(o,-79,-35,6,0.25,10,9));
+  add(44,-36,o=>percent(o,44,-36,6,-0.2,7,9));
+  add(58,39.2,o=>strikeTag(o,58,39.2,-0.05,3));
+  add(74,-9,o=>ringFlower(o,74,-9,4.2,9,13,6));
+  add(-40.5,4,o=>daisy(o,-40.5,4,3.3,6,11,5));
+  add(40.5,3,o=>daisy(o,40.5,3,3.3,3,11,6));
+  add(-77,30,o=>daisy(o,-77,30,3.8,9,11,6,7));
+  add(79,9,o=>daisy(o,79,9,3.4,10,11,6,7));
+  add(-79,7,o=>sprig(o,-80,14,-1.45,13,0.25,4,3));
+  add(-18,-40,o=>{ const e=sprig(o,-7,-38.5,Math.PI+0.2,24,-0.5,5); daisy(o,e[0]-2.4,e[1]+0.6,3,10,11,6); });
+  add(18,-40,o=>{ const e=sprig(o,7,-38.5,-0.2,24,0.5,5); daisy(o,e[0]+2.4,e[1]+0.6,3,5,11,6); });
+  add(0,-39.5,o=>heart(o,0,-39.5,2.7,0,3,4));
+  add(-19,40,o=>sprig(o,-31,40.5,-0.1,23,0.28,5,3)); add(19,40,o=>sprig(o,31,40.5,Math.PI+0.1,23,-0.28,5,9));
+  add(0,40,o=>star(o,0,40,3.3,0,6,5));
+  add(-58,-39,o=>numText(o,"-50%",-58,-39,3.8,0.08,10,9));
+  add(64,-39.5,o=>numText(o,"-70%",64,-39.5,3.8,-0.07,6,5));
+  add(-60,38,o=>heart(o,-60,38,2.4,-0.2,14,3)); add(-38.5,-10,o=>star(o,-38.5,-10,2.1,0.3,3,11)); add(38.5,-12,o=>star(o,38.5,-12,2.1,0.1,9,11));
+  for(const c of [[-77,-26,1],[78,-31,-1],[-45,-6,-1]]) add(c[0],c[1],o=>{ const pts=[]; for(let i=0;i<=40;i++){ const t=i/40, a=t*8.5*c[2], r=0.5+t*2.5; pts.push([c[0]+Math.cos(a)*r+t*4,c[1]+Math.sin(a)*r]); } stem(o,pts,1.1,0.3,c[2]>0?5:7); });
+  const boxes=[[-35.5,-32,35.5,33]]; for(const it of items){ let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; for(const s of it.st){ x0=Math.min(x0,s[0],s[2]); x1=Math.max(x1,s[0],s[2]); y0=Math.min(y0,s[1],s[3]); y1=Math.max(y1,s[1],s[3]); } boxes.push([x0-1.6,y0-1.6,x1+1.6,y1+1.6]); }
   const placed=[], quad=[[],[],[],[]], pc=[3,5,6,7,9,10,11];
-  for(let tries=0; tries<1400 && placed.length<110; tries++){ const x=(rnd()*2-1)*198, y=(rnd()*2-1)*108;
-    if(boxes.some(b=>x>b[0]&&x<b[2]&&y>b[1]&&y<b[3]) || placed.some(p=>Math.hypot(p[0]-x,p[1]-y)<8)) continue;
+  for(let tries=0; tries<1400 && placed.length<64; tries++){ const x=(rnd()*2-1)*81, y=(rnd()*2-1)*45;
+    if(boxes.some(b=>x>b[0]&&x<b[2]&&y>b[1]&&y<b[3]) || placed.some(p=>Math.hypot(p[0]-x,p[1]-y)<4.2)) continue;
     placed.push([x,y]); const o=quad[(x>0?1:0)+(y>0?2:0)], col=pc[Math.floor(rnd()*pc.length)];
-    if(placed.length%4===0) sparkle(o,x,y,1.6+rnd()*1.8,col); else knot(o,x,y,0.45+rnd()*0.3,col,0); }
-  quad.forEach((st,i)=>items.push({st,x:(i%2?1:-1)*150,y:(i>1?1:-1)*80}));
+    if(placed.length%4===0) sparkle(o,x,y,1+rnd()*0.9,col); else knot(o,x,y,0.45+rnd()*0.25,col,0); }
+  quad.forEach((st,i)=>items.push({st,x:(i%2?1:-1)*60,y:(i>1?1:-1)*30}));
   return {items,g1,f1,p1};
 }
 function buildFilm(){
   seed=11; cx2.clearRect(0,0,chalk.width,chalk.height);
-  const tr=0.035, maxW=162; let capN=maxW/textW("NOVEMBER",1,tr), capS=maxW/textW("SALE",1,tr), gNS=capN*0.27, tot=capN+gNS+capS;
-  if(tot>124){ const k=124/tot; capN*=k; capS*=k; gNS*=k; tot=124; }
-  const top=-13-tot/2, yN=top+capN/2, yR=top+capN+gNS/2, yS=top+capN+gNS+capS/2, bw=textW("NOVEMBER",capN,tr);
-  const TL="THEY'RE PLAYING US", capT=Math.min(11.5,150/textW(TL,1,0.09)), yT=yS+capS/2+7.5+capT/2, tw=textW(TL,capT,0.09), yU=yT+capT/2+4.8;
-  const oN={th:0.62,w:0.66,gap:0.56,maxLen:10.5}, oS={th:-0.62,w:0.72,gap:0.62,maxLen:9}, oT={th:1.15,w:0.46,gap:0.42,maxLen:4.2,rot:-0.03,track:0.09};
+  const tr=0.035, maxW=66; let capN=maxW/textW("NOVEMBER",1,tr), capS=maxW/textW("SALE",1,tr), gNS=capN*0.27, tot=capN+gNS+capS;
+  if(tot>50){ const k=50/tot; capN*=k; capS*=k; gNS*=k; tot=50; }
+  const top=-5-tot/2, yN=top+capN/2, yR=top+capN+gNS/2, yS=top+capN+gNS+capS/2, bw=textW("NOVEMBER",capN,tr);
+  const TL="THEY'RE PLAYING US", capT=Math.min(4.7,60/textW(TL,1,0.09)), yT=yS+capS/2+3.4+capT/2, tw=textW(TL,capT,0.09), yU=yT+capT/2+2.2;
+  const oN={th:0.62,w:0.58,gap:0.45,maxLen:9}, oS={th:-0.62,w:0.62,gap:0.49,maxLen:9.5}, oT={th:1.15,w:0.4,gap:0.35,maxLen:3,rot:-0.03,track:0.09};
   chalkText("NOVEMBER",0,yN,capN,oN); chalkText("SALE",0,yS,capS,oS); chalkText(TL,0,yT,capT,oT);
-  chalkLine([[-bw/2-4,yN-capN/2],[bw/2+4,yN-capN/2]],0.12,0.1); chalkLine([[-bw/2-4,yN+capN/2],[bw/2+4,yN+capN/2]],0.12,0.1);
-  chalkLine([[-bw/2-4,yS-capS/2],[bw/2+4,yS-capS/2]],0.12,0.1); chalkLine([[-bw/2-4,yS+capS/2],[bw/2+4,yS+capS/2]],0.12,0.1);
+  chalkLine([[-bw/2-2,yN-capN/2],[bw/2+2,yN-capN/2]],0.14,0.08); chalkLine([[-bw/2-2,yN+capN/2],[bw/2+2,yN+capN/2]],0.14,0.08);
+  chalkLine([[-bw/2-2,yS-capS/2],[bw/2+2,yS-capS/2]],0.14,0.08); chalkLine([[-bw/2-2,yS+capS/2],[bw/2+2,yS+capS/2]],0.14,0.08);
   chalkTex.needsUpdate=true;
   const nov=[],rule=[],sale=[],tag=[],und=[];
-  textStitches(nov,"NOVEMBER",0,yN,capN,0,oN);
-  lineStitches(rule,[[bw/2,yR],[-bw/2,yR]],3.2,0.86,0.6,2);
-  textStitches(sale,"SALE",0,yS,capS,1,oS);
+  textStitches(nov,"NOVEMBER",0,yN,capN,0,oN); tint(nov,0,15,0,yN-capN/2,0,yN+capN/2,0.6);
+  lineStitches(rule,[[bw/2,yR],[-bw/2,yR]],2.4,0.86,0.5,2);
+  textStitches(sale,"SALE",0,yS,capS,1,oS); tint(sale,0,16,0,yS-capS/2,0,yS+capS/2,0.65);
   textStitches(tag,TL,0,yT,capT,2,oT);
-  lineStitches(und,[[tw/2+2,yU-0.9],[-tw/2-2,yU+0.9]],3.6,0.88,0.72,1);
+  lineStitches(und,[[tw/2+1,yU-0.4],[-tw/2-1,yU+0.4]],2.6,0.88,0.55,1);
   const W=buildWorld(), rest=W.items.filter(it=>it!==W.g1&&it!==W.f1&&it!==W.p1);
-  addJob([],{dur:1.2,cam:{fixed:[-bw/2+4,-yN],fw:[66,40],tilt:0.36,yaw:-0.34,k:3}});
-  addJob(nov,{dur:9.5,p:2.2,cam:{fw:[36,64],tilt:0.33,yaw:[-0.30,0.26],k:3.0}});
-  addJob(rule,{dur:1.3,p:1,cam:{fw:[74,70],tilt:0.36,yaw:[0.2,-0.16],k:3.4}});
-  addJob(sale,{dur:10.5,p:1.7,cam:{fw:[56,104],tilt:0.35,yaw:[-0.28,0.26],k:2.6}});
-  addJob(W.g1.st,{dur:4.6,p:1.25,cam:{fixed:[-150,-37],fw:[92,62],tilt:0.34,yaw:[-0.28,0.18],k:2.6}});
-  addJob(W.f1.st.concat(W.p1.st),{dur:4.2,p:1.15,cam:{fixed:[-146,20],fw:[54,72],tilt:0.32,yaw:[0.2,-0.2],k:2.8}});
-  addGroup(rest,{dur:9,cam:{fixed:[0,0],fw:[170,WIDE],tilt:0.24,yaw:[-0.32,0.3],k:1.6}});
-  addJob(tag,{dur:5,p:1.4,cam:{fixed:[0,-58],fw:[150,128],tilt:0.27,yaw:[0.16,-0.08],k:2.2}});
-  addJob(und,{dur:1.1,p:1,cam:{fixed:[0,-58],fw:[128,136],tilt:0.27,yaw:[-0.08,-0.14],k:2.2}});
-  addJob([],{dur:7,cam:{fixed:[0,0],fw:[WIDE,WIDE],tilt:0.13,yaw:0,k:1.3}});
+  addJob([],{dur:1.2,cam:{fixed:[-bw/2+2,-yN],fw:[34,26],tilt:0.36,yaw:-0.34,k:3}});
+  addJob(nov,{dur:9.5,p:2.2,cam:{fw:[24,36],tilt:0.33,yaw:[-0.30,0.26],k:3.0}});
+  addJob(rule,{dur:1.3,p:1,cam:{fw:[40,38],tilt:0.36,yaw:[0.2,-0.16],k:3.4}});
+  addJob(sale,{dur:10.5,p:1.7,cam:{fw:[30,54],tilt:0.35,yaw:[-0.28,0.26],k:2.6}});
+  addJob(W.g1.st,{dur:4.6,p:1.25,cam:{fixed:[-59,-9],fw:[46,30],tilt:0.34,yaw:[-0.28,0.18],k:2.6}});
+  addJob(W.f1.st.concat(W.p1.st),{dur:4.2,p:1.15,cam:{fixed:[-61,18],fw:[26,38],tilt:0.32,yaw:[0.2,-0.2],k:2.8}});
+  addGroup(rest,{dur:9,cam:{fixed:[0,0],fw:[78,WIDE],tilt:0.24,yaw:[-0.32,0.3],k:1.6}});
+  addJob(tag,{dur:5,p:1.4,cam:{fixed:[0,-25],fw:[64,54],tilt:0.27,yaw:[0.16,-0.08],k:2.2}});
+  addJob(und,{dur:1.1,p:1,cam:{fixed:[0,-25],fw:[54,58],tilt:0.27,yaw:[-0.08,-0.14],k:2.2}});
+  addJob([],{dur:7,cam:{fixed:[0,0],fw:[WIDE,WIDE],tilt:0.15,yaw:0,k:1.3}});
   const j=S.jobs[0].cam; C.tx=j.fixed[0]; C.ty=j.fixed[1]; C.lf=Math.log(j.fw[0]); C.tilt=j.tilt; C.yaw=j.yaw; C.roll=0; for(const k in C.v) C.v[k]=0;
   wps.x=C.tx; wps.y=C.ty; wp.x=nov[0][0]; wp.y=-nov[0][1];
 }
 function addDoodle(x,y){
-  const st=[], k=S.tagN++%5, pc=[3,6,7,9,10,5][Math.floor(rnd()*6)]; x=clamp(x,-195,195); y=clamp(y,-106,106);
-  if(k===0) ringFlower(st,x,y,5+rnd()*2,pc,4,6); else if(k===1) daisy(st,x,y,5+rnd()*2,pc,11,6); else if(k===2) star(st,x,y,5.5,rnd(),6,5); else if(k===3) heart(st,x,y,5,(rnd()-.5)*0.5,3,4); else percent(st,x,y,10,(rnd()-.5)*0.5,pc,11);
+  const st=[], k=S.tagN++%5, pc=[3,6,7,9,10,5][Math.floor(rnd()*6)]; x=clamp(x,-79,79); y=clamp(y,-44,44);
+  if(k===0) ringFlower(st,x,y,3.2+rnd()*1.2,pc,4,6); else if(k===1) daisy(st,x,y,3+rnd(),pc,11,6); else if(k===2) star(st,x,y,2.6,rnd(),6,5); else if(k===3) heart(st,x,y,2.4,(rnd()-.5)*0.5,3,4); else percent(st,x,y,6,(rnd()-.5)*0.5,pc,11);
   addJob(st,{dur:1.7,p:1.2,cam:{fixed:[x*0.4,-y*0.4],fw:[WIDE*0.72,WIDE*0.72],tilt:0.2,yaw:x>0?0.12:-0.12,k:2}});
 }
 function film(){ clearJobs(); buildFilm(); S.film=true; S.paused=false; clearTimeout(hudT); $("bar").classList.add("off"); stage.classList.add("quiet"); }
@@ -572,7 +582,7 @@ function step(dt){
     if(x>=1){ if(job.n){ job.u.value=job.n; job.mesh.geometry.instanceCount=job.n; } if(job.subs) for(const q of job.subs){ q.u.value=q.n; q.mesh.geometry.instanceCount=q.n; } S.cur++; if(S.cur>=S.jobs.length) wp.on=false; }
   } else {
     wp.on=false; const t=S.time, m=reduce?0:1;
-    des={tx:(Math.sin(t*0.13)*6+ptr.x*9)*m, ty:(Math.cos(t*0.1)*3+ptr.y*5)*m, lf:Math.log(WIDE), tilt:0.13, yaw:(Math.sin(t*0.08)*0.09+ptr.x*0.06)*m, roll:Math.sin(t*0.09)*0.006*m};
+    des={tx:(Math.sin(t*0.13)*2.4+ptr.x*3.6)*m, ty:(Math.cos(t*0.1)*1.2+ptr.y*2)*m, lf:Math.log(WIDE), tilt:0.13, yaw:(Math.sin(t*0.08)*0.09+ptr.x*0.06)*m, roll:Math.sin(t*0.09)*0.006*m};
   }
   spring("tx",des.tx,k,dt); spring("ty",des.ty,k,dt); spring("lf",des.lf,k,dt); spring("tilt",des.tilt,k,dt); spring("yaw",des.yaw,k,dt); spring("roll",des.roll,k,dt);
   const lt=wp.on?1:0; WU.uLen.value+=(lt-WU.uLen.value)*(1-Math.exp(-dt*(wp.on?7:3)));
@@ -588,19 +598,23 @@ function applyCam(){
   cam.near=Math.max(0.6,d*0.08); cam.far=d*3+900; cam.updateProjectionMatrix(); cam.updateMatrixWorld();
   shared.uCam.value.copy(cam.position); cam.getWorldDirection(shared.uFwd.value);
   shared.uFoc.value.x=d; shared.uFoc.value.y=2.6*RH;
-  const z0=wp.w*0.34, P0=WU.uP0.value.set(wp.x,wp.y,z0), sw=Math.sin(t*1.7)*1.5, sw2=Math.cos(t*1.1)*2;
+  const z0=wp.w*0.41, P0=WU.uP0.value.set(wp.x,wp.y,z0), sw=Math.sin(t*1.7)*1.5, sw2=Math.cos(t*1.1)*2;
   WU.uP1.value.set(P0.x-3.2,P0.y+1.6,z0+1.4); WU.uP2.value.set(P0.x+7+sw,P0.y+27+sw2,10+sw*0.5); WU.uP3.value.set(P0.x-64+sw*5,P0.y+240+sw2*4,72);
-  const S2=clamp(fw*1.5,60,560); lightCam.left=-S2/2; lightCam.right=S2/2; lightCam.top=S2/2; lightCam.bottom=-S2/2;
+  const S2=clamp(fw*1.5,30,300); lightCam.left=-S2/2; lightCam.right=S2/2; lightCam.top=S2/2; lightCam.bottom=-S2/2;
   tmp.set(tgt.x,tgt.y+fw*0.04,0); lightCam.position.copy(tmp).addScaledVector(Lv,420); lightCam.up.set(0,0,1); lightCam.lookAt(tmp);
   lightCam.updateProjectionMatrix(); lightCam.updateMatrixWorld(); lightCam.matrixWorldInverse.copy(lightCam.matrixWorld).invert();
   shared.uShadowMat.value.multiplyMatrices(lightCam.projectionMatrix,lightCam.matrixWorldInverse);
   shared.uPen.value=Math.max(0.24/S2,1.3/SM); shared.uSBias.value=0.22/890;
+  aoCam.left=-S2/2; aoCam.right=S2/2; aoCam.top=S2/2; aoCam.bottom=-S2/2; aoCam.position.set(tmp.x,tmp.y,100); aoCam.up.set(0,1,0); aoCam.lookAt(tmp);
+  aoCam.updateProjectionMatrix(); aoCam.updateMatrixWorld(); aoCam.matrixWorldInverse.copy(aoCam.matrixWorld).invert();
+  shared.uAoMat.value.multiplyMatrices(aoCam.projectionMatrix,aoCam.matrixWorldInverse); shared.uAoR.value=0.75/S2;
 }
 function render(){
   applyCam();
   const all=casters.concat(meshes);
   for(const m of all){ m.userData.main=m.material; m.material=m.userData.depth; } cloth.visible=false;
   renderer.setRenderTarget(shadowRT); renderer.clear(); renderer.render(scene,lightCam);
+  renderer.setRenderTarget(aoRT); renderer.clear(); renderer.render(scene,aoCam);
   for(const m of all) m.material=m.userData.main; cloth.visible=true;
   renderer.setRenderTarget(sceneRT); renderer.clear(); renderer.render(scene,cam);
   PU.uTime.value=S.time; renderer.setRenderTarget(null); renderer.render(postScene,postCam);
@@ -625,12 +639,13 @@ stage.addEventListener("pointermove",e=>{ const r=canvas.getBoundingClientRect()
 stage.addEventListener("pointerdown",e=>{ wake(); if(e.target.closest("button")||(S.film&&S.cur<S.jobs.length)) return; S.film=false; const p=pick(e); addDoodle(p[0],p[1]); });
 $("bFilm").addEventListener("click",film);
 $("bReset").addEventListener("click",restart);
+$("bCloth").addEventListener("click",()=>setCloth(clothI+1));
 $("bSpeed").addEventListener("click",e=>{ S.speed=S.speed===1?2:S.speed===2?4:1; e.currentTarget.textContent="SPEED "+S.speed+"X"; });
 $("bFull").addEventListener("click",()=>{ const p=document.fullscreenElement?document.exitFullscreen():wrap.requestFullscreen&&wrap.requestFullscreen(); if(p&&p.catch) p.catch(()=>{}); });
 addEventListener("keydown",e=>{ if(e.key===" "){ e.preventDefault(); film(); } });
 let rz; const refit=()=>{ clearTimeout(rz); rz=setTimeout(fit,160); }; addEventListener("resize",refit); document.addEventListener("fullscreenchange",refit);
 
-window.__emb={ seek(t,asFilm){ asFilm?film():restart(); while(S.time<t) step(1/30); S.paused=true; return {cur:S.cur,jobs:S.jobs.map(j=>j.n),cap:CAPR}; }, quality(s){ Q.fixed=s; fit(); }, play(){ S.paused=false; } };
+window.__emb={ seek(t,asFilm){ asFilm?film():restart(); while(S.time<t) step(1/30); S.paused=true; return {cur:S.cur,jobs:S.jobs.map(j=>j.n),cap:CAPR}; }, quality(s){ Q.fixed=s; fit(); }, cloth(i){ setCloth(i); }, play(){ S.paused=false; } };
 
 const boot=()=>{ initFont(); fit(); restart(); if(reduce){ while(S.cur<S.jobs.length) step(1/30); } wake(); requestAnimationFrame(frame); };
 const fonts=document.fonts?Promise.race([Promise.allSettled([document.fonts.load('80px "AntonLocal"'),document.fonts.load('80px "Anton"')]),new Promise(r=>setTimeout(r,2500))]):Promise.resolve();
