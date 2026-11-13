@@ -40,32 +40,53 @@ Small signature in a corner: "SHELLY GISSER" in Anton, plum, 11px.
 
 ---
 
-## 1. רקמה תלת־ממדית שאפשר לרקום
+## 1. רקמת NOVEMBER SALE (הגרסה שנבנתה)
+
+הבילד עצמו: `builds/01-november-sale-embroidery.html`. הפרומפט הזה עומד בפני עצמו, בלי בלוק הסגנון הפסטלי.
 
 ```text
-Build an interactive 3D embroidery hoop.
+Build a real-time 3D macro film of hand embroidery in one self-contained HTML file
+(Three.js r128 from cdnjs is allowed), locked to a 16:9 frame.
 
-Scene: a wooden embroidery hoop holding cream linen, seen slightly from above, lit by soft
-window light. The linen has a visible woven texture (procedural, generated in code) and
-catches light along the weave.
+Scene: black plain-weave cloth stretched in a wooden embroidery hoop (a rounded-rectangle
+hoop with two rings and varnished wood grain). The weave is procedural in the shader:
+individual warp and weft threads going over and under each other, slightly irregular, with
+yarn twist and fuzz. Faint white chalk transfer lines mark where the design will go.
 
-Interaction: wherever I click or tap on the fabric, a small flower is stitched in real time:
-the thread is drawn stitch by stitch (petals as satin stitch, centre as a French knot, a short
-stem in back stitch), each stitch a raised 3D tube with its own highlight and tiny shadow, and
-the fabric puckers very slightly around it. Each flower takes about 1.2 seconds to stitch.
-Dragging stitches a running vine of leaves that follows the pointer.
+Stitching: every stitch is real geometry, a thick strand of floss that rises out of the cloth,
+lies on it and dives back in, with satin sheen (an anisotropic highlight along the fibre),
+visible plies, a soft shadow on the cloth and small colour variation from stitch to stitch.
+Letters are filled with diagonal long-and-short stitch generated from the letter shapes.
+A working thread runs from the newest stitch out of frame.
 
-Thread colours: pink, magenta, plum and lilac, with sky for leaves. A small row of thread
-spools at the bottom lets me choose the colour; the active spool lifts slightly.
+Design, stitched in this order: "NOVEMBER" in yellow; a cream back-stitch rule; "SALE" in
+red, twice as tall; "THEY'RE PLAYING US" in cream, slightly tilted, with a red underline.
+All text in English, heavy condensed caps (Anton).
 
-Details: a needle follows the pointer and dips through the fabric on every stitch. The hoop
-can be rotated by dragging outside the fabric. Buttons: "לנקות" (unpick everything, with the
-threads pulling out in reverse) and "לשמור תמונה" (export PNG).
+Camera: a macro lens that follows the needle. Start on the hoop's wooden edge, glide to the
+first letter, track right along NOVEMBER, sweep back left along the rule, track right across
+SALE, drop to the tagline, then pull all the way back to reveal the whole hoop. Shallow depth
+of field, a slight tilt and yaw so parallax is visible, gentle handheld drift, film grain and
+vignette. The first stitches of each word are slow enough to watch one by one, then the pace
+accelerates.
 
-On load, auto-stitch the word "שלום" in magenta chain stitch in the centre, then hand over control.
+Interaction: after the reveal, each click on the cloth flies the camera to that spot and
+stitches a price tag (yellow back-stitch outline, punched hole, cord) holding one finding:
+a big red number and a two-line cream caption. Findings, in order:
+  96% / OF PRICES DIDN'T MOVE ON 11.11
+  7 IN 10 / CROSSED-OUT PRICES ARE INFLATED
+  10 OF 107 / STORES CUT PRICES ON 11.11
+  30% NOT 58% / THE REAL DISCOUNT VS THE ONE ON THE TAG
+  98.91 / SALE INDEX TODAY. BEFORE THE SALES: 100
+  48 / STORES RAISED A PRICE
+A PLAY FILM button runs everything hands-free, including all six tags and a final wide shot;
+the controls hide while it plays.
+
+Priority: realism of thread and cloth over everything else. It should be hard to believe
+this is code.
 ```
 
-**מה לצלם:** טעינה עם ה"שלום" שנרקם, ואז 5–6 קליקים מהירים ומשיכה אחת ארוכה.
+**מה לצלם:** לחיצה על PLAY FILM (או מקש רווח) והקלטה של הריצה המלאה, בערך 68 שניות במהירות 1X.
 
 ---
 

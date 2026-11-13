@@ -2,59 +2,79 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap">
 <style>
-/* Layout: one full-bleed stretched black cloth in a wooden frame; the sale sign is stitched centre, findings land where you click. */
+/* Layout: a fixed 16:9 film frame, centred. Everything in it is a macro shot of black cloth in a wooden hoop; controls float over the bottom edge and fade away. */
 :root{
   color-scheme:dark;
-  --cloth:#0a0a0c;
+  --void:#040405;
   --thread-yellow:#ffd60a;
   --thread-red:#ff2a2a;
   --thread-cream:#efe6d2;
-  --wood:#8a5527;
-  --label:#d9cfba;
+  --label:#d6ccb8;
   --display:"AntonLocal","Anton",Impact,"Arial Narrow",sans-serif;
   --utility:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
 }
 @font-face{font-family:"AntonLocal";src:url("../assets/anton.ttf") format("truetype");font-display:swap}
 html,body{height:100%}
-body{margin:0;background:var(--cloth);color:var(--label);overflow:hidden;font-family:var(--utility)}
-#stage{position:relative;width:100%;height:100%;overflow:hidden;cursor:none;touch-action:none;user-select:none;-webkit-user-select:none}
-#stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.bar{position:absolute;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;
-  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));pointer-events:none;transition:opacity .4s}
+body{margin:0;background:var(--void);color:var(--label);overflow:hidden;font-family:var(--utility)}
+#wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--void)}
+#stage{position:relative;overflow:hidden;background:var(--void);cursor:crosshair;touch-action:none;user-select:none;-webkit-user-select:none}
+#stage.quiet{cursor:none}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
+#msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));color:var(--thread-cream)}
+.bar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:8px;align-items:center;justify-content:flex-end;
+  padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  pointer-events:none;transition:opacity .45s}
 .bar.off{opacity:0}
-.src{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--label);text-shadow:0 1px 2px #000;min-width:0}
-.src b{color:var(--thread-yellow);font-weight:600}
-.btns{display:flex;gap:8px;pointer-events:auto}
-.bar.off .btns{pointer-events:none}
-button{font:400 14px/1 var(--display);letter-spacing:.12em;color:var(--cloth);background:var(--thread-yellow);border:0;border-radius:3px;
-  padding:9px 14px 8px;cursor:pointer;box-shadow:0 2px 0 #000,0 0 0 1px #0008}
-button.alt{background:var(--cloth);color:var(--thread-cream);box-shadow:0 0 0 1px var(--thread-cream)}
-button:hover{filter:brightness(1.12)}
+.bar button{pointer-events:auto}
+.bar.off button{pointer-events:none}
+button{font:400 13px/1 var(--display);letter-spacing:.14em;color:var(--void);background:var(--thread-yellow);border:0;border-radius:3px;
+  padding:9px 13px 8px;cursor:pointer;box-shadow:0 2px 0 #000,0 0 0 1px #0009}
+button.alt{background:#0b0b0dcc;color:var(--thread-cream);box-shadow:0 0 0 1px #efe6d299}
+button:hover{filter:brightness(1.15)}
 button:focus-visible{outline:2px solid var(--thread-red);outline-offset:3px}
-#hint{position:absolute;left:50%;top:max(9%,54px);transform:translateX(-50%);font:400 clamp(12px,1.5vw,20px)/1 var(--display);letter-spacing:.22em;
-  color:var(--thread-cream);opacity:0;transition:opacity .8s;pointer-events:none;white-space:nowrap;text-shadow:0 2px 6px #000}
-#hint.on{opacity:.85}
+#hint,#credit{position:absolute;pointer-events:none;opacity:0;transition:opacity .9s;text-shadow:0 1px 3px #000,0 0 12px #000}
+#hint{left:50%;top:13.5%;transform:translateX(-50%);font:400 clamp(11px,1.5vw,19px)/1 var(--display);letter-spacing:.24em;color:var(--thread-cream);white-space:nowrap}
+#credit{left:50%;transform:translateX(-50%);bottom:12.5%;white-space:nowrap;font-size:clamp(9px,.85vw,11px);letter-spacing:.1em;text-transform:uppercase}
+#credit b{color:var(--thread-yellow);font-weight:600}
+#hint.on{opacity:.8}
+#credit.on{opacity:.75}
 </style>
 
-<div id="stage" aria-label="Interactive embroidery: November Sale, they're playing us. Click to stitch a price finding.">
-  <canvas id="cF"></canvas><canvas id="cT"></canvas><canvas id="cG"></canvas><canvas id="cO"></canvas>
-  <div id="hint">CLICK THE CLOTH TO STITCH A FINDING</div>
-  <div class="bar" id="bar">
-    <div class="src"><b>Shelly Or Gisser</b> · Israeli sale index · prices as of 12 Nov 2026</div>
-    <div class="btns">
-      <button id="bAuto" type="button">AUTO</button>
-      <button id="bReplay" type="button" class="alt">REPLAY</button>
-      <button id="bClear" type="button" class="alt">UNPICK</button>
+<div id="wrap">
+  <div id="stage" aria-label="A macro film of embroidery on black cloth: November Sale, they're playing us. Click the cloth to stitch a price finding.">
+    <canvas id="gl"></canvas>
+    <div id="msg" hidden></div>
+    <div id="hint">CLICK THE CLOTH TO STITCH A FINDING</div>
+    <div id="credit"><b>Shelly Or Gisser</b> · Israeli sale index · prices as of 12 Nov 2026</div>
+    <div class="bar off" id="bar">
+      <button id="bFilm" type="button">PLAY FILM</button>
+      <button id="bReset" type="button" class="alt">RESTART</button>
+      <button id="bSpeed" type="button" class="alt">SPEED 1X</button>
+      <button id="bFull" type="button" class="alt">FULL SCREEN</button>
     </div>
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function(){
 "use strict";
+const $=id=>document.getElementById(id), wrap=$("wrap"), stage=$("stage"), canvas=$("gl");
+function fail(t){ const m=$("msg"); m.textContent=t; m.hidden=false; }
+if(!window.THREE){ fail("The 3D engine did not load. Check the connection and reload."); return; }
+const T=THREE; let renderer;
+try{ renderer=new T.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:"high-performance"}); }
+catch(e){ fail("This piece needs WebGL, and this browser has it switched off."); return; }
+if(!renderer.capabilities.isWebGL2){ fail("This piece needs WebGL 2. Try a current Chrome, Edge, Safari or Firefox."); return; }
+const gl=renderer.getContext();
+const HDR=!!(gl.getExtension("EXT_color_buffer_float")||gl.getExtension("EXT_color_buffer_half_float"));
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- the design, in millimetres (x right, y down, origin at the centre of the hoop) ---------- */
 const FONT='"AntonLocal","Anton",Impact,"Arial Narrow",sans-serif';
-const YEL={h:50,s:100,l:52}, RED={h:1,s:94,l:53}, CRM={h:42,s:42,l:86};
+const D={W:420,H:250}, HOOP={hx:184,hy:99.5,r:60}, PITCH=0.85, ASPECT=16/9, WIDE=2*(HOOP.hx+9.5)+14;
+const PAL=[[1.0,0.60,0.012],[0.82,0.016,0.02],[0.84,0.76,0.60]];           // yellow, red, cream (linear)
 const FINDINGS=[
   ["96%","OF PRICES DIDN'T","MOVE ON 11.11"],
   ["7 IN 10","CROSSED-OUT PRICES","ARE INFLATED"],
@@ -63,246 +83,456 @@ const FINDINGS=[
   ["98.91","SALE INDEX TODAY","BEFORE THE SALES: 100"],
   ["48","STORES RAISED","A PRICE"]
 ];
-const $=id=>document.getElementById(id);
-const stage=$("stage"), cF=$("cF"), cT=$("cT"), cG=$("cG"), cO=$("cO");
-const xF=cF.getContext("2d"), xT=cT.getContext("2d"), xG=cG.getContext("2d"), xO=cO.getContext("2d");
-const mask=document.createElement("canvas"), xm=mask.getContext("2d",{willReadFrequently:true});
-const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
-let W=0,H=0,DPR=1,FR=0,land=true,queue=[],acc=0,tagN=0,introDone=false,run=0;
-let ptr={x:-1,y:-1,on:false}, needle={x:0,y:0,col:YEL,busy:false,t:0}, lastT=0;
-let seed=7; const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const hsl=(c,dl,a)=>`hsla(${c.h},${c.s}%,${clamp(c.l+(dl||0),4,96)}%,${a==null?1:a})`;
+const SPOTS=[[-130,-55],[130,-55],[-130,0],[130,0],[-130,55],[130,55]];
+let seed=11; const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), lerp=(a,b,t)=>a+(b-a)*t;
 
-/* ---------- cloth + frame ---------- */
-function drawCloth(){
-  const c=xF; c.setTransform(DPR,0,0,DPR,0,0);
-  c.fillStyle="#0a0a0c"; c.fillRect(0,0,W,H);
-  const u=land?7:6, p=document.createElement("canvas"); p.width=p.height=u*2*DPR;
-  const q=p.getContext("2d"); q.scale(DPR,DPR);
-  q.fillStyle="#08080a"; q.fillRect(0,0,u*2,u*2);
-  const th=u*0.78, o=(u-th)/2;
-  const g1=q.createLinearGradient(0,0,0,u); g1.addColorStop(0,"#101014"); g1.addColorStop(.5,"#24242b"); g1.addColorStop(1,"#0d0d10");
-  const g2=q.createLinearGradient(0,0,u,0); g2.addColorStop(0,"#0e0e12"); g2.addColorStop(.5,"#1d1d24"); g2.addColorStop(1,"#0c0c0f");
-  q.fillStyle=g1; q.fillRect(-1,o,u+2,th); q.save(); q.translate(u,u); q.fillRect(-1,o,u+2,th); q.restore();
-  q.fillStyle=g2; q.save(); q.translate(u,0); q.fillRect(o,-1,th,u+2); q.restore(); q.save(); q.translate(0,u); q.fillRect(o,-1,th,u+2); q.restore();
-  c.fillStyle=c.createPattern(p,"repeat"); c.save(); c.scale(1/DPR,1/DPR); c.fillRect(0,0,W*DPR,H*DPR); c.restore();
-  for(let i=0;i<W*H/900;i++){ // lint and slubs
-    const x=rnd()*W,y=rnd()*H,l=2+rnd()*14,a=rnd()*6.283;
-    c.strokeStyle=`rgba(255,255,255,${0.02+rnd()*0.05})`; c.lineWidth=.6+rnd()*.6;
-    c.beginPath(); c.moveTo(x,y); c.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l); c.stroke();
-  }
-  let g=c.createRadialGradient(W*.22,H*.1,0,W*.22,H*.1,Math.max(W,H)*.9);
-  g.addColorStop(0,"rgba(255,244,220,.13)"); g.addColorStop(.5,"rgba(255,244,220,.03)"); g.addColorStop(1,"rgba(0,0,0,0)");
-  c.fillStyle=g; c.fillRect(0,0,W,H);
-  g=c.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.75);
-  g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,"rgba(0,0,0,.62)");
-  c.fillStyle=g; c.fillRect(0,0,W,H);
-  // wooden stretcher frame
-  const f=FR; c.save();
-  c.beginPath(); c.rect(0,0,W,H); c.rect(f,f,W-2*f,H-2*f);
-  c.shadowColor="rgba(0,0,0,.9)"; c.shadowBlur=f*1.1; c.shadowOffsetX=f*.12; c.shadowOffsetY=f*.2;
-  g=c.createLinearGradient(0,0,W,H); g.addColorStop(0,"#a66a33"); g.addColorStop(.45,"#7a4a21"); g.addColorStop(1,"#5a3415");
-  c.fillStyle=g; c.fill("evenodd"); c.restore();
-  c.save(); c.beginPath(); c.rect(0,0,W,H); c.rect(f,f,W-2*f,H-2*f); c.clip("evenodd");
-  for(let i=0;i<260;i++){ // grain
-    const horiz=rnd()<.5, a=.04+rnd()*.09; c.strokeStyle=rnd()<.5?`rgba(40,20,5,${a})`:`rgba(255,210,150,${a*.6})`; c.lineWidth=.5+rnd();
-    c.beginPath();
-    if(horiz){const y=(rnd()<.5?rnd()*f:H-rnd()*f), x=rnd()*W; c.moveTo(x,y); c.lineTo(x+60+rnd()*300,y+rnd()*2-1);}
-    else{const x=(rnd()<.5?rnd()*f:W-rnd()*f), y=rnd()*H; c.moveTo(x,y); c.lineTo(x+rnd()*2-1,y+60+rnd()*300);}
-    c.stroke();
-  }
-  c.strokeStyle="rgba(255,225,170,.28)"; c.lineWidth=1; c.strokeRect(.5,.5,W-1,H-1);
-  c.strokeStyle="rgba(0,0,0,.55)"; c.lineWidth=2; c.strokeRect(f-1,f-1,W-2*f+2,H-2*f+2);
-  c.restore();
-  const tack=(x,y)=>{const r=f*.17; const tg=c.createRadialGradient(x-r*.35,y-r*.4,r*.1,x,y,r);
-    tg.addColorStop(0,"#fff3c4"); tg.addColorStop(.45,"#c9a13a"); tg.addColorStop(1,"#5c4410");
-    c.fillStyle="rgba(0,0,0,.5)"; c.beginPath(); c.arc(x+1.5,y+2,r,0,7); c.fill(); c.fillStyle=tg; c.beginPath(); c.arc(x,y,r,0,7); c.fill();};
-  const nx=Math.round(W/110), ny=Math.round(H/110);
-  for(let i=0;i<=nx;i++){const x=f/2+(W-f)*i/nx; tack(x,f/2); tack(x,H-f/2);}
-  for(let i=1;i<ny;i++){const y=f/2+(H-f)*i/ny; tack(f/2,y); tack(W-f/2,y);}
+/* ---------- letters become rows of fill stitches ---------- */
+const mc=document.createElement("canvas"), mx=mc.getContext("2d",{willReadFrequently:true});
+let CAPR=0.72; const cw={};
+function initFont(){ mc.width=mc.height=8; mx.font=`200px ${FONT}`; const m=mx.measureText("H"); CAPR=(m.actualBoundingBoxAscent||144)/200; for(const k in cw) delete cw[k]; }
+function charW(ch){ if(cw[ch]==null){ mx.font=`200px ${FONT}`; cw[ch]=mx.measureText(ch).width/200; } return cw[ch]; }
+function textW(str,cap,tk){ const em=cap/CAPR; let w=0; for(const c of str) w+=charW(c)*em; return w+tk*em*(str.length-1); }
+function eachGlyph(str,cx,cy,cap,o,fn){
+  const tkK=o.track==null?0.035:o.track, em=cap/CAPR, tk=tkK*em, rot=o.rot||0, cr=Math.cos(rot), sr=Math.sin(rot);
+  let x=-textW(str,cap,tkK)/2;
+  for(const ch of str){ const w=charW(ch)*em; if(ch!==" "){ const lx=x+w/2; fn(ch,cx+lx*cr,cy+lx*sr,em,rot); } x+=w+tk; }
 }
-
-/* ---------- one stitch: shadow, body, sheen ---------- */
-function stitch(c,s){
-  const x1=s[0],y1=s[1],x2=s[2],y2=s[3],col=s[4],w=s[5];
-  let dx=x2-x1,dy=y2-y1; const len=Math.hypot(dx,dy)||1; dx/=len; dy/=len;
-  let nx=-dy,ny=dx; if(nx+ny>0){nx=-nx;ny=-ny;}            // normal that faces the light (top-left)
-  const j=(rnd()-.5)*9;
-  c.lineCap="round";
-  c.strokeStyle="rgba(0,0,0,.6)"; c.lineWidth=w*1.2;
-  c.beginPath(); c.moveTo(x1+w*.4,y1+w*.55); c.lineTo(x2+w*.4,y2+w*.55); c.stroke();
-  c.strokeStyle=hsl(col,-20+j); c.lineWidth=w;
-  c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2,y2); c.stroke();
-  c.strokeStyle=hsl(col,j); c.lineWidth=w*.6;
-  c.beginPath(); c.moveTo(x1+nx*w*.13,y1+ny*w*.13); c.lineTo(x2+nx*w*.13,y2+ny*w*.13); c.stroke();
-  if(len>w*1.2){ const k=len*.18;
-    c.strokeStyle=hsl({h:col.h,s:col.s*.85,l:col.l},26+j,.6); c.lineWidth=w*.2;
-    c.beginPath(); c.moveTo(x1+dx*k+nx*w*.26,y1+dy*k+ny*w*.26); c.lineTo(x2-dx*k+nx*w*.26,y2-dy*k+ny*w*.26); c.stroke(); }
-}
-
-/* ---------- letters become fill stitches ---------- */
-function glyph(ch,size,capH,th,gap,maxLen){
-  const M=Math.ceil(size*1.55)+10; if(mask.width!==M){mask.width=M;mask.height=M;}
-  xm.setTransform(1,0,0,1,0,0); xm.clearRect(0,0,M,M);
-  xm.translate(M/2,M/2); xm.rotate(-th); xm.font=`${size}px ${FONT}`; xm.textAlign="center"; xm.textBaseline="alphabetic";
-  xm.fillStyle="#fff"; xm.fillText(ch,0,capH/2);
-  const d=xm.getImageData(0,0,M,M).data, out=[], ct=Math.cos(th), st=Math.sin(th);
-  let row=0;
-  for(let yf=gap/2; yf<M; yf+=gap, row++){
-    const y=Math.min(M-1,Math.round(yf)), base=y*M*4+3, segs=[];
-    let x=0;
+function glyphStitches(out,ch,gx,gy,em,cap,rot,o,ci){
+  const ppm=clamp(3.3/o.gap,5,44), size=em*ppm, M=Math.ceil(size*1.55)+12;
+  mc.width=M; mc.height=M;
+  mx.translate(M/2,M/2); mx.rotate(-o.th); mx.font=`${size}px ${FONT}`; mx.textAlign="center"; mx.textBaseline="alphabetic"; mx.fillStyle="#fff";
+  mx.fillText(ch,0,cap*ppm/2);
+  const d=mx.getImageData(0,0,M,M).data, ct=Math.cos(o.th), st=Math.sin(o.th), cr=Math.cos(rot), sr=Math.sin(rot);
+  const gp=o.gap*ppm, mL=o.maxLen*ppm, minRun=0.45*ppm, ov=0.45*ppm; let row=0;
+  for(let yf=gp/2; yf<M; yf+=gp, row++){
+    const y=Math.min(M-1,Math.round(yf)), base=y*M*4+3, segs=[]; let x=0;
     while(x<M){
       while(x<M && d[base+x*4]<110) x++;
       if(x>=M) break;
       const a=x; while(x<M && d[base+x*4]>=110) x++;
-      const b=x-1; if(b-a<1.2) continue;
-      let s=a, first=maxLen*(row%2?0.55:1);
-      while(s<b){ const e=Math.min(b,s+first); if(b-e<maxLen*.25){segs.push([s,b]);break;} segs.push([s,e]); s=e; first=maxLen; }
+      const b=x-1; if(b-a<minRun) continue;
+      const cuts=[a]; let s=a, first=mL*(0.45+0.55*rnd());
+      while(b-s>first+mL*0.3){ s+=first; cuts.push(s); first=mL; }
+      cuts.push(b);
+      for(let k=0;k<cuts.length-1;k++) segs.push([cuts[k]-(k?ov:0), cuts[k+1]+(k<cuts.length-2?ov:0)]);
     }
     if(row%2) segs.reverse();
     for(const sg of segs){
-      const xa=(row%2?sg[1]:sg[0])-M/2, xb=(row%2?sg[0]:sg[1])-M/2, yy=yf-M/2, jx=(rnd()-.5)*.7, jy=(rnd()-.5)*.7;
-      out.push([xa*ct-yy*st+jx, xa*st+yy*ct+jy, xb*ct-yy*st-jx, xb*st+yy*ct-jy]);
+      const X1=((row%2?sg[1]:sg[0])-M/2)/ppm, X2=((row%2?sg[0]:sg[1])-M/2)/ppm, Y=(yf-M/2)/ppm, j=()=>(rnd()-.5)*0.2;
+      const x1=X1*ct-Y*st+j(), y1=X1*st+Y*ct+j(), x2=X2*ct-Y*st+j(), y2=X2*st+Y*ct+j();
+      out.push([gx+x1*cr-y1*sr, gy+x1*sr+y1*cr, gx+x2*cr-y2*sr, gy+x2*sr+y2*cr, o.w, ci]);
     }
   }
-  return out;
 }
-function measure(str,size,track){ xm.setTransform(1,0,0,1,0,0); xm.font=`${size}px ${FONT}`;
-  let w=0; for(const ch of str) w+=xm.measureText(ch).width+track; return w-track; }
-function capOf(size){ xm.setTransform(1,0,0,1,0,0); xm.font=`${size}px ${FONT}`; const m=xm.measureText("H"); return m.actualBoundingBoxAscent||size*.72; }
-function textStitches(str,cx,cy,size,col,o){
-  o=o||{}; const track=size*(o.track==null?.035:o.track), rot=o.rot||0, th=o.angle==null?.62:o.angle;
-  const w=clamp(size*.0125,1.5,4.4), gap=w*.9, maxLen=clamp(size*.1,7,42), capH=capOf(size);
-  const total=measure(str,size,track), cr=Math.cos(rot), sr=Math.sin(rot), out=[];
-  xm.setTransform(1,0,0,1,0,0); xm.font=`${size}px ${FONT}`;
-  let x=-total/2;
-  for(const ch of str){
-    const cw=xm.measureText(ch).width;
-    if(ch!==" "){ const lx=x+cw/2, gx=cx+lx*cr, gy=cy+lx*sr;
-      for(const s of glyph(ch,size,capH,th,gap,maxLen))
-        out.push([gx+s[0]*cr-s[1]*sr, gy+s[0]*sr+s[1]*cr, gx+s[2]*cr-s[3]*sr, gy+s[2]*sr+s[3]*cr, col, w]);
-      xm.setTransform(1,0,0,1,0,0); xm.font=`${size}px ${FONT}`; }
-    x+=cw+track;
-  }
-  return out;
-}
-function fitSize(str,maxW,start){ const w=measure(str,100,3.5); return Math.min(start,maxW/w*100); }
-function lineStitches(pts,col,w,L,cover){ // back stitch (cover~.85) or running stitch (cover~.5) along a polyline
-  const out=[]; let carry=0;
+function textStitches(out,str,cx,cy,cap,ci,o){ eachGlyph(str,cx,cy,cap,o,(ch,gx,gy,em,rot)=>glyphStitches(out,ch,gx,gy,em,cap,rot,o,ci)); }
+function lineStitches(out,pts,L,cover,w,ci){
+  let carry=0;
   for(let i=0;i<pts.length-1;i++){
-    const a=pts[i], b=pts[i+1], len=Math.hypot(b[0]-a[0],b[1]-a[1]); if(len<.01) continue;
+    const a=pts[i], b=pts[i+1], len=Math.hypot(b[0]-a[0],b[1]-a[1]); if(len<0.01) continue;
     const ux=(b[0]-a[0])/len, uy=(b[1]-a[1])/len; let t=carry;
-    while(t<len){ const e=Math.min(len,t+L*cover);
-      if(e-t>w*.6) out.push([a[0]+ux*t,a[1]+uy*t,a[0]+ux*e,a[1]+uy*e,col,w]); t+=L; }
+    while(t<len){ const e=Math.min(len,t+L*cover); if(e-t>w*0.9) out.push([a[0]+ux*t,a[1]+uy*t,a[0]+ux*e,a[1]+uy*e,w,ci]); t+=L; }
     carry=t-len;
   }
-  return out;
 }
 
-/* ---------- price tag with one finding ---------- */
-function tagJob(cx,cy,idx){
-  const f=FINDINGS[idx%FINDINGS.length];
-  const tw=land?clamp(W*.19,200,400):clamp(W*.4,150,400), th=tw*.46, c=th*.26;
-  const rot=(rnd()-.5)*.17 + (cx<W/2?-.03:.03), cr=Math.cos(rot), sr=Math.sin(rot);
-  cx=clamp(cx,FR+tw*.56,W-FR-tw*.56); cy=clamp(cy,FR+th*.62,H-FR-th*.62);
-  const P=(x,y)=>[cx+x*cr-y*sr, cy+x*sr+y*cr];
-  const lw=clamp(tw*.0075,1.6,3.2), st=[];
+/* ---------- chalk transfer lines on the cloth ---------- */
+const CK=7, chalk=document.createElement("canvas"); chalk.width=D.W*CK; chalk.height=D.H*CK; const cx2=chalk.getContext("2d");
+const cpx=(x,y)=>[(x+D.W/2)*CK,(y+D.H/2)*CK];
+function chalkText(str,cx,cy,cap,o){
+  eachGlyph(str,cx,cy,cap,o,(ch,gx,gy,em,rot)=>{
+    const p=cpx(gx,gy); cx2.save(); cx2.translate(p[0],p[1]); cx2.rotate(rot); cx2.font=`${em*CK}px ${FONT}`; cx2.textAlign="center"; cx2.textBaseline="alphabetic";
+    cx2.lineJoin="round"; cx2.strokeStyle="rgba(255,255,255,.6)"; cx2.lineWidth=0.2*CK; cx2.strokeText(ch,0,cap*CK/2); cx2.restore();
+  });
+}
+function chalkLine(pts,a,w){ cx2.strokeStyle=`rgba(255,255,255,${a})`; cx2.lineWidth=(w||0.16)*CK; cx2.lineCap="round"; cx2.beginPath();
+  pts.forEach((p,i)=>{ const q=cpx(p[0],p[1]); i?cx2.lineTo(q[0],q[1]):cx2.moveTo(q[0],q[1]); }); cx2.stroke(); }
+
+/* ---------- shaders ---------- */
+const COMMON=`
+uniform vec3 uCam; uniform vec3 uFwd; uniform vec3 uL; uniform vec3 uLCol; uniform vec3 uSky; uniform vec3 uGnd;
+uniform sampler2D tShadow; uniform mat4 uShadowMat; uniform float uPen; uniform float uSBias; uniform vec4 uFoc;
+float h11(float p){ p=fract(p*0.1031); p*=p+33.33; p*=p+p; return fract(p); }
+float h21(vec2 p){ vec3 q=fract(vec3(p.xyx)*0.1031); q+=dot(q,q.yzx+33.33); return fract((q.x+q.y)*q.z); }
+float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+  return mix(mix(h21(i),h21(i+vec2(1.,0.)),f.x), mix(h21(i+vec2(0.,1.)),h21(i+vec2(1.,1.)),f.x), f.y); }
+float ign(vec2 p){ return fract(52.9829189*fract(dot(p,vec2(0.06711056,0.00583715)))); }
+float shadowAt(vec3 W){
+  vec4 sc=uShadowMat*vec4(W,1.); vec3 p=sc.xyz/sc.w*0.5+0.5;
+  if(p.x<0.||p.x>1.||p.y<0.||p.y>1.||p.z>1.) return 1.;
+  float rot=ign(gl_FragCoord.xy)*6.2832, acc=0.;
+  for(int i=0;i<10;i++){ float fi=float(i); float r=sqrt((fi+0.5)/10.); float a=fi*2.39996+rot;
+    acc+=step(p.z-uSBias, texture2D(tShadow,p.xy+vec2(cos(a),sin(a))*r*uPen).r); }
+  return acc/10.;
+}
+vec3 aces(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.,1.); }
+vec4 finish(vec3 lin, vec3 W){
+  float z=max(dot(W-uCam,uFwd),0.5); float coc=uFoc.y*(1./uFoc.x-1./z);
+  float a=clamp(coc/uFoc.z,-1.,1.)*0.5+0.5;
+  if(uFoc.w>0.5) lin=pow(aces(lin),vec3(1./2.2));
+  return vec4(lin,a);
+}`;
+const STITCH_VS=`
+attribute vec4 iA; attribute vec4 iB; attribute vec3 iC; uniform float uProg;
+varying vec3 vW; varying vec3 vN; varying vec3 vT; varying vec3 vCol; varying vec3 vUV; varying float vSeed;
+float zAt(float s,float L,float zone,float w,float open){
+  float e=clamp(min(s,L-s)/zone,0.,1.); if(open>0.5&&s>L*0.5) e=1.;
+  float ee=e*e*(3.-2.*e); float rh=0.34*w*(0.45+0.55*ee);
+  return rh*(-2.3+3.3*ee)+0.012*L*sin(3.14159*clamp(s/L,0.,1.));
+}
+void main(){
+  vec2 a=iA.xy, b=iA.zw; float w=iB.x; float grow=clamp(uProg-iB.z,0.,1.);
+  vec2 d=b-a; float len=max(length(d),0.001); vec2 t=d/len; vec2 n=vec2(-t.y,t.x);
+  float L=max(len*grow,0.05); float open=step(grow,0.999);
+  float zone=min(0.9*w,0.45*L); float px=position.x; float s;
+  if(px<1.) s=px*zone; else if(px<2.) s=zone+(px-1.)*(L-2.*zone); else s=L-(3.-px)*zone;
+  float e=clamp(min(s,L-s)/zone,0.,1.); if(open>0.5&&s>L*0.5) e=1.;
+  float ee=e*e*(3.-2.*e);
+  float rw=0.5*w*(0.72+0.28*ee), rh=0.34*w*(0.45+0.55*ee);
+  float zc=iB.w+zAt(s,L,zone,w,open);
+  float dz=(zAt(s+0.02,L,zone,w,open)-zAt(s-0.02,L,zone,w,open))/0.04;
+  vec3 T3=normalize(vec3(t,dz)); vec3 S3=vec3(n,0.); vec3 U3=cross(T3,S3);
+  float c=position.y, sn=position.z;
+  vec3 P=vec3(a+t*s+n*(c*rw), zc+sn*rh);
+  vW=P; vN=normalize(S3*c*rh+U3*sn*rw); vT=T3; vCol=iC; vUV=vec3(s,uv.x,ee); vSeed=iB.y;
+  gl_Position=projectionMatrix*viewMatrix*vec4(P,1.);
+}`;
+const WORK_VS=`
+uniform vec3 uP0; uniform vec3 uP1; uniform vec3 uP2; uniform vec3 uP3; uniform float uLen; uniform float uRad; uniform vec3 uTCol;
+varying vec3 vW; varying vec3 vN; varying vec3 vT; varying vec3 vCol; varying vec3 vUV; varying float vSeed;
+void main(){
+  float t=position.x*uLen, m=1.-t;
+  vec3 C=m*m*m*uP0+3.*m*m*t*uP1+3.*m*t*t*uP2+t*t*t*uP3;
+  vec3 Tn=normalize(3.*m*m*(uP1-uP0)+6.*m*t*(uP2-uP1)+3.*t*t*(uP3-uP2));
+  vec3 S=normalize(cross(vec3(0.,0.,1.),Tn)); vec3 U=cross(Tn,S);
+  vec3 R=S*position.y+U*position.z; vec3 P=C+R*uRad*step(0.002,uLen);
+  vW=P; vN=R; vT=Tn; vCol=uTCol; vUV=vec3(t*420.,uv.x,1.); vSeed=0.37;
+  gl_Position=projectionMatrix*viewMatrix*vec4(P,1.);
+}`;
+const THREAD_FS=COMMON+`
+varying vec3 vW; varying vec3 vN; varying vec3 vT; varying vec3 vCol; varying vec3 vUV; varying float vSeed;
+void main(){
+  vec3 N=normalize(vN), Tn=normalize(vT); vec3 B=normalize(cross(N,Tn)); vec3 Lc=uLCol*0.46;
+  float s=vUV.x, ee=vUV.z;
+  float mini=smoothstep(0.3,1.3,fwidth(vUV.y));
+  float ph=vUV.y/6.2832*5.+s*0.5+vSeed*9.;
+  float fd=(1.-smoothstep(0.12,0.55,fwidth(ph)))*(1.-mini);
+  float cph=cos(6.2832*ph), sph=sin(6.2832*ph);
+  float fib=vn(vec2(ph*11.,s*2.6+vSeed*40.));
+  vec3 Nb=normalize(mix(N,vec3(0.,0.,1.),mini*0.75));
+  vec3 N2=normalize(Nb+B*sph*0.5*fd+B*(fib-0.5)*0.3*fd);
+  vec3 alb=vCol*(0.88+0.12*cph*fd)*(0.88+0.24*fib*fd);
+  vec3 Tf=normalize(Tn+B*0.3);
+  vec3 V=normalize(uCam-vW), H=normalize(uL+V);
+  float sh=shadowAt(vW+N*0.07);
+  float ndl=dot(N2,uL); float wrap=clamp((ndl+0.18)/1.18,0.,1.);
+  float t1=dot(normalize(Tf+N2*0.10),H), t2=dot(normalize(Tf-N2*0.22),H);
+  float sp1=pow(sqrt(max(0.,1.-t1*t1)),48.), sp2=pow(sqrt(max(0.,1.-t2*t2)),12.);
+  float sm=smoothstep(-0.05,0.4,ndl);
+  float ao=mix(0.35,1.,ee)*mix(mix(0.42,1.,smoothstep(0.,0.8,N.z)),0.9,mini);
+  vec3 amb=mix(uGnd,uSky,N2.z*0.5+0.5)*1.6;
+  vec3 col=alb*(Lc*wrap*sh+amb)*ao;
+  col+=Lc*sh*sm*ao*(sp1*0.16*(1.-mini)+sp2*alb*0.7);
+  col+=alb*Lc*pow(1.-max(dot(N2,V),0.),3.)*0.3*sh*ao;
+  gl_FragColor=finish(col,vW);
+}`;
+const CLOTH_VS=`varying vec3 vW; void main(){ vW=position; gl_Position=projectionMatrix*viewMatrix*vec4(position,1.); }`;
+const CLOTH_FS=COMMON+`
+varying vec3 vW; uniform sampler2D tChalk; uniform vec2 uD; uniform vec3 uHoop; uniform float uPitch;
+float weave(vec2 g, out float dir, out vec2 tc){
+  vec2 c=floor(g), f=fract(g)-0.5; float s=mod(c.x+c.y,2.)*2.-1.;
+  float nx=vn(vec2(c.x*7.31,g.y*0.33)), ny=vn(vec2(c.y*5.17+17.,g.x*0.33));
+  float wx=f.x+(nx-0.5)*0.15, wy=f.y+(ny-0.5)*0.15;
+  float ax=0.41+(fract(nx*7.)-0.5)*0.07, ay=0.41+(fract(ny*7.)-0.5)*0.07;
+  float pw=sqrt(max(0.,1.-(wx/ax)*(wx/ax))), pf=sqrt(max(0.,1.-(wy/ay)*(wy/ay)));
+  float hw=pw>0.?(0.5-0.5*s*cos(3.14159*f.y))*0.6+pw*0.4:0.;
+  float hf=pf>0.?(0.5+0.5*s*cos(3.14159*f.x))*0.6+pf*0.4:0.;
+  if(hw>hf){ dir=0.; tc=vec2(wx/ax,g.y); return hw; }
+  dir=1.; tc=vec2(wy/ay,g.x); return hf;
+}
+void main(){
+  vec2 g=vW.xy/uPitch; vec2 fg=fwidth(g); float det=1.-smoothstep(0.1,0.42,max(fg.x,fg.y));
+  float dir,d2; vec2 tc,t2; float h=weave(g,dir,tc);
+  float e=0.035; float hx=weave(g+vec2(e,0.),d2,t2), hy=weave(g+vec2(0.,e),d2,t2);
+  float sg=dir<0.5?1.:-1.;
+  float ridge=0.5+0.5*sin((tc.y*3.4+tc.x*0.55*sg)*6.2832);
+  float fuzz=vn(vW.xy*9.)*0.6+vn(vW.xy*27.)*0.4;
+  float big=vn(vW.xy*0.045)*0.6+vn(vW.xy*0.011)*0.4;
+  vec3 N=normalize(vec3(-(hx-h)/e*0.34*det,-(hy-h)/e*0.34*det,1.));
+  vec3 td=dir<0.5?vec3(0.,1.,0.):vec3(1.,0.,0.);
+  N=normalize(N+td*(ridge-0.5)*0.35*det+vec3(vn(vW.xy*0.06)-0.5,vn(vW.yx*0.06+9.)-0.5,0.)*0.07);
+  float tid=dir<0.5?floor(g.x)*1.7:floor(g.y)*2.3+50.;
+  float occl=mix(0.75,smoothstep(0.02,0.55,h),det);
+  vec3 alb=vec3(0.0095,0.0095,0.012)*(0.75+0.5*h11(tid))*(0.62+0.5*ridge*det)*(0.72+0.5*fuzz)*(0.8+0.4*big);
+  vec2 cuv=(vW.xy+uD*0.5)/uD; float ck=texture2D(tChalk,cuv).r;
+  alb+=vec3(0.13,0.13,0.125)*ck*(0.12+0.88*smoothstep(0.35,0.95,mix(0.8,h,det)))*(0.35+0.9*fuzz);
+  vec2 q=abs(vW.xy)-(uHoop.xy-uHoop.z); float sd=length(max(q,0.))+min(max(q.x,q.y),0.)-uHoop.z;
+  float ring=mix(0.28,1.,smoothstep(-7.,-26.,sd)); if(sd>0.) ring=0.42;
+  vec3 V=normalize(uCam-vW), H=normalize(uL+V);
+  float sh=shadowAt(vW+vec3(0.,0.,0.05));
+  float ndl=max(dot(N,uL),0.);
+  vec3 col=alb*(uLCol*ndl*sh+mix(uGnd,uSky,N.z*0.5+0.5)*1.3)*occl*ring;
+  col+=uLCol*sh*ring*pow(max(dot(N,H),0.),26.)*0.03*h*det;
+  col+=alb*uLCol*sh*ring*pow(1.-max(dot(N,V),0.),3.)*0.6;
+  gl_FragColor=finish(col,vW);
+}`;
+const WOOD_VS=`varying vec3 vW; varying vec3 vN; varying vec2 vUv; void main(){ vW=position; vN=normal; vUv=uv; gl_Position=projectionMatrix*viewMatrix*vec4(position,1.); }`;
+const WOOD_FS=COMMON+`
+varying vec3 vW; varying vec3 vN; varying vec2 vUv; uniform float uTot;
+vec2 grain(float s,float v){ float wv=vn(vec2(s*0.02,v*2.)+7.)*5.; return vec2(vn(vec2(s*0.05,v*10.+wv)),vn(vec2(s*0.7,v*70.+wv*3.))); }
+void main(){
+  vec3 N=normalize(vN); if(!gl_FrontFacing) N=-N;
+  vec2 gr=mix(grain(vUv.x,vUv.y),grain(vUv.x-uTot,vUv.y),smoothstep(uTot-30.,uTot,vUv.x));
+  vec3 alb=mix(vec3(0.17,0.085,0.032),vec3(0.40,0.235,0.10),smoothstep(0.2,0.8,gr.x))*(0.8+0.35*gr.y);
+  vec3 V=normalize(uCam-vW), H=normalize(uL+V);
+  float ndl=max(dot(N,uL),0.); float sh=shadowAt(vW+N*0.4);
+  vec3 col=alb*(uLCol*ndl*sh+mix(uGnd,uSky,N.z*0.5+0.5)*1.2);
+  float fr=pow(1.-max(dot(N,V),0.),4.);
+  col+=uLCol*sh*pow(max(dot(N,H),0.),80.)*0.3+uSky*fr*1.2;
+  gl_FragColor=finish(col,vW);
+}`;
+const DEPTH_FS=`void main(){ gl_FragColor=vec4(1.); }`;
+const POST_VS=`varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }`;
+const POST_FS=`
+uniform sampler2D tScene; uniform vec2 uPx; uniform float uMax; uniform float uTime; uniform float uLDR; uniform float uExp; varying vec2 vUv;
+float ign(vec2 p){ return fract(52.9829189*fract(dot(p,vec2(0.06711056,0.00583715)))); }
+vec3 aces(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.,1.); }
+void main(){
+  vec4 c0=texture2D(tScene,vUv); float cc=(c0.a*2.-1.)*uMax, cs=abs(cc);
+  vec3 col=c0.rgb, glow=vec3(0.); float tot=1., rot=ign(gl_FragCoord.xy)*6.2832;
+  for(int i=1;i<=32;i++){ float fi=float(i); float r=uMax*sqrt(fi/32.); float a=fi*2.39996+rot;
+    vec4 sm=texture2D(tScene,vUv+vec2(cos(a),sin(a))*r*uPx); float sc=(sm.a*2.-1.)*uMax, ss=abs(sc);
+    if(sc>cc) ss=clamp(ss,0.,cs*2.);
+    float m=smoothstep(r-0.5,r+0.5,ss);
+    col+=mix(col/tot,sm.rgb,m); tot+=1.; glow+=sm.rgb*smoothstep(1.3,3.,dot(sm.rgb,vec3(0.3,0.6,0.1))); }
+  col=col/tot+glow/32.*0.35;
+  if(uLDR<0.5){ col=aces(col*uExp); col=pow(col,vec3(1./2.2)); }
+  vec2 q=vUv-0.5; col*=1.-dot(q,q)*0.85;
+  col+=(ign(gl_FragCoord.xy+fract(uTime*7.31)*91.)-0.5)*0.028;
+  gl_FragColor=vec4(col,1.);
+}`;
+
+/* ---------- scene ---------- */
+const scene=new T.Scene(), cam=new T.PerspectiveCamera(26,ASPECT,1,4000);
+const Lv=new T.Vector3(-0.58,0.46,0.67).normalize();
+const shared={ uCam:{value:new T.Vector3()}, uFwd:{value:new T.Vector3()}, uL:{value:Lv}, uLCol:{value:new T.Vector3(3.3,3.05,2.7)},
+  uSky:{value:new T.Vector3(0.085,0.10,0.135)}, uGnd:{value:new T.Vector3(0.045,0.036,0.03)}, tShadow:{value:null}, uShadowMat:{value:new T.Matrix4()},
+  uPen:{value:0.002}, uSBias:{value:0.0003}, uFoc:{value:new T.Vector4(100,3000,13,HDR?0:1)} };
+const mat=(vs,fs,extra)=>new T.ShaderMaterial({uniforms:Object.assign({},shared,extra||{}),vertexShader:vs,fragmentShader:fs,side:T.DoubleSide,extensions:{derivatives:true}});
+const casters=[];
+function caster(mesh,depthMat){ mesh.userData.depth=depthMat; casters.push(mesh); }
+
+const chalkTex=new T.CanvasTexture(chalk); chalkTex.anisotropy=renderer.capabilities.getMaxAnisotropy(); chalkTex.minFilter=T.LinearMipmapLinearFilter;
+const cloth=new T.Mesh(new T.PlaneGeometry(1800,1400), mat(CLOTH_VS,CLOTH_FS,{tChalk:{value:chalkTex},uD:{value:new T.Vector2(D.W,D.H)},uHoop:{value:new T.Vector3(HOOP.hx,HOOP.hy,HOOP.r)},uPitch:{value:PITCH}}));
+scene.add(cloth);
+
+function hoopPath(){
+  const r=HOOP.r, ax=HOOP.hx-r, ay=HOOP.hy-r, C=[[ax,ay,0],[-ax,ay,Math.PI/2],[-ax,-ay,Math.PI],[ax,-ay,1.5*Math.PI]], pts=[]; let s=0, prev=null;
+  for(const c of C) for(let i=0;i<=22;i++){ const a=c[2]+i/22*Math.PI/2, p={x:c[0]+Math.cos(a)*r,y:c[1]+Math.sin(a)*r,nx:Math.cos(a),ny:Math.sin(a)};
+    if(prev) s+=Math.hypot(p.x-prev.x,p.y-prev.y); p.s=s; pts.push(p); prev=p; }
+  const p0=Object.assign({},pts[0]); p0.s=s+Math.hypot(p0.x-prev.x,p0.y-prev.y); pts.push(p0); return pts;
+}
+function sweep(path,prof){
+  const pos=[],uv=[],idx=[],m=prof.length;
+  path.forEach(p=>prof.forEach((q,j)=>{ pos.push(p.x+p.nx*q[0],p.y+p.ny*q[0],q[1]); uv.push(p.s,j/(m-1)); }));
+  for(let i=0;i<path.length-1;i++) for(let j=0;j<m-1;j++){ const a=i*m+j,b=a+1,c=a+m,d=c+1; idx.push(a,c,b,b,c,d); }
+  const g=new T.BufferGeometry(); g.setAttribute("position",new T.Float32BufferAttribute(pos,3)); g.setAttribute("uv",new T.Float32BufferAttribute(uv,2)); g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+{ const path=hoopPath(), woodDepth=new T.ShaderMaterial({vertexShader:WOOD_VS,fragmentShader:DEPTH_FS,side:T.DoubleSide});
+  const outer=[[1.2,-3],[1.2,5.6],[1.8,7],[3.2,7.6],[7.2,7.6],[8.6,7],[9.2,5.6],[9.2,-3]], inner=[[-7.4,-3],[-7.4,4.2],[-6.8,5.5],[-5.6,6],[-2.2,6],[-1,5.5],[-0.4,4.2],[-0.4,-3]];
+  for(const pr of [outer,inner]){ const m=new T.Mesh(sweep(path,pr),mat(WOOD_VS,WOOD_FS,{uTot:{value:path[path.length-1].s}})); scene.add(m); caster(m,woodDepth); } }
+
+function tubeBase(xs,a0,a1,rn){
+  const pos=[],uv=[],idx=[];
+  for(let i=0;i<xs.length;i++) for(let j=0;j<rn;j++){ const th=a0+(a1-a0)*j/(rn-1); pos.push(xs[i],Math.cos(th),Math.sin(th)); uv.push(th,0); }
+  for(let i=0;i<xs.length-1;i++) for(let j=0;j<rn-1;j++){ const a=i*rn+j,b=a+1,c=a+rn,d=c+1; idx.push(a,c,b,b,c,d); }
+  return {pos:new T.Float32BufferAttribute(pos,3),uv:new T.Float32BufferAttribute(uv,2),idx:new T.Uint16BufferAttribute(idx,1)};
+}
+const SB=tubeBase([0,.35,.7,1,1.5,2,2.3,2.65,3],-0.9,Math.PI+0.9,7);
+function buildMesh(st){
+  const n=st.length, A=new Float32Array(n*4), B=new Float32Array(n*4), C=new Float32Array(n*3);
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  for(let i=0;i<n;i++){ const s=st[i], p=PAL[s[5]], tone=0.82+0.3*rnd(), warm=0.9+0.2*rnd();
+    A[i*4]=s[0]; A[i*4+1]=-s[1]; A[i*4+2]=s[2]; A[i*4+3]=-s[3];
+    B[i*4]=s[4]; B[i*4+1]=rnd(); B[i*4+2]=i; B[i*4+3]=rnd()*0.05;
+    C[i*3]=p[0]*tone; C[i*3+1]=p[1]*tone*warm; C[i*3+2]=p[2]*tone*(s[5]===2?warm:1);
+    x0=Math.min(x0,s[0],s[2]); x1=Math.max(x1,s[0],s[2]); y0=Math.min(y0,-s[1],-s[3]); y1=Math.max(y1,-s[1],-s[3]); }
+  const g=new T.InstancedBufferGeometry(); g.setIndex(SB.idx); g.setAttribute("position",SB.pos); g.setAttribute("uv",SB.uv);
+  g.setAttribute("iA",new T.InstancedBufferAttribute(A,4)); g.setAttribute("iB",new T.InstancedBufferAttribute(B,4)); g.setAttribute("iC",new T.InstancedBufferAttribute(C,3));
+  g.instanceCount=0; g.boundingSphere=new T.Sphere(new T.Vector3((x0+x1)/2,(y0+y1)/2,0),Math.hypot(x1-x0,y1-y0)/2+3);
+  const u={value:0}, mesh=new T.Mesh(g,mat(STITCH_VS,THREAD_FS,{uProg:u}));
+  mesh.userData.depth=new T.ShaderMaterial({uniforms:{uProg:u},vertexShader:STITCH_VS,fragmentShader:DEPTH_FS,side:T.DoubleSide});
+  scene.add(mesh); return {mesh,u};
+}
+const WU={uP0:{value:new T.Vector3()},uP1:{value:new T.Vector3()},uP2:{value:new T.Vector3()},uP3:{value:new T.Vector3()},uLen:{value:0},uRad:{value:0.25},uTCol:{value:new T.Vector3(1,0.6,0.012)}};
+{ const xs=[]; for(let i=0;i<=64;i++) xs.push(Math.pow(i/64,1.7)); const b=tubeBase(xs,0,Math.PI*2,9);
+  const g=new T.BufferGeometry(); g.setIndex(b.idx); g.setAttribute("position",b.pos); g.setAttribute("uv",b.uv);
+  const m=new T.Mesh(g,mat(WORK_VS,THREAD_FS,WU)); m.frustumCulled=false; scene.add(m);
+  caster(m,new T.ShaderMaterial({uniforms:WU,vertexShader:WORK_VS,fragmentShader:DEPTH_FS,side:T.DoubleSide})); }
+
+/* ---------- render targets, shadow, post ---------- */
+const SM=2048, shadowRT=new T.WebGLRenderTarget(SM,SM,{minFilter:T.NearestFilter,magFilter:T.NearestFilter});
+shadowRT.depthTexture=new T.DepthTexture(SM,SM,T.UnsignedIntType); shared.tShadow.value=shadowRT.depthTexture;
+const lightCam=new T.OrthographicCamera(-1,1,1,-1,10,900);
+const PU={tScene:{value:null},uPx:{value:new T.Vector2()},uMax:{value:13},uTime:{value:0},uLDR:{value:HDR?0:1},uExp:{value:1.05}};
+const postScene=new T.Scene(), postCam=new T.Camera();
+{ const m=new T.Mesh(new T.PlaneGeometry(2,2),new T.ShaderMaterial({uniforms:PU,vertexShader:POST_VS,fragmentShader:POST_FS,depthTest:false,depthWrite:false})); m.frustumCulled=false; postScene.add(m); }
+const Q={fixed:0,acc:0,n:0,level:0,checked:0};
+let sceneRT=null, SW=960, SH=540, scale=1, RH=540;
+function makeRT(){
+  if(sceneRT) sceneRT.dispose();
+  const w=Math.max(2,Math.round(SW*scale)), h=Math.max(2,Math.round(SH*scale));
+  const hdr=HDR&&Q.level<2, o={minFilter:T.LinearFilter,magFilter:T.LinearFilter,format:T.RGBAFormat,type:hdr?T.HalfFloatType:T.UnsignedByteType,stencilBuffer:false};
+  if(Q.level<1){ sceneRT=new T.WebGLMultisampleRenderTarget(w,h,o); sceneRT.samples=scale>1.6?2:4; } else sceneRT=new T.WebGLRenderTarget(w,h,o);
+  shared.uFoc.value.w=hdr?0:1; PU.uLDR.value=hdr?0:1;
+  renderer.setPixelRatio(1); renderer.setSize(w,h,false);
+  PU.tScene.value=sceneRT.texture; PU.uPx.value.set(1/w,1/h); RH=h; PU.uMax.value=h*0.013; shared.uFoc.value.z=h*0.013;
+}
+function fit(){
+  const bw=wrap.clientWidth, bh=wrap.clientHeight, w=Math.max(160,Math.min(bw,bh*ASPECT)), h=w/ASPECT;
+  stage.style.width=w+"px"; stage.style.height=h+"px"; SW=w; SH=h;
+  scale=Q.fixed||Math.min(window.devicePixelRatio||1,2,2560/w); makeRT();
+}
+
+/* ---------- timeline ---------- */
+const S={jobs:[],cur:0,time:0,speed:1,film:false,paused:false,tagN:0};
+const wp={x:0,y:0,w:0.6,c:0,on:false}, wps={x:0,y:0};
+const C={tx:0,ty:0,lf:Math.log(WIDE),tilt:0.13,yaw:0,roll:0,v:{tx:0,ty:0,lf:0,tilt:0,yaw:0,roll:0}};
+const ptr={x:0,y:0}; let hudT=0;
+function addJob(st,o){ const m=st.length?buildMesh(st):null; const job=Object.assign({st,n:st.length,t:0,p:1.6,dur:3,mesh:m&&m.mesh,u:m&&m.u,cam:{}},o); S.jobs.push(job); return job; }
+function clearJobs(){ for(const j of S.jobs) if(j.mesh){ scene.remove(j.mesh); j.mesh.geometry.dispose(); j.mesh.material.dispose(); j.mesh.userData.depth.dispose(); }
+  S.jobs=[]; S.cur=0; S.time=0; S.tagN=0; wp.on=false; WU.uLen.value=0; }
+
+function buildIntro(){
+  seed=11; cx2.clearRect(0,0,chalk.width,chalk.height);
+  const tr=0.035, maxW=162; let capN=maxW/textW("NOVEMBER",1,tr), capS=maxW/textW("SALE",1,tr), gNS=capN*0.27, tot=capN+gNS+capS;
+  if(tot>124){ const k=124/tot; capN*=k; capS*=k; gNS*=k; tot=124; }
+  const top=-13-tot/2, yN=top+capN/2, yR=top+capN+gNS/2, yS=top+capN+gNS+capS/2, bw=textW("NOVEMBER",capN,tr);
+  const TL="THEY'RE PLAYING US", capT=Math.min(11.5,150/textW(TL,1,0.09)), yT=yS+capS/2+7.5+capT/2, tw=textW(TL,capT,0.09), yU=yT+capT/2+4.8;
+  const oN={th:0.62,w:0.66,gap:0.56,maxLen:10.5}, oS={th:-0.62,w:0.72,gap:0.62,maxLen:9}, oT={th:1.15,w:0.46,gap:0.42,maxLen:4.2,rot:-0.03,track:0.09};
+  chalkText("NOVEMBER",0,yN,capN,oN); chalkText("SALE",0,yS,capS,oS); chalkText(TL,0,yT,capT,oT);
+  chalkLine([[-bw/2-5,yN-capN/2],[bw/2+5,yN-capN/2]],0.22,0.12); chalkLine([[-bw/2-5,yN+capN/2],[bw/2+5,yN+capN/2]],0.22,0.12);
+  chalkLine([[-bw/2-5,yS-capS/2],[bw/2+5,yS-capS/2]],0.22,0.12); chalkLine([[-bw/2-5,yS+capS/2],[bw/2+5,yS+capS/2]],0.22,0.12);
+  for(const s of SPOTS){ chalkLine([[s[0]-2,s[1]],[s[0]+2,s[1]]],0.5); chalkLine([[s[0],s[1]-2],[s[0],s[1]+2]],0.5); }
+  chalkTex.needsUpdate=true;
+  const nov=[],rule=[],sale=[],tag=[],und=[];
+  textStitches(nov,"NOVEMBER",0,yN,capN,0,oN);
+  lineStitches(rule,[[bw/2,yR],[-bw/2,yR]],3.2,0.86,0.6,2);
+  textStitches(sale,"SALE",0,yS,capS,1,oS);
+  textStitches(tag,TL,0,yT,capT,2,oT);
+  lineStitches(und,[[tw/2+2,yU-0.9],[-tw/2-2,yU+0.9]],3.6,0.88,0.72,1);
+  addJob([],{dur:1.8,cam:{fixed:[-146,66],fw:[76,66],tilt:0.46,yaw:-0.5,k:3}});
+  addJob(nov,{dur:11,p:2.2,cam:{fw:[36,64],tilt:0.33,yaw:[-0.30,0.26],k:3.0}});
+  addJob(rule,{dur:1.4,p:1,cam:{fw:[74,70],tilt:0.36,yaw:[0.2,-0.16],k:3.4}});
+  addJob(sale,{dur:12,p:1.7,cam:{fw:[56,104],tilt:0.35,yaw:[-0.28,0.26],k:2.6}});
+  addJob(tag,{dur:7,p:1.5,cam:{fw:[42,60],tilt:0.32,yaw:[-0.24,0.2],k:3.0}});
+  addJob(und,{dur:1.2,p:1,cam:{fw:[78,84],tilt:0.34,yaw:[0.16,-0.1],k:3.2}});
+  addJob([],{dur:4.6,cam:{fixed:[0,0],fw:[WIDE,WIDE],tilt:0.13,yaw:0,k:1.5}});
+  const j=S.jobs[0].cam; C.tx=j.fixed[0]; C.ty=j.fixed[1]; C.lf=Math.log(j.fw[0]); C.tilt=j.tilt; C.yaw=j.yaw; C.roll=0; for(const k in C.v) C.v[k]=0;
+  wps.x=C.tx; wps.y=C.ty; wp.x=nov[0][0]; wp.y=-nov[0][1];
+}
+function addTag(x,y){
+  const f=FINDINGS[S.tagN%FINDINGS.length], side=S.tagN%2; S.tagN++;
+  const tw=62, th=28.5, c=7.4; x=clamp(x,-HOOP.hx+46,HOOP.hx-46); y=clamp(y,-HOOP.hy+27,HOOP.hy-27);
+  const rot=(rnd()-.5)*0.14+(x<0?-0.025:0.025), cr=Math.cos(rot), sr=Math.sin(rot), P=(u,v)=>[x+u*cr-v*sr,y+u*sr+v*cr], st=[];
   const outline=[P(-tw/2+c,-th/2),P(tw/2,-th/2),P(tw/2,th/2),P(-tw/2+c,th/2),P(-tw/2,th/2-c),P(-tw/2,-th/2+c),P(-tw/2+c,-th/2)];
-  st.push(...lineStitches(outline,YEL,lw,lw*4.6,.84));
-  const hx=-tw/2+c*.95, ring=[]; for(let i=0;i<=10;i++){const a=i/10*6.283; ring.push(P(hx+Math.cos(a)*th*.065,Math.sin(a)*th*.065));}
-  st.push(...lineStitches(ring,YEL,lw*.85,lw*2.4,.9));
-  const cord=[]; for(let i=0;i<=14;i++){const t=i/14; cord.push(P(hx-t*tw*.2, -t*th*.5+Math.sin(t*3.14)*th*.22));}
-  st.push(...lineStitches(cord,CRM,lw*.8,lw*4.4,.52));
-  const inner=tw-c*1.5-tw*.08, ox=c*.55;
-  const sN=fitSize(f[0],inner,th*.5), sC=Math.min(fitSize(f[1],inner,th*.2),fitSize(f[2],inner,th*.2));
-  const p0=P(ox,-th*.17), p1=P(ox,th*.17), p2=P(ox,th*.17+sC*1.02);
-  st.push(...textStitches(f[0],p0[0],p0[1],sN,RED,{rot,angle:.5}));
-  st.push(...textStitches(f[1],p1[0],p1[1],sC,CRM,{rot,angle:-.6,track:.06}));
-  st.push(...textStitches(f[2],p2[0],p2[1],sC,CRM,{rot,angle:-.6,track:.06}));
-  return {st,i:0,ctx:xG,rate:reduce?1e6:Math.max(520,st.length/2.2),tag:true};
+  chalkLine(outline,0.55,0.2); chalkTex.needsUpdate=true;
+  lineStitches(st,outline,2.5,0.86,0.52,0);
+  const hx=-tw/2+c*0.95, ring=[]; for(let i=0;i<=10;i++){ const a=i/10*6.2832; ring.push(P(hx+Math.cos(a)*1.9,Math.sin(a)*1.9)); }
+  lineStitches(st,ring,1.25,0.92,0.42,0);
+  const cord=[]; for(let i=0;i<=16;i++){ const t=i/16; cord.push(P(hx-t*13,-t*14+Math.sin(t*3.14)*6)); }
+  lineStitches(st,cord,2.3,0.55,0.4,2);
+  const inner=tw-c*1.5-5, ox=c*0.55, capNum=Math.min(9.6,inner/textW(f[0],1,0.035)), capC=Math.min(3.7,inner/textW(f[1],1,0.07),inner/textW(f[2],1,0.07));
+  const p0=P(ox,-th*0.17), p1=P(ox,th*0.2), p2=P(ox,th*0.2+capC*1.6);
+  textStitches(st,f[0],p0[0],p0[1],capNum,1,{rot,th:0.5,w:0.44,gap:0.4,maxLen:4});
+  textStitches(st,f[1],p1[0],p1[1],capC,2,{rot,th:-0.6,w:0.32,gap:0.29,maxLen:2.2,track:0.07});
+  textStitches(st,f[2],p2[0],p2[1],capC,2,{rot,th:-0.6,w:0.32,gap:0.29,maxLen:2.2,track:0.07});
+  const y0=side?0.24:-0.24;
+  addJob(st,{dur:3.8,p:1.25,tag:true,cam:{fixed:[x,-y],fw:[84,66],tilt:0.36,yaw:[y0,-y0*0.6],k:2.8}});
 }
+function film(){ clearJobs(); buildIntro(); for(const s of SPOTS) addTag(s[0],s[1]); addJob([],{dur:6,cam:{fixed:[0,0],fw:[WIDE,WIDE],tilt:0.13,yaw:0,k:1.4}}); S.film=true; S.paused=false;
+  clearTimeout(hudT); $("bar").classList.add("off"); stage.classList.add("quiet"); }
+function restart(){ clearJobs(); buildIntro(); S.film=false; S.paused=false; }
 
-/* ---------- the sale sign ---------- */
-function intro(){
-  const my=++run; introDone=false; $("hint").classList.remove("on");
-  const cx=W/2, maxW=land?W*.47:W*.8, maxH=land?H*.5:H*.34, cyc=land?H*.44:H*.385;
-  const wN=measure("NOVEMBER",100,3.5), wS=measure("SALE",100,3.5), cap=capOf(100)/100;
-  let a=maxW/wN*100, b=maxW/wS*100; const gapK=.2;
-  const hTot=()=>a*cap+b*cap+a*cap*gapK*2.2; if(hTot()>maxH){const k=maxH/hTot(); a*=k; b*=k;}
-  const hN=a*cap, hS=b*cap, g=hN*gapK*2.2, top=cyc-(hN+g+hS)/2;
-  const yN=top+hN/2, yS=top+hN+g+hS/2, bw=Math.max(measure("NOVEMBER",a,a*.035),measure("SALE",b,b*.035));
-  // running-stitch border just inside the frame
-  const m=FR+Math.min(W,H)*.03, bl=clamp(W*.004,1.6,3.2);
-  const border=lineStitches([[m,m],[W-m,m],[W-m,H-m],[m,H-m],[m,m]],YEL,bl,bl*6,.55);
-  const nov=textStitches("NOVEMBER",cx,yN,a,YEL,{angle:.62});
-  const rule=lineStitches([[cx-bw/2,top+hN+g/2],[cx+bw/2,top+hN+g/2]],CRM,clamp(a*.02,1.6,4),clamp(a*.09,8,22),.8);
-  const sale=textStitches("SALE",cx,yS,b,RED,{angle:-.62});
-  const tSize=fitSize("THEY'RE PLAYING US",land?W*.4:W*.74,land?H*.085:H*.05);
-  const yT=top+hN+g+hS+tSize*cap*1.25+(land?H*.012:H*.02);
-  const tag=textStitches("THEY'RE PLAYING US",cx,yT,tSize,CRM,{rot:-.035,angle:1.2,track:.09});
-  const under=lineStitches([[cx-measure("THEY'RE PLAYING US",tSize,tSize*.09)/2, yT+tSize*cap*.95+8],[cx+measure("THEY'RE PLAYING US",tSize,tSize*.09)/2, yT+tSize*cap*.95-2]],RED,clamp(tSize*.05,2,4),14,.8);
-  const dur=reduce?0.001:1;
-  const J=(st,sec,done)=>({st,i:0,ctx:xT,rate:st.length/(sec*dur),done});
-  queue.push(J(border,1.4),J(nov,4.2),J(rule,.5),J(sale,4.6),J(tag,2.6),J(under,.5,()=>{ if(my===run){introDone=true;$("hint").classList.add("on");} }));
+function spring(key,target,k,dt){ const a=k*k*(target-C[key])-2*k*C.v[key]; C.v[key]+=a*dt; C[key]+=C.v[key]*dt; }
+function step(dt){
+  S.time+=dt; const job=S.jobs[S.cur]; let des, k=1.5;
+  if(job){
+    job.t+=dt; const x=Math.min(1,job.t/job.dur), c=job.cam;
+    if(job.n){
+      const prog=job.n*Math.pow(x,job.p); job.u.value=prog; job.mesh.geometry.instanceCount=Math.min(job.n,Math.ceil(prog));
+      const i=Math.min(job.n-1,Math.floor(prog)), g=Math.min(1,prog-i), s=job.st[i];
+      wp.x=lerp(s[0],s[2],g); wp.y=-lerp(s[1],s[3],g); wp.w=s[4]; wp.c=s[5]; wp.on=true;
+    } else wp.on=false;
+    const f=1-Math.exp(-dt*5); wps.x+=(wp.x-wps.x)*f; wps.y+=(wp.y-wps.y)*f;
+    const yw=Array.isArray(c.yaw)?lerp(c.yaw[0],c.yaw[1],x):c.yaw;
+    des={tx:c.fixed?c.fixed[0]:wps.x, ty:c.fixed?c.fixed[1]:wps.y, lf:Math.log(lerp(c.fw[0],c.fw[1],x*x*(3-2*x))), tilt:c.tilt, yaw:yw, roll:Math.sin(S.time*0.5)*0.012};
+    k=c.k||3;
+    if(x>=1){ if(job.n){ job.u.value=job.n; job.mesh.geometry.instanceCount=job.n; } S.cur++; if(S.cur>=S.jobs.length) wp.on=false; }
+  } else {
+    wp.on=false; const t=S.time, m=reduce?0:1;
+    des={tx:(Math.sin(t*0.13)*6+ptr.x*9)*m, ty:(Math.cos(t*0.1)*3+ptr.y*5)*m, lf:Math.log(WIDE), tilt:0.13, yaw:(Math.sin(t*0.08)*0.09+ptr.x*0.06)*m, roll:Math.sin(t*0.09)*0.006*m};
+  }
+  spring("tx",des.tx,k,dt); spring("ty",des.ty,k,dt); spring("lf",des.lf,k,dt); spring("tilt",des.tilt,k,dt); spring("yaw",des.yaw,k,dt); spring("roll",des.roll,k,dt);
+  const lt=wp.on?1:0; WU.uLen.value+=(lt-WU.uLen.value)*(1-Math.exp(-dt*(wp.on?7:3)));
+  if(wp.on){ const p=PAL[wp.c], f=1-Math.exp(-dt*14), v=WU.uTCol.value; v.x+=(p[0]-v.x)*f; v.y+=(p[1]-v.y)*f; v.z+=(p[2]-v.z)*f; WU.uRad.value=Math.max(0.13,wp.w*0.29); }
 }
-function autoSpots(){
-  return land? [[.142,.24],[.858,.24],[.142,.5],[.858,.5],[.142,.76],[.858,.76]]
-             : [[.285,.115],[.715,.115],[.285,.765],[.715,.765],[.285,.885],[.715,.885]];
+const tgt=new T.Vector3(), tmp=new T.Vector3();
+function applyCam(){
+  const fw=Math.exp(C.lf), t=S.time, hand=fw*0.0025;
+  tgt.set(C.tx+Math.sin(t*1.3)*hand+Math.sin(t*0.71)*hand, C.ty+Math.cos(t*1.1)*hand, 0);
+  const d=(fw/ASPECT/2)/Math.tan(cam.fov*Math.PI/360), st=Math.sin(C.tilt);
+  cam.position.set(tgt.x+st*Math.sin(C.yaw)*d, tgt.y-st*Math.cos(C.yaw)*d, Math.cos(C.tilt)*d);
+  cam.up.set(Math.sin(C.roll),Math.cos(C.roll),0); cam.lookAt(tgt);
+  cam.near=Math.max(0.6,d*0.08); cam.far=d*3+900; cam.updateProjectionMatrix(); cam.updateMatrixWorld();
+  shared.uCam.value.copy(cam.position); cam.getWorldDirection(shared.uFwd.value);
+  shared.uFoc.value.x=d; shared.uFoc.value.y=2.6*RH;
+  const z0=wp.w*0.34, P0=WU.uP0.value.set(wp.x,wp.y,z0), sw=Math.sin(t*1.7)*1.5, sw2=Math.cos(t*1.1)*2;
+  WU.uP1.value.set(P0.x-3.2,P0.y+1.6,z0+1.4); WU.uP2.value.set(P0.x+7+sw,P0.y+27+sw2,10+sw*0.5); WU.uP3.value.set(P0.x-64+sw*5,P0.y+240+sw2*4,72);
+  const S2=clamp(fw*1.5,60,480); lightCam.left=-S2/2; lightCam.right=S2/2; lightCam.top=S2/2; lightCam.bottom=-S2/2;
+  tmp.set(tgt.x,tgt.y+fw*0.04,0); lightCam.position.copy(tmp).addScaledVector(Lv,420); lightCam.up.set(0,0,1); lightCam.lookAt(tmp);
+  lightCam.updateProjectionMatrix(); lightCam.updateMatrixWorld(); lightCam.matrixWorldInverse.copy(lightCam.matrixWorld).invert();
+  shared.uShadowMat.value.multiplyMatrices(lightCam.projectionMatrix,lightCam.matrixWorldInverse);
+  shared.uPen.value=Math.max(0.24/S2,1.3/SM); shared.uSBias.value=0.22/890;
 }
-
-/* ---------- loop ---------- */
-function frame(t){
-  const dt=Math.min(.05,(t-lastT)/1000||0); lastT=t;
-  needle.busy=queue.length>0;
-  if(queue.length){
-    const job=queue[0]; acc+=job.rate*dt; job.ctx.setTransform(DPR,0,0,DPR,0,0);
-    let n=0;
-    while(acc>=1 && job.i<job.st.length && n<1500){ const s=job.st[job.i++]; stitch(job.ctx,s); acc--; n++; needle.tx=s[2]; needle.ty=s[3]; needle.col=s[4]; }
-    if(job.i>=job.st.length){ queue.shift(); acc=0; if(job.done) job.done(); }
-  }else if(ptr.on){ needle.tx=ptr.x; needle.ty=ptr.y; }
-  else { needle.tx=W-FR-W*.06; needle.ty=H-FR-H*.12; }
-  const k=needle.busy?.5:.22; needle.x+=(needle.tx-needle.x)*k; needle.y+=(needle.ty-needle.y)*k; needle.t+=dt;
-  drawOverlay();
+function render(){
+  applyCam();
+  const all=casters.concat(S.jobs.filter(j=>j.mesh).map(j=>j.mesh));
+  for(const m of all){ m.userData.main=m.material; m.material=m.userData.depth; } cloth.visible=false;
+  renderer.setRenderTarget(shadowRT); renderer.clear(); renderer.render(scene,lightCam);
+  for(const m of all) m.material=m.userData.main; cloth.visible=true;
+  renderer.setRenderTarget(sceneRT); renderer.clear(); renderer.render(scene,cam);
+  PU.uTime.value=S.time; renderer.setRenderTarget(null); renderer.render(postScene,postCam);
+  if(Q.checked<3){ Q.checked++; if(gl.getError()===gl.INVALID_FRAMEBUFFER_OPERATION && Q.level<2){ Q.level++; Q.checked=0; makeRT(); } }
+}
+let last=0;
+function frame(now){
+  const raw=(now-last)/1000||0; last=now; const dt=Math.min(0.05,raw);
+  if(!S.paused){ const sub=Math.max(1,Math.round(S.speed)); for(let i=0;i<sub;i++) step(dt*S.speed/sub); }
+  render(); hud();
+  if(!Q.fixed && raw>0 && raw<0.5){ Q.acc+=raw; if(++Q.n>=45){ const avg=Q.acc/Q.n; Q.acc=0; Q.n=0; if(avg>0.03 && scale>0.7){ scale=Math.max(0.7,scale*0.82); makeRT(); } } }
   requestAnimationFrame(frame);
 }
-function drawOverlay(){
-  const c=xO; c.setTransform(DPR,0,0,DPR,0,0); c.clearRect(0,0,W,H);
-  const lx=needle.x, ly=needle.y, R=Math.max(W,H)*.34;
-  const g=c.createRadialGradient(lx,ly,0,lx,ly,R); g.addColorStop(0,"rgba(255,246,225,.11)"); g.addColorStop(1,"rgba(255,246,225,0)");
-  c.globalCompositeOperation="lighter"; c.fillStyle=g; c.fillRect(lx-R,ly-R,R*2,R*2); c.globalCompositeOperation="source-over";
-  const L=clamp(Math.min(W,H)*.15,70,170), bob=needle.busy?Math.abs(Math.sin(needle.t*34))*L*.16:L*.1, ang=-.95;
-  const tipx=lx+Math.cos(ang)*bob, tipy=ly+Math.sin(ang)*bob, ex=tipx+Math.cos(ang)*L, ey=tipy+Math.sin(ang)*L;
-  // thread from the eye back to the cloth
-  c.strokeStyle=hsl(needle.col,0,.95); c.lineWidth=clamp(L*.017,1.2,2.6); c.lineCap="round";
-  c.beginPath(); c.moveTo(ex-Math.cos(ang)*L*.06,ey-Math.sin(ang)*L*.06);
-  c.quadraticCurveTo(ex+L*.5,ey+L*.25,lx+L*.9,ly-L*1.5); c.stroke();
-  const body=(ox,oy,style)=>{ c.save(); c.translate(tipx+ox,tipy+oy); c.rotate(ang); c.fillStyle=style;
-    c.beginPath(); c.moveTo(0,0); c.quadraticCurveTo(L*.4,-L*.018,L*.94,-L*.022); c.quadraticCurveTo(L*1.01,0,L*.94,L*.022); c.quadraticCurveTo(L*.4,L*.018,0,0); c.fill(); c.restore(); };
-  body(L*.1+bob*.5,L*.14+bob*.6,"rgba(0,0,0,.4)");
-  const sg=c.createLinearGradient(tipx,tipy-4,tipx+6,tipy+6); sg.addColorStop(0,"#ffffff"); sg.addColorStop(.5,"#b9bcc4"); sg.addColorStop(1,"#6d7078");
-  body(0,0,sg);
-  c.save(); c.translate(tipx,tipy); c.rotate(ang); c.fillStyle="#08080a"; c.beginPath(); c.ellipse(L*.9,0,L*.045,L*.008,0,0,7); c.fill(); c.restore();
-}
 
-/* ---------- setup + input ---------- */
-function setup(){
-  seed=7; W=stage.clientWidth; H=stage.clientHeight; DPR=Math.min(window.devicePixelRatio||1,2); land=W>=H; FR=Math.round(Math.min(W,H)*.038);
-  for(const cv of [cF,cT,cG,cO]){ cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR); }
-  queue=[]; acc=0; tagN=0; needle.x=W/2; needle.y=H/2; drawCloth(); intro();
-}
-function place(x,y){ queue.push(tagJob(x,y,tagN++)); $("hint").classList.remove("on"); }
-function pos(e){ const r=stage.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top]; }
-stage.addEventListener("pointermove",e=>{ const p=pos(e); ptr.x=p[0]; ptr.y=p[1]; ptr.on=true; });
-stage.addEventListener("pointerleave",()=>{ ptr.on=false; });
-stage.addEventListener("pointerdown",e=>{ if(e.target.closest("button")) return; const p=pos(e); ptr.x=p[0]; ptr.y=p[1]; ptr.on=e.pointerType==="mouse"; place(p[0],p[1]); });
-$("bAuto").addEventListener("click",()=>{ autoSpots().forEach(s=>place(s[0]*W,s[1]*H)); });
-$("bReplay").addEventListener("click",()=>{ xT.setTransform(1,0,0,1,0,0); xT.clearRect(0,0,cT.width,cT.height); xG.setTransform(1,0,0,1,0,0); xG.clearRect(0,0,cG.width,cG.height); queue=[]; acc=0; tagN=0; seed=7; intro(); });
-$("bClear").addEventListener("click",()=>{ queue=queue.filter(j=>!j.tag); xG.setTransform(1,0,0,1,0,0); xG.clearRect(0,0,cG.width,cG.height); tagN=0; if(introDone) $("hint").classList.add("on"); });
-addEventListener("keydown",e=>{ if(e.key==="h"||e.key==="H") $("bar").classList.toggle("off"); });
-let rz; addEventListener("resize",()=>{ clearTimeout(rz); rz=setTimeout(setup,180); });
-const start=()=>{ setup(); requestAnimationFrame(frame); };
+/* ---------- controls ---------- */
+const bar=$("bar"), hint=$("hint"), credit=$("credit");
+function hud(){ const idle=S.cur>=S.jobs.length, wide=Math.exp(C.lf)>WIDE*0.9; hint.classList.toggle("on",idle&&!S.film&&wide); credit.classList.toggle("on",wide); }
+function wake(){ bar.classList.remove("off"); stage.classList.remove("quiet"); clearTimeout(hudT); hudT=setTimeout(()=>{ bar.classList.add("off"); stage.classList.add("quiet"); },2600); }
+function pick(e){ const r=canvas.getBoundingClientRect(); tmp.set(((e.clientX-r.left)/r.width)*2-1,-(((e.clientY-r.top)/r.height)*2-1),0.5).unproject(cam).sub(cam.position).normalize();
+  const t=-cam.position.z/tmp.z; return [cam.position.x+tmp.x*t,-(cam.position.y+tmp.y*t)]; }
+stage.addEventListener("pointermove",e=>{ const r=canvas.getBoundingClientRect(); ptr.x=((e.clientX-r.left)/r.width)*2-1; ptr.y=-(((e.clientY-r.top)/r.height)*2-1); wake(); });
+stage.addEventListener("pointerdown",e=>{ wake(); if(e.target.closest("button")||(S.film&&S.cur<S.jobs.length)) return; S.film=false; const p=pick(e); addTag(p[0],p[1]); });
+$("bFilm").addEventListener("click",film);
+$("bReset").addEventListener("click",restart);
+$("bSpeed").addEventListener("click",e=>{ S.speed=S.speed===1?2:S.speed===2?4:1; e.currentTarget.textContent="SPEED "+S.speed+"X"; });
+$("bFull").addEventListener("click",()=>{ const p=document.fullscreenElement?document.exitFullscreen():wrap.requestFullscreen&&wrap.requestFullscreen(); if(p&&p.catch) p.catch(()=>{}); });
+addEventListener("keydown",e=>{ if(e.key===" "){ e.preventDefault(); film(); } });
+let rz; const refit=()=>{ clearTimeout(rz); rz=setTimeout(fit,160); }; addEventListener("resize",refit); document.addEventListener("fullscreenchange",refit);
+
+window.__emb={ seek(t,asFilm){ asFilm?film():restart(); while(S.time<t) step(1/30); S.paused=true; return {cur:S.cur,jobs:S.jobs.map(j=>j.n),cap:CAPR}; }, quality(s){ Q.fixed=s; fit(); }, play(){ S.paused=false; } };
+
+const boot=()=>{ initFont(); fit(); restart(); if(reduce){ while(S.cur<S.jobs.length) step(1/30); } wake(); requestAnimationFrame(frame); };
 const fonts=document.fonts?Promise.race([Promise.allSettled([document.fonts.load('80px "AntonLocal"'),document.fonts.load('80px "Anton"')]),new Promise(r=>setTimeout(r,2500))]):Promise.resolve();
-fonts.then(start,start);
+fonts.then(boot,boot);
 })();
 </script>
