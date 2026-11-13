@@ -1,0 +1,308 @@
+<title>November Sale Embroidery</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap">
+<style>
+/* Layout: one full-bleed stretched black cloth in a wooden frame; the sale sign is stitched centre, findings land where you click. */
+:root{
+  color-scheme:dark;
+  --cloth:#0a0a0c;
+  --thread-yellow:#ffd60a;
+  --thread-red:#ff2a2a;
+  --thread-cream:#efe6d2;
+  --wood:#8a5527;
+  --label:#d9cfba;
+  --display:"AntonLocal","Anton",Impact,"Arial Narrow",sans-serif;
+  --utility:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@font-face{font-family:"AntonLocal";src:url("../assets/anton.ttf") format("truetype");font-display:swap}
+html,body{height:100%}
+body{margin:0;background:var(--cloth);color:var(--label);overflow:hidden;font-family:var(--utility)}
+#stage{position:relative;width:100%;height:100%;overflow:hidden;cursor:none;touch-action:none;user-select:none;-webkit-user-select:none}
+#stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.bar{position:absolute;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;
+  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));pointer-events:none;transition:opacity .4s}
+.bar.off{opacity:0}
+.src{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--label);text-shadow:0 1px 2px #000;min-width:0}
+.src b{color:var(--thread-yellow);font-weight:600}
+.btns{display:flex;gap:8px;pointer-events:auto}
+.bar.off .btns{pointer-events:none}
+button{font:400 14px/1 var(--display);letter-spacing:.12em;color:var(--cloth);background:var(--thread-yellow);border:0;border-radius:3px;
+  padding:9px 14px 8px;cursor:pointer;box-shadow:0 2px 0 #000,0 0 0 1px #0008}
+button.alt{background:var(--cloth);color:var(--thread-cream);box-shadow:0 0 0 1px var(--thread-cream)}
+button:hover{filter:brightness(1.12)}
+button:focus-visible{outline:2px solid var(--thread-red);outline-offset:3px}
+#hint{position:absolute;left:50%;top:max(9%,54px);transform:translateX(-50%);font:400 clamp(12px,1.5vw,20px)/1 var(--display);letter-spacing:.22em;
+  color:var(--thread-cream);opacity:0;transition:opacity .8s;pointer-events:none;white-space:nowrap;text-shadow:0 2px 6px #000}
+#hint.on{opacity:.85}
+</style>
+
+<div id="stage" aria-label="Interactive embroidery: November Sale, they're playing us. Click to stitch a price finding.">
+  <canvas id="cF"></canvas><canvas id="cT"></canvas><canvas id="cG"></canvas><canvas id="cO"></canvas>
+  <div id="hint">CLICK THE CLOTH TO STITCH A FINDING</div>
+  <div class="bar" id="bar">
+    <div class="src"><b>Shelly Or Gisser</b> · Israeli sale index · prices as of 12 Nov 2026</div>
+    <div class="btns">
+      <button id="bAuto" type="button">AUTO</button>
+      <button id="bReplay" type="button" class="alt">REPLAY</button>
+      <button id="bClear" type="button" class="alt">UNPICK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const FONT='"AntonLocal","Anton",Impact,"Arial Narrow",sans-serif';
+const YEL={h:50,s:100,l:52}, RED={h:1,s:94,l:53}, CRM={h:42,s:42,l:86};
+const FINDINGS=[
+  ["96%","OF PRICES DIDN'T","MOVE ON 11.11"],
+  ["7 IN 10","CROSSED-OUT PRICES","ARE INFLATED"],
+  ["10 OF 107","STORES CUT PRICES","ON 11.11"],
+  ["30% NOT 58%","THE REAL DISCOUNT","VS THE ONE ON THE TAG"],
+  ["98.91","SALE INDEX TODAY","BEFORE THE SALES: 100"],
+  ["48","STORES RAISED","A PRICE"]
+];
+const $=id=>document.getElementById(id);
+const stage=$("stage"), cF=$("cF"), cT=$("cT"), cG=$("cG"), cO=$("cO");
+const xF=cF.getContext("2d"), xT=cT.getContext("2d"), xG=cG.getContext("2d"), xO=cO.getContext("2d");
+const mask=document.createElement("canvas"), xm=mask.getContext("2d",{willReadFrequently:true});
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+let W=0,H=0,DPR=1,FR=0,land=true,queue=[],acc=0,tagN=0,introDone=false,run=0;
+let ptr={x:-1,y:-1,on:false}, needle={x:0,y:0,col:YEL,busy:false,t:0}, lastT=0;
+let seed=7; const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const hsl=(c,dl,a)=>`hsla(${c.h},${c.s}%,${clamp(c.l+(dl||0),4,96)}%,${a==null?1:a})`;
+
+/* ---------- cloth + frame ---------- */
+function drawCloth(){
+  const c=xF; c.setTransform(DPR,0,0,DPR,0,0);
+  c.fillStyle="#0a0a0c"; c.fillRect(0,0,W,H);
+  const u=land?7:6, p=document.createElement("canvas"); p.width=p.height=u*2*DPR;
+  const q=p.getContext("2d"); q.scale(DPR,DPR);
+  q.fillStyle="#08080a"; q.fillRect(0,0,u*2,u*2);
+  const th=u*0.78, o=(u-th)/2;
+  const g1=q.createLinearGradient(0,0,0,u); g1.addColorStop(0,"#101014"); g1.addColorStop(.5,"#24242b"); g1.addColorStop(1,"#0d0d10");
+  const g2=q.createLinearGradient(0,0,u,0); g2.addColorStop(0,"#0e0e12"); g2.addColorStop(.5,"#1d1d24"); g2.addColorStop(1,"#0c0c0f");
+  q.fillStyle=g1; q.fillRect(-1,o,u+2,th); q.save(); q.translate(u,u); q.fillRect(-1,o,u+2,th); q.restore();
+  q.fillStyle=g2; q.save(); q.translate(u,0); q.fillRect(o,-1,th,u+2); q.restore(); q.save(); q.translate(0,u); q.fillRect(o,-1,th,u+2); q.restore();
+  c.fillStyle=c.createPattern(p,"repeat"); c.save(); c.scale(1/DPR,1/DPR); c.fillRect(0,0,W*DPR,H*DPR); c.restore();
+  for(let i=0;i<W*H/900;i++){ // lint and slubs
+    const x=rnd()*W,y=rnd()*H,l=2+rnd()*14,a=rnd()*6.283;
+    c.strokeStyle=`rgba(255,255,255,${0.02+rnd()*0.05})`; c.lineWidth=.6+rnd()*.6;
+    c.beginPath(); c.moveTo(x,y); c.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l); c.stroke();
+  }
+  let g=c.createRadialGradient(W*.22,H*.1,0,W*.22,H*.1,Math.max(W,H)*.9);
+  g.addColorStop(0,"rgba(255,244,220,.13)"); g.addColorStop(.5,"rgba(255,244,220,.03)"); g.addColorStop(1,"rgba(0,0,0,0)");
+  c.fillStyle=g; c.fillRect(0,0,W,H);
+  g=c.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.75);
+  g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,"rgba(0,0,0,.62)");
+  c.fillStyle=g; c.fillRect(0,0,W,H);
+  // wooden stretcher frame
+  const f=FR; c.save();
+  c.beginPath(); c.rect(0,0,W,H); c.rect(f,f,W-2*f,H-2*f);
+  c.shadowColor="rgba(0,0,0,.9)"; c.shadowBlur=f*1.1; c.shadowOffsetX=f*.12; c.shadowOffsetY=f*.2;
+  g=c.createLinearGradient(0,0,W,H); g.addColorStop(0,"#a66a33"); g.addColorStop(.45,"#7a4a21"); g.addColorStop(1,"#5a3415");
+  c.fillStyle=g; c.fill("evenodd"); c.restore();
+  c.save(); c.beginPath(); c.rect(0,0,W,H); c.rect(f,f,W-2*f,H-2*f); c.clip("evenodd");
+  for(let i=0;i<260;i++){ // grain
+    const horiz=rnd()<.5, a=.04+rnd()*.09; c.strokeStyle=rnd()<.5?`rgba(40,20,5,${a})`:`rgba(255,210,150,${a*.6})`; c.lineWidth=.5+rnd();
+    c.beginPath();
+    if(horiz){const y=(rnd()<.5?rnd()*f:H-rnd()*f), x=rnd()*W; c.moveTo(x,y); c.lineTo(x+60+rnd()*300,y+rnd()*2-1);}
+    else{const x=(rnd()<.5?rnd()*f:W-rnd()*f), y=rnd()*H; c.moveTo(x,y); c.lineTo(x+rnd()*2-1,y+60+rnd()*300);}
+    c.stroke();
+  }
+  c.strokeStyle="rgba(255,225,170,.28)"; c.lineWidth=1; c.strokeRect(.5,.5,W-1,H-1);
+  c.strokeStyle="rgba(0,0,0,.55)"; c.lineWidth=2; c.strokeRect(f-1,f-1,W-2*f+2,H-2*f+2);
+  c.restore();
+  const tack=(x,y)=>{const r=f*.17; const tg=c.createRadialGradient(x-r*.35,y-r*.4,r*.1,x,y,r);
+    tg.addColorStop(0,"#fff3c4"); tg.addColorStop(.45,"#c9a13a"); tg.addColorStop(1,"#5c4410");
+    c.fillStyle="rgba(0,0,0,.5)"; c.beginPath(); c.arc(x+1.5,y+2,r,0,7); c.fill(); c.fillStyle=tg; c.beginPath(); c.arc(x,y,r,0,7); c.fill();};
+  const nx=Math.round(W/110), ny=Math.round(H/110);
+  for(let i=0;i<=nx;i++){const x=f/2+(W-f)*i/nx; tack(x,f/2); tack(x,H-f/2);}
+  for(let i=1;i<ny;i++){const y=f/2+(H-f)*i/ny; tack(f/2,y); tack(W-f/2,y);}
+}
+
+/* ---------- one stitch: shadow, body, sheen ---------- */
+function stitch(c,s){
+  const x1=s[0],y1=s[1],x2=s[2],y2=s[3],col=s[4],w=s[5];
+  let dx=x2-x1,dy=y2-y1; const len=Math.hypot(dx,dy)||1; dx/=len; dy/=len;
+  let nx=-dy,ny=dx; if(nx+ny>0){nx=-nx;ny=-ny;}            // normal that faces the light (top-left)
+  const j=(rnd()-.5)*9;
+  c.lineCap="round";
+  c.strokeStyle="rgba(0,0,0,.6)"; c.lineWidth=w*1.2;
+  c.beginPath(); c.moveTo(x1+w*.4,y1+w*.55); c.lineTo(x2+w*.4,y2+w*.55); c.stroke();
+  c.strokeStyle=hsl(col,-20+j); c.lineWidth=w;
+  c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2,y2); c.stroke();
+  c.strokeStyle=hsl(col,j); c.lineWidth=w*.6;
+  c.beginPath(); c.moveTo(x1+nx*w*.13,y1+ny*w*.13); c.lineTo(x2+nx*w*.13,y2+ny*w*.13); c.stroke();
+  if(len>w*1.2){ const k=len*.18;
+    c.strokeStyle=hsl({h:col.h,s:col.s*.85,l:col.l},26+j,.6); c.lineWidth=w*.2;
+    c.beginPath(); c.moveTo(x1+dx*k+nx*w*.26,y1+dy*k+ny*w*.26); c.lineTo(x2-dx*k+nx*w*.26,y2-dy*k+ny*w*.26); c.stroke(); }
+}
+
+/* ---------- letters become fill stitches ---------- */
+function glyph(ch,size,capH,th,gap,maxLen){
+  const M=Math.ceil(size*1.55)+10; if(mask.width!==M){mask.width=M;mask.height=M;}
+  xm.setTransform(1,0,0,1,0,0); xm.clearRect(0,0,M,M);
+  xm.translate(M/2,M/2); xm.rotate(-th); xm.font=`${size}px ${FONT}`; xm.textAlign="center"; xm.textBaseline="alphabetic";
+  xm.fillStyle="#fff"; xm.fillText(ch,0,capH/2);
+  const d=xm.getImageData(0,0,M,M).data, out=[], ct=Math.cos(th), st=Math.sin(th);
+  let row=0;
+  for(let yf=gap/2; yf<M; yf+=gap, row++){
+    const y=Math.min(M-1,Math.round(yf)), base=y*M*4+3, segs=[];
+    let x=0;
+    while(x<M){
+      while(x<M && d[base+x*4]<110) x++;
+      if(x>=M) break;
+      const a=x; while(x<M && d[base+x*4]>=110) x++;
+      const b=x-1; if(b-a<1.2) continue;
+      let s=a, first=maxLen*(row%2?0.55:1);
+      while(s<b){ const e=Math.min(b,s+first); if(b-e<maxLen*.25){segs.push([s,b]);break;} segs.push([s,e]); s=e; first=maxLen; }
+    }
+    if(row%2) segs.reverse();
+    for(const sg of segs){
+      const xa=(row%2?sg[1]:sg[0])-M/2, xb=(row%2?sg[0]:sg[1])-M/2, yy=yf-M/2, jx=(rnd()-.5)*.7, jy=(rnd()-.5)*.7;
+      out.push([xa*ct-yy*st+jx, xa*st+yy*ct+jy, xb*ct-yy*st-jx, xb*st+yy*ct-jy]);
+    }
+  }
+  return out;
+}
+function measure(str,size,track){ xm.setTransform(1,0,0,1,0,0); xm.font=`${size}px ${FONT}`;
+  let w=0; for(const ch of str) w+=xm.measureText(ch).width+track; return w-track; }
+function capOf(size){ xm.setTransform(1,0,0,1,0,0); xm.font=`${size}px ${FONT}`; const m=xm.measureText("H"); return m.actualBoundingBoxAscent||size*.72; }
+function textStitches(str,cx,cy,size,col,o){
+  o=o||{}; const track=size*(o.track==null?.035:o.track), rot=o.rot||0, th=o.angle==null?.62:o.angle;
+  const w=clamp(size*.0125,1.5,4.4), gap=w*.9, maxLen=clamp(size*.1,7,42), capH=capOf(size);
+  const total=measure(str,size,track), cr=Math.cos(rot), sr=Math.sin(rot), out=[];
+  xm.setTransform(1,0,0,1,0,0); xm.font=`${size}px ${FONT}`;
+  let x=-total/2;
+  for(const ch of str){
+    const cw=xm.measureText(ch).width;
+    if(ch!==" "){ const lx=x+cw/2, gx=cx+lx*cr, gy=cy+lx*sr;
+      for(const s of glyph(ch,size,capH,th,gap,maxLen))
+        out.push([gx+s[0]*cr-s[1]*sr, gy+s[0]*sr+s[1]*cr, gx+s[2]*cr-s[3]*sr, gy+s[2]*sr+s[3]*cr, col, w]);
+      xm.setTransform(1,0,0,1,0,0); xm.font=`${size}px ${FONT}`; }
+    x+=cw+track;
+  }
+  return out;
+}
+function fitSize(str,maxW,start){ const w=measure(str,100,3.5); return Math.min(start,maxW/w*100); }
+function lineStitches(pts,col,w,L,cover){ // back stitch (cover~.85) or running stitch (cover~.5) along a polyline
+  const out=[]; let carry=0;
+  for(let i=0;i<pts.length-1;i++){
+    const a=pts[i], b=pts[i+1], len=Math.hypot(b[0]-a[0],b[1]-a[1]); if(len<.01) continue;
+    const ux=(b[0]-a[0])/len, uy=(b[1]-a[1])/len; let t=carry;
+    while(t<len){ const e=Math.min(len,t+L*cover);
+      if(e-t>w*.6) out.push([a[0]+ux*t,a[1]+uy*t,a[0]+ux*e,a[1]+uy*e,col,w]); t+=L; }
+    carry=t-len;
+  }
+  return out;
+}
+
+/* ---------- price tag with one finding ---------- */
+function tagJob(cx,cy,idx){
+  const f=FINDINGS[idx%FINDINGS.length];
+  const tw=land?clamp(W*.19,200,400):clamp(W*.4,150,400), th=tw*.46, c=th*.26;
+  const rot=(rnd()-.5)*.17 + (cx<W/2?-.03:.03), cr=Math.cos(rot), sr=Math.sin(rot);
+  cx=clamp(cx,FR+tw*.56,W-FR-tw*.56); cy=clamp(cy,FR+th*.62,H-FR-th*.62);
+  const P=(x,y)=>[cx+x*cr-y*sr, cy+x*sr+y*cr];
+  const lw=clamp(tw*.0075,1.6,3.2), st=[];
+  const outline=[P(-tw/2+c,-th/2),P(tw/2,-th/2),P(tw/2,th/2),P(-tw/2+c,th/2),P(-tw/2,th/2-c),P(-tw/2,-th/2+c),P(-tw/2+c,-th/2)];
+  st.push(...lineStitches(outline,YEL,lw,lw*4.6,.84));
+  const hx=-tw/2+c*.95, ring=[]; for(let i=0;i<=10;i++){const a=i/10*6.283; ring.push(P(hx+Math.cos(a)*th*.065,Math.sin(a)*th*.065));}
+  st.push(...lineStitches(ring,YEL,lw*.85,lw*2.4,.9));
+  const cord=[]; for(let i=0;i<=14;i++){const t=i/14; cord.push(P(hx-t*tw*.2, -t*th*.5+Math.sin(t*3.14)*th*.22));}
+  st.push(...lineStitches(cord,CRM,lw*.8,lw*4.4,.52));
+  const inner=tw-c*1.5-tw*.08, ox=c*.55;
+  const sN=fitSize(f[0],inner,th*.5), sC=Math.min(fitSize(f[1],inner,th*.2),fitSize(f[2],inner,th*.2));
+  const p0=P(ox,-th*.17), p1=P(ox,th*.17), p2=P(ox,th*.17+sC*1.02);
+  st.push(...textStitches(f[0],p0[0],p0[1],sN,RED,{rot,angle:.5}));
+  st.push(...textStitches(f[1],p1[0],p1[1],sC,CRM,{rot,angle:-.6,track:.06}));
+  st.push(...textStitches(f[2],p2[0],p2[1],sC,CRM,{rot,angle:-.6,track:.06}));
+  return {st,i:0,ctx:xG,rate:reduce?1e6:Math.max(520,st.length/2.2),tag:true};
+}
+
+/* ---------- the sale sign ---------- */
+function intro(){
+  const my=++run; introDone=false; $("hint").classList.remove("on");
+  const cx=W/2, maxW=land?W*.47:W*.8, maxH=land?H*.5:H*.34, cyc=land?H*.44:H*.385;
+  const wN=measure("NOVEMBER",100,3.5), wS=measure("SALE",100,3.5), cap=capOf(100)/100;
+  let a=maxW/wN*100, b=maxW/wS*100; const gapK=.2;
+  const hTot=()=>a*cap+b*cap+a*cap*gapK*2.2; if(hTot()>maxH){const k=maxH/hTot(); a*=k; b*=k;}
+  const hN=a*cap, hS=b*cap, g=hN*gapK*2.2, top=cyc-(hN+g+hS)/2;
+  const yN=top+hN/2, yS=top+hN+g+hS/2, bw=Math.max(measure("NOVEMBER",a,a*.035),measure("SALE",b,b*.035));
+  // running-stitch border just inside the frame
+  const m=FR+Math.min(W,H)*.03, bl=clamp(W*.004,1.6,3.2);
+  const border=lineStitches([[m,m],[W-m,m],[W-m,H-m],[m,H-m],[m,m]],YEL,bl,bl*6,.55);
+  const nov=textStitches("NOVEMBER",cx,yN,a,YEL,{angle:.62});
+  const rule=lineStitches([[cx-bw/2,top+hN+g/2],[cx+bw/2,top+hN+g/2]],CRM,clamp(a*.02,1.6,4),clamp(a*.09,8,22),.8);
+  const sale=textStitches("SALE",cx,yS,b,RED,{angle:-.62});
+  const tSize=fitSize("THEY'RE PLAYING US",land?W*.4:W*.74,land?H*.085:H*.05);
+  const yT=top+hN+g+hS+tSize*cap*1.25+(land?H*.012:H*.02);
+  const tag=textStitches("THEY'RE PLAYING US",cx,yT,tSize,CRM,{rot:-.035,angle:1.2,track:.09});
+  const under=lineStitches([[cx-measure("THEY'RE PLAYING US",tSize,tSize*.09)/2, yT+tSize*cap*.95+8],[cx+measure("THEY'RE PLAYING US",tSize,tSize*.09)/2, yT+tSize*cap*.95-2]],RED,clamp(tSize*.05,2,4),14,.8);
+  const dur=reduce?0.001:1;
+  const J=(st,sec,done)=>({st,i:0,ctx:xT,rate:st.length/(sec*dur),done});
+  queue.push(J(border,1.4),J(nov,4.2),J(rule,.5),J(sale,4.6),J(tag,2.6),J(under,.5,()=>{ if(my===run){introDone=true;$("hint").classList.add("on");} }));
+}
+function autoSpots(){
+  return land? [[.142,.24],[.858,.24],[.142,.5],[.858,.5],[.142,.76],[.858,.76]]
+             : [[.285,.115],[.715,.115],[.285,.765],[.715,.765],[.285,.885],[.715,.885]];
+}
+
+/* ---------- loop ---------- */
+function frame(t){
+  const dt=Math.min(.05,(t-lastT)/1000||0); lastT=t;
+  needle.busy=queue.length>0;
+  if(queue.length){
+    const job=queue[0]; acc+=job.rate*dt; job.ctx.setTransform(DPR,0,0,DPR,0,0);
+    let n=0;
+    while(acc>=1 && job.i<job.st.length && n<1500){ const s=job.st[job.i++]; stitch(job.ctx,s); acc--; n++; needle.tx=s[2]; needle.ty=s[3]; needle.col=s[4]; }
+    if(job.i>=job.st.length){ queue.shift(); acc=0; if(job.done) job.done(); }
+  }else if(ptr.on){ needle.tx=ptr.x; needle.ty=ptr.y; }
+  else { needle.tx=W-FR-W*.06; needle.ty=H-FR-H*.12; }
+  const k=needle.busy?.5:.22; needle.x+=(needle.tx-needle.x)*k; needle.y+=(needle.ty-needle.y)*k; needle.t+=dt;
+  drawOverlay();
+  requestAnimationFrame(frame);
+}
+function drawOverlay(){
+  const c=xO; c.setTransform(DPR,0,0,DPR,0,0); c.clearRect(0,0,W,H);
+  const lx=needle.x, ly=needle.y, R=Math.max(W,H)*.34;
+  const g=c.createRadialGradient(lx,ly,0,lx,ly,R); g.addColorStop(0,"rgba(255,246,225,.11)"); g.addColorStop(1,"rgba(255,246,225,0)");
+  c.globalCompositeOperation="lighter"; c.fillStyle=g; c.fillRect(lx-R,ly-R,R*2,R*2); c.globalCompositeOperation="source-over";
+  const L=clamp(Math.min(W,H)*.15,70,170), bob=needle.busy?Math.abs(Math.sin(needle.t*34))*L*.16:L*.1, ang=-.95;
+  const tipx=lx+Math.cos(ang)*bob, tipy=ly+Math.sin(ang)*bob, ex=tipx+Math.cos(ang)*L, ey=tipy+Math.sin(ang)*L;
+  // thread from the eye back to the cloth
+  c.strokeStyle=hsl(needle.col,0,.95); c.lineWidth=clamp(L*.017,1.2,2.6); c.lineCap="round";
+  c.beginPath(); c.moveTo(ex-Math.cos(ang)*L*.06,ey-Math.sin(ang)*L*.06);
+  c.quadraticCurveTo(ex+L*.5,ey+L*.25,lx+L*.9,ly-L*1.5); c.stroke();
+  const body=(ox,oy,style)=>{ c.save(); c.translate(tipx+ox,tipy+oy); c.rotate(ang); c.fillStyle=style;
+    c.beginPath(); c.moveTo(0,0); c.quadraticCurveTo(L*.4,-L*.018,L*.94,-L*.022); c.quadraticCurveTo(L*1.01,0,L*.94,L*.022); c.quadraticCurveTo(L*.4,L*.018,0,0); c.fill(); c.restore(); };
+  body(L*.1+bob*.5,L*.14+bob*.6,"rgba(0,0,0,.4)");
+  const sg=c.createLinearGradient(tipx,tipy-4,tipx+6,tipy+6); sg.addColorStop(0,"#ffffff"); sg.addColorStop(.5,"#b9bcc4"); sg.addColorStop(1,"#6d7078");
+  body(0,0,sg);
+  c.save(); c.translate(tipx,tipy); c.rotate(ang); c.fillStyle="#08080a"; c.beginPath(); c.ellipse(L*.9,0,L*.045,L*.008,0,0,7); c.fill(); c.restore();
+}
+
+/* ---------- setup + input ---------- */
+function setup(){
+  seed=7; W=stage.clientWidth; H=stage.clientHeight; DPR=Math.min(window.devicePixelRatio||1,2); land=W>=H; FR=Math.round(Math.min(W,H)*.038);
+  for(const cv of [cF,cT,cG,cO]){ cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR); }
+  queue=[]; acc=0; tagN=0; needle.x=W/2; needle.y=H/2; drawCloth(); intro();
+}
+function place(x,y){ queue.push(tagJob(x,y,tagN++)); $("hint").classList.remove("on"); }
+function pos(e){ const r=stage.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top]; }
+stage.addEventListener("pointermove",e=>{ const p=pos(e); ptr.x=p[0]; ptr.y=p[1]; ptr.on=true; });
+stage.addEventListener("pointerleave",()=>{ ptr.on=false; });
+stage.addEventListener("pointerdown",e=>{ if(e.target.closest("button")) return; const p=pos(e); ptr.x=p[0]; ptr.y=p[1]; ptr.on=e.pointerType==="mouse"; place(p[0],p[1]); });
+$("bAuto").addEventListener("click",()=>{ autoSpots().forEach(s=>place(s[0]*W,s[1]*H)); });
+$("bReplay").addEventListener("click",()=>{ xT.setTransform(1,0,0,1,0,0); xT.clearRect(0,0,cT.width,cT.height); xG.setTransform(1,0,0,1,0,0); xG.clearRect(0,0,cG.width,cG.height); queue=[]; acc=0; tagN=0; seed=7; intro(); });
+$("bClear").addEventListener("click",()=>{ queue=queue.filter(j=>!j.tag); xG.setTransform(1,0,0,1,0,0); xG.clearRect(0,0,cG.width,cG.height); tagN=0; if(introDone) $("hint").classList.add("on"); });
+addEventListener("keydown",e=>{ if(e.key==="h"||e.key==="H") $("bar").classList.toggle("off"); });
+let rz; addEventListener("resize",()=>{ clearTimeout(rz); rz=setTimeout(setup,180); });
+const start=()=>{ setup(); requestAnimationFrame(frame); };
+const fonts=document.fonts?Promise.race([Promise.allSettled([document.fonts.load('80px "AntonLocal"'),document.fonts.load('80px "Anton"')]),new Promise(r=>setTimeout(r,2500))]):Promise.resolve();
+fonts.then(start,start);
+})();
+</script>
