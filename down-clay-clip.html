@@ -266,23 +266,29 @@ var CAM_A0 = new V3(0,1.45,6.3), LOOK_A = new V3(0,1.15,0), CAM_B0 = new V3(7.2,
 var rt = null, post = new THREE.Scene(), postCam = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
 var postMat = new THREE.ShaderMaterial({
   uniforms: {tC:{value:null}, tD:{value:null}, uNear:{value:0.5}, uFar:{value:90}, uFocus:{value:6.2}, uBlur:{value:0.25},
-    uExp:{value:1}, uSeed:{value:0}, uBts:{value:0}, uAspect:{value:16/9}},
+    uExp:{value:1}, uSeed:{value:0}, uBts:{value:0}, uAspect:{value:16/9}, uWp:{value:-1}, uWs:{value:0}, uWc:{value:new THREE.Color(1,1,1)}},
   vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }',
   fragmentShader: [
   'precision highp float; varying vec2 vUv; uniform sampler2D tC; uniform sampler2D tD;',
-  'uniform float uNear,uFar,uFocus,uBlur,uExp,uSeed,uBts,uAspect;',
+  'uniform float uNear,uFar,uFocus,uBlur,uExp,uSeed,uBts,uAspect,uWp,uWs; uniform vec3 uWc;',
+  'float h1(float n){ return fract(sin(n*91.345)*47453.5); }',
+  'float n1(float x){ float i=floor(x), f=fract(x); f=f*f*(3.-2.*f); return mix(h1(i),h1(i+1.),f); }',
   'float zAt(vec2 uv){ float d=texture2D(tD,uv).x; return (uNear*uFar)/(uFar-(uFar-uNear)*d); }',
   'float coc(float z){ return min(abs(1./uFocus-1./z)*uBlur, 0.034); }',
   'float rnd(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233))+uSeed)*43758.5453); }',
   'vec3 aces(vec3 x){ return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.); }',
   'void main(){',
-  ' float z0 = zAt(vUv); float Rc = coc(z0);',
+  ' float wd = -1.; vec2 sUv = vUv;',
+  ' if(uWp>=0.){ float e1 = n1(vUv.x*4.+uWs)*.55+n1(vUv.x*11.+uWs*2.)*.3+n1(vUv.x*27.+uWs)*.15;',
+  '  wd = uWp<1. ? vUv.y-(1.-uWp*1.5+e1*.5) : (1.-(uWp-1.)*1.5+e1*.5)-vUv.y;',
+  '  if(wd<0. && wd>-.18) sUv.y = clamp(sUv.y+(uWp<1.?1.:-1.)*(.18+wd)*.6, 0., 1.); }',
+  ' float z0 = zAt(sUv); float Rc = coc(z0);',
   ' vec2 q = (vUv-vec2(.76,.34))*vec2(uAspect,1.); q = mat2(.88,-.47,.47,.88)*q;',
   ' float sd = length(q/vec2(.085,.115)); float sm = smoothstep(1.,.5,sd)*uBts;',
   ' float Rr = max(Rc, sm*0.011);',
   ' vec3 acc = vec3(0.); float wsum = 0.; float rot = rnd(vUv)*6.2831;',
   ' for(int i=0;i<36;i++){ float fi=float(i); float r=sqrt((fi+.5)/36.); float a=fi*2.39996+rot;',
-  '  vec2 uv = vUv + vec2(cos(a)/uAspect, sin(a))*r*Rr;',
+  '  vec2 uv = sUv + vec2(cos(a)/uAspect, sin(a))*r*Rr;',
   '  float z = zAt(uv); float c = coc(z);',
   '  float w = max(step(z0-0.35, z), smoothstep(Rr*r*0.7, Rr*r, c)); w = max(w, 0.02);',
   '  acc += texture2D(tC,uv).rgb*w; wsum += w; }',
@@ -290,6 +296,10 @@ var postMat = new THREE.ShaderMaterial({
   ' vec2 w2 = q + 0.006*sin(q.yx*64.);',
   ' float ridge = 0.5+0.5*sin(length(w2*vec2(1.,.78))*330.);',
   ' col = mix(col, mix(col, vec3(.86,.42,.5), .5), sm*(0.2+0.5*ridge));',
+  ' if(uWp>=0.){ col *= 1.-.45*smoothstep(-.04,0.,wd);',
+  '  float rdg = sin((vUv.x*.8+vUv.y*.45+n1(vUv.y*6.+uWs)*.05)*420.);',
+  '  vec3 cc = uWc*(.74+.26*smoothstep(0.,.07,wd)) + .25*exp(-pow((wd-.024)/.013,2.)) + rdg*.022;',
+  '  col = mix(col, cc, smoothstep(0.,.004,wd)); }',
   ' col *= uExp*1.02;',
   ' vec2 v = vUv-.5; col *= 1.-dot(v,v)*0.62;',
   ' col = aces(col);',
@@ -376,14 +386,21 @@ var hero = (function(){
   for (var i=0;i<2;i++){
     var e = new THREE.Mesh(new THREE.SphereGeometry(0.052,14,10), eyeMat); c.root.add(e); c.eyes.push(e);
     var br = new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.014,0.13,6), eyeMat); br.geometry.rotateZ(Math.PI/2); c.root.add(br); c.brows.push(br);
-    var arm = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.058,1,10,4), heroMat));
-    var hand = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.088,16,12), heroMat));
+    var arm = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.088,1,12,4), heroMat));
+    var hand = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.118,16,12), heroMat));
     scene.add(arm); scene.add(hand); c.arms.push({arm: arm, hand: hand});
   }
   c.mouth = new THREE.Mesh(new THREE.SphereGeometry(0.05,14,10), eyeMat); c.root.add(c.mouth);
+  c.cheeks = []; c.feet = [];
+  var chm = clay(C.coral, {wob:0.3}), ftm = clay('#e2709f');
+  for (var q=0;q<2;q++){
+    var ch = new THREE.Mesh(new THREE.SphereGeometry(0.075,14,10), chm); c.root.add(ch); c.cheeks.push(ch);
+    var ft = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.14,16,12), ftm)); c.root.add(ft); c.feet.push(ft);
+  }
+  c.belly = new THREE.Mesh(new THREE.SphereGeometry(0.2,20,14), clay('#f9bdd3', {wob:0.3})); c.root.add(c.belly);
   return c;
 })();
-var SHAPE = [0.82, 1.35], TOP0 = 2*R*1.35;
+var SHAPE = [1.12, 1.2], TOP0 = 2*R*1.2;
 function poseHero(p, f){
   var c = hero, on = Math.abs(p.x) < 6.3 && p.scale > 0.03;
   c.root.visible = on; c.arms.forEach(function(a){ a.arm.visible = a.hand.visible = on && p.arms > 0.02; });
@@ -409,6 +426,13 @@ function poseHero(p, f){
   var my = hy*1.1, mr = rx*0.985;
   c.mouth.position.set(Math.sin(p.turn)*mr, my, Math.cos(p.turn)*mr);
   c.mouth.rotation.y = p.turn; c.mouth.scale.set(p.mouth[0]*1.6, p.mouth[1], 0.35);
+  for (var q=0;q<2;q++){
+    var ca = p.turn + (q?0.72:-0.72), ch = c.cheeks[q], ft = c.feet[q];
+    ch.visible = face; ch.position.set(Math.sin(ca)*rx*0.95, hy*1.2, Math.cos(ca)*rx*0.95); ch.rotation.y = ca; ch.scale.set(1,0.7,0.3);
+    ft.visible = p.form > 0.5 && p.sq > 0.5; ft.position.set((q?1:-1)*rx*0.48, 0.07, 0.1+rx*0.6); ft.scale.set(1.1*p.form,0.55*p.form,1.5*p.form);
+  }
+  c.belly.visible = face && p.form > 0.8;
+  c.belly.position.set(Math.sin(p.turn)*rx*0.93, hy*0.66, Math.cos(p.turn)*rx*0.93); c.belly.rotation.y = p.turn; c.belly.scale.set(rx/0.4, hy/0.62, 0.3);
   c.root.updateMatrixWorld(true);
   for (var k=0;k<2;k++){
     var side = k?1:-1, A = c.arms[k];
@@ -484,7 +508,7 @@ var models = [];
   var g = new THREE.Group(), wm = clay('#f3eee6');
   var base = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.22,0.06,18,1), wm)); base.position.y = 0.03; g.add(base);
   var pole = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.55,8,1), wm)); pole.position.y = 0.3; g.add(pole);
-  var torso = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.3,24,18), wm)); torso.scale.set(0.9,1.45,0.62); torso.position.y = 0.92; g.add(torso);
+  var torso = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.3,24,18), wm)); torso.scale.set(1.3,1.35,0.95); torso.position.y = 0.92; g.add(torso);
   var head = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.14,18,14), wm)); head.scale.y = 1.2; head.position.y = 1.5; g.add(head);
   g.position.set(q[0],0,q[1]); scene.add(g); models.push(g);
 });
@@ -499,6 +523,19 @@ var signs = [];
   var t1 = shadowed(new THREE.Mesh(new THREE.TorusGeometry(0.045,0.018,8,14), cm)); t1.position.set(0.3,0.1,0.05);
   var t2 = t1.clone(); t2.position.set(0.46,-0.1,0.05); g.add(t1, t2, coil(new V3(0.3,-0.16,0.05), new V3(0.46,0.16,0.05), 0.018, cm));
   g.userData = {x: x, d1: d1, d2: d2, i: i}; scene.add(g); signs.push(g);
+});
+
+var dancers = [];
+[[-2.7,C.green],[2.75,'#ff9a3c']].forEach(function(q){
+  var g = new THREE.Group(), m = clay(q[1]);
+  var b = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.5,36,26), m)); b.position.y = 0.5; g.add(b); g.userData.body = b;
+  [-1,1].forEach(function(s){
+    var e = new THREE.Mesh(new THREE.SphereGeometry(0.05,12,10), eyeMat); e.position.set(s*0.15,0.74,0.47); g.add(e);
+    var ch = new THREE.Mesh(new THREE.SphereGeometry(0.07,12,10), clay(C.coral,{wob:0.3})); ch.position.set(s*0.32,0.6,0.43); ch.scale.set(1,0.7,0.3); g.add(ch);
+    var ft = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.13,12,10), m)); ft.position.set(s*0.24,0.06,0.4); ft.scale.set(1.1,0.55,1.5); g.add(ft);
+  });
+  var mo = new THREE.Mesh(new THREE.SphereGeometry(0.05,12,10), eyeMat); mo.position.set(0,0.56,0.53); mo.scale.set(1.8,0.6,0.3); g.add(mo);
+  g.position.set(q[0],0,-0.9); scene.add(g); dancers.push(g);
 });
 
 /* the bank balance, hung in front of the lens */
@@ -695,6 +732,13 @@ function update(b, f){
     g.scale.setScalar(1+0.06*bp*(b<48?1:0));
   });
 
+  dancers.forEach(function(g, n){
+    var on = at(b,24,49.6); g.visible = on; if (!on) return;
+    var ph = Math.abs(Math.sin((b+n*0.5)*Math.PI)), sink = span(b,48+n*0.5,49+n*0.5), body = g.userData.body;
+    body.scale.set(1.2-ph*0.1, 0.95+ph*0.14, 1.1-ph*0.08); body.position.y = 0.5*(0.95+ph*0.14);
+    g.position.y = ph*0.1-sink*sink*1.5; g.rotation.z = 0.12*Math.sin(b*Math.PI+n)+jit(f,80+n,1)*0.03; g.scale.setScalar(Math.max(pop((b-24)*6,n*2),0.001));
+  });
+
   /* the ball that leaves */
   var out = span(b,62.2,64);
   ball2.visible = b >= 61.6 && out < 0.97;
@@ -717,6 +761,7 @@ var bpm = 120, startAt = 0, playing = false, tPause = 3*60/120, dirty = true, la
 var ctx = null, master = null, t0 = 0, songBuf = null, src = null, timer = null, nextHalf = 0, noiseBuf = null;
 var btsT = 0, btsTarget = 0, btsClock = 0, lastNow = 0;
 var CAM_B = new V3(7.2,5.2,19.5), LOOK_B = new V3(-0.2,1.7,0.6);
+var WIPES = [0,8,16,24,32,40,48,60,64], WCOL = [C.pink,C.must,C.cyan,C.coral,C.green,C.lilac,C.pink,C.must];
 function LEN(){ return BEATS*60/bpm; }
 function curTime(){ var L = LEN(); if (playing && ctx) return (((ctx.currentTime-t0)%L)+L)%L; return tPause; }
 function frames(){ return Math.round(LEN()*FPS); }
@@ -858,6 +903,10 @@ function draw(){
   counter.visible = e < 0.25;
   var sc = D/5.2*(1+0.14*(counter.userData.bump||0));
   counter.position.set(-0.476*D*0.7, -0.268*D*0.74, -D); counter.scale.setScalar(sc); counter.rotation.z = jit(fi,92,1)*0.03;
+  var wp = -1;
+  WIPES.forEach(function(wb, i){ var df = fi-Math.round(wb*60/bpm*FPS);
+    if (df >= -2 && df < 2){ wp = [0.5,0.9,1.25,1.65][df+2]; u.uWs.value = (i%8)*7.3; u.uWc.value.copy(lin(WCOL[i%8])); } });
+  u.uWp.value = wp;
   u.uFocus.value = lerp(D, 20.5, e); u.uBlur.value = lerp(0.3, 0.2, e);
   u.uExp.value = 1 + jit(fi,91,1)*0.09; u.uSeed.value = hash(fi+.5)*10; u.uBts.value = e;
   renderer.setRenderTarget(rt); renderer.render(scene, camera);
