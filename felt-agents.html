@@ -87,7 +87,7 @@ h1{font:900 clamp(27px,5.2vw,40px)/1.05 var(--display);letter-spacing:-.3px;marg
 .stats{display:grid;grid-template-columns:1fr auto;gap:5px 12px;margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:14px}
 .stats dt{color:var(--muted)}.stats dd{margin:0;font-weight:800;font-variant-numeric:tabular-nums;text-align:end}
 .note{margin:12px 0 0;font-size:13px;color:var(--muted);text-wrap:pretty}
-@media (min-width:620px){.steps{grid-template-columns:repeat(16,minmax(0,1fr))}.steps button:nth-child(4n+1){margin-left:0}}
+@media (min-width:620px){.steps{grid-template-columns:repeat(16,minmax(0,1fr))}}
 @media (min-width:1000px){
   .app{height:100%}
   .bench{grid-template-columns:236px minmax(0,1fr) 276px;grid-template-rows:minmax(0,1fr) auto;grid-template-areas:"cast stage props" "cast seq props";align-items:stretch}
@@ -104,7 +104,7 @@ h1{font:900 clamp(27px,5.2vw,40px)/1.05 var(--display);letter-spacing:-.3px;marg
 <div class="app" dir="rtl" lang="he">
  <header class="top">
   <div class="brand"><div class="eyebrow">Felt Agents Lab</div><h1>מעבדת סוכני הלבד</h1></div>
-  <p class="lede">שבעה סוכנים, תפורים בקוד ולא בבלנדר. לוחצים נגן, והלסתות נוחתות על הביט.</p>
+  <p class="lede">שבעה סוכנים שנתפרו בקוד, שורה אחרי שורה. לוחצים נגן, והלסתות נוחתות על הביט.</p>
   <button class="play" id="play" type="button" aria-pressed="false"><span id="playlbl">נגנו 138 BPM</span><span class="ico" aria-hidden="true"></span></button>
  </header>
  <main class="bench">
@@ -472,14 +472,14 @@ function camGoal(){
   if(S.view==='solo')return{tx:0,ty:2.5,tz:SPOT.z,d:Math.max(1.42/th,1.0/(th*a)),el:.05,f:12};
   return{tx:0,ty:2.7,tz:-.2,d:Math.max(3.05/th,4.35/(th*a)),el:.1,f:20};
 }
-function update(t,dt,beat){
+function update(t,dt,beat,skip){
   dt=Math.min(dt,.1);
   for(var i=0;i<puppets.length;i++)animate(puppets[i],i,beat,t,dt);
   var g=camGoal();if(!cs)cs=g;var k=1-Math.exp(-dt*4.5);for(var q in g)cs[q]=lerp(cs[q],g[q],k);
   var az=orb.az+Math.sin(t*.3)*.08,el=clamp(cs.el+orb.el,-.04,.7);
   cam.position.set(cs.tx+Math.sin(az)*Math.cos(el)*cs.d,cs.ty+Math.sin(el)*cs.d,cs.tz+Math.cos(az)*Math.cos(el)*cs.d);cam.lookAt(cs.tx,cs.ty,cs.tz);
   scene.fog.near=cs.d+1.6;scene.fog.far=cs.d+cs.f;
-  renderer.render(scene,cam);ui(beat);
+  if(!skip)renderer.render(scene,cam);ui(beat);
 }
 var last=performance.now()/1000;
 function frame(){
@@ -587,7 +587,7 @@ requestAnimationFrame(frame);
 /* hooks for rendering a clip frame by frame (used to export video) */
 window.feltLab={
   select:select,setView:setView,puppets:puppets,
-  renderAt:function(sec){manual=true;var dt=lastManual==null?1/30:sec-lastManual;lastManual=sec;update(sec,dt,sec*clk.bpm/60)},
+  renderAt:function(sec,skip){manual=true;var dt=lastManual==null?1/30:sec-lastManual;lastManual=sec;update(sec,dt,sec*clk.bpm/60,skip)},
   snap:function(){cs=camGoal();puppets.forEach(function(p,i){var solo=S.view==='solo'&&i===S.sel,tg=solo?SPOT:SLOTS[i];p.root.position.copy(tg);p.gy=tg.y;p.hop=0})},
   wav:function(sec){var O=window.OfflineAudioContext||window.webkitOfflineAudioContext,sr=44100,ctx=new O(2,Math.ceil(sr*sec),sr),g=graph(ctx),sd=60/clk.bpm/4,n=Math.floor(sec/sd);
     for(var s=0;s<n;s++)step(ctx,g,s,s*sd+.001,sd);
