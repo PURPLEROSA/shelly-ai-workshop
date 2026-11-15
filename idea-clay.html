@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Idea Clay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Heebo:wght@400;500;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #303039;
+    --sky: #DDF4FF;
+    --pink: #F4B8CA;
+    --magenta: #B93372;
+    --plum: #60445D;
+    --cream: #F7F2ED;
+    --lilac: #E8E0F2;
+    --paper: #FFFDFB;
+    --accent: linear-gradient(120deg, #C2337A 0%, #8E3FB8 55%, #5B4BD6 100%);
+    --ease: cubic-bezier(.2, .8, .2, 1);
+    --shadow: 0 16px 34px -14px rgba(96, 68, 93, .5);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--sky);
+    color: var(--ink);
+    font-family: "Heebo", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background:
+      radial-gradient(90vmax 70vmax at 50% 44%, rgba(255, 253, 251, .95) 0%, rgba(255, 253, 251, 0) 62%),
+      radial-gradient(60vmax 50vmax at 50% 108%, rgba(232, 224, 242, .9) 0%, rgba(232, 224, 242, 0) 70%),
+      var(--sky);
+  }
+  /* paper grain */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .1;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .38 0 0 0 0 .27 0 0 0 0 .36 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  canvas#scene {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+    cursor: grab;
+  }
+  canvas#scene.dragging { cursor: grabbing; }
+
+  /* centred 9:16 safe column */
+  .safe {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: min(100vw, calc(100vh * 9 / 16));
+    width: min(100vw, calc(100dvh * 9 / 16));
+    transform: translateX(-50%);
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: max(22px, env(safe-area-inset-top)) 22px max(24px, env(safe-area-inset-bottom));
+    pointer-events: none;
+  }
+  .label {
+    font-family: "Anton", "Heebo", sans-serif;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1.8px;
+    color: var(--plum);
+    font-size: 12px;
+    line-height: 1.2;
+  }
+  .bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .sig { font-size: 11px; }
+  .copy { margin-top: 5cqw; }
+  .step {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--paper);
+    box-shadow: 0 8px 18px -10px rgba(96, 68, 93, .45);
+  }
+  .step i {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--magenta);
+  }
+  h1 {
+    margin: 3.4cqw 0 0;
+    font-weight: 900;
+    font-size: 40px;
+    font-size: clamp(30px, 11.2cqw, 64px);
+    line-height: 1.08;
+    letter-spacing: -.025em;
+    text-wrap: balance;
+    max-width: 11em;
+  }
+  .sub {
+    margin: 2.6cqw 0 0;
+    font-weight: 500;
+    font-size: 16px;
+    font-size: clamp(14px, 4.1cqw, 20px);
+    line-height: 1.45;
+    color: var(--plum);
+    max-width: 22em;
+    text-wrap: pretty;
+  }
+  .swap {
+    transition: opacity .55s var(--ease), transform .7s var(--ease);
+  }
+  .swap.out {
+    opacity: 0;
+    transform: translateY(10px);
+    transition-duration: .22s, .22s;
+  }
+
+  .foot { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .hint { opacity: .8; font-size: 11px; }
+  .dots { display: flex; gap: 8px; pointer-events: auto; }
+  .dots button {
+    appearance: none;
+    border: 0;
+    padding: 8px 0;
+    background: none;
+    cursor: pointer;
+  }
+  .dots button span {
+    display: block;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--paper);
+    box-shadow: inset 0 0 0 1px var(--ink);
+    transition: width .6s var(--ease), background-color .6s var(--ease), box-shadow .6s var(--ease);
+  }
+  .dots button[aria-current="true"] span {
+    width: 30px;
+    background: var(--magenta);
+    box-shadow: inset 0 0 0 1px var(--magenta);
+  }
+  .actions {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    justify-content: center;
+    pointer-events: auto;
+  }
+  .btn {
+    appearance: none;
+    font: inherit;
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 54px;
+    padding: 7px 7px 7px 22px;
+    border-radius: 999px;
+    border: 1px solid var(--ink);
+    background: rgba(255, 253, 251, .6);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform .5s var(--ease), box-shadow .5s var(--ease), background-color .5s var(--ease);
+  }
+  .btn .badge {
+    flex: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--ink);
+    transition: transform .6s var(--ease);
+  }
+  .btn svg { width: 16px; height: 16px; display: block; }
+  .btn.primary {
+    border: 0;
+    color: var(--paper);
+    background: var(--accent);
+    box-shadow: var(--shadow);
+    padding-left: 26px;
+  }
+  .btn.primary .badge {
+    border: 0;
+    background: var(--paper);
+    color: var(--magenta);
+    width: 40px;
+    height: 40px;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn.primary:hover { box-shadow: 0 22px 40px -14px rgba(96, 68, 93, .6); }
+  .btn:hover .badge { transform: translateX(3px); }
+  .btn:active { transform: translateY(0) scale(.98); }
+  .btn:focus-visible, .dots button:focus-visible {
+    outline: 2px solid var(--magenta);
+    outline-offset: 3px;
+    border-radius: 999px;
+  }
+  .fallback {
+    position: fixed;
+    inset: 0;
+    display: none;
+    place-items: center;
+    padding: 32px;
+    text-align: center;
+    color: var(--plum);
+    font-weight: 500;
+  }
+  .no-webgl .fallback { display: grid; }
+
+  @media (max-height: 620px) {
+    .hint { display: none; }
+    .sub { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .swap, .btn, .btn .badge, .dots button span { transition: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="A soft sculpture of clay beads. Drag to turn it, tap to poke it."></canvas>
+<div class="fallback">This piece needs WebGL, and your browser is keeping it switched off.</div>
+
+<main class="safe">
+  <header>
+    <div class="bar">
+      <span class="label">AI Workshop &middot; Idea Clay</span>
+      <span class="label sig">SHELLY GISSER</span>
+    </div>
+    <div class="copy swap" id="copy" aria-live="polite">
+      <span class="label step"><i></i><span id="step">01 &middot; SPARK</span></span>
+      <h1 id="title">Every idea starts as a lovely mess.</h1>
+      <p class="sub" id="sub">Loose thoughts, no shape yet. Exactly right.</p>
+    </div>
+  </header>
+
+  <footer class="foot">
+    <span class="label hint">Drag to turn &middot; Tap to poke</span>
+    <div class="dots" id="dots" role="group" aria-label="Choose a shape"></div>
+    <div class="actions">
+      <button class="btn" id="poke" type="button">
+        Poke it
+        <span class="badge" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2"/><circle cx="8" cy="8" r="6" opacity=".55"/></svg>
+        </span>
+      </button>
+      <button class="btn primary" id="next" type="button">
+        <span id="nextLabel">Shape it</span>
+        <span class="badge" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </span>
+      </button>
+    </div>
+  </footer>
+</main>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const STAGES = [
+  { step: '01 · SPARK', title: 'Every idea starts as a lovely mess.', sub: 'Loose thoughts, no shape yet. Exactly right.', cta: 'Shape it' },
+  { step: '02 · BRIEF', title: 'Give it edges.', sub: 'A clear brief turns noise into a block you can build on.', cta: 'Set it moving' },
+  { step: '03 · FLOW', title: 'Let it move.', sub: 'Chain the steps and the work starts carrying itself.', cta: 'Make it yours' },
+  { step: '04 · CRAFT', title: 'Then make it yours.', sub: 'Taste is the one part no model ships with.', cta: 'Start again' },
+];
+
+const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+const canvas = document.getElementById('scene');
+
+/* ---------- helpers ---------- */
+function rng(seed) {
+  return () => {
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+// cubic-bezier(.2,.8,.2,1)
+function ease(x) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const x1 = .2, y1 = .8, x2 = .2, y2 = 1;
+  let t = x;
+  for (let i = 0; i < 6; i++) {
+    const u = 1 - t;
+    const bx = 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t - x;
+    const dx = 3 * u * u * x1 + 6 * u * t * (x2 - x1) + 3 * t * t * (1 - x2);
+    if (Math.abs(dx) < 1e-5) break;
+    t = Math.min(1, Math.max(0, t - bx / dx));
+  }
+  const u = 1 - t;
+  return 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t;
+}
+
+/* ---------- shapes ---------- */
+const N = 729;
+function spaced(sample, minDist, rand) {
+  const pts = [];
+  let d = minDist, fails = 0;
+  while (pts.length < N) {
+    const p = sample(rand);
+    if (!p) continue;
+    let ok = true;
+    for (let i = 0; i < pts.length; i++) {
+      const q = pts[i], dx = p[0] - q[0], dy = p[1] - q[1], dz = p[2] - q[2];
+      if (dx * dx + dy * dy + dz * dz < d * d) { ok = false; break; }
+    }
+    if (ok) { pts.push(p); fails = 0; }
+    else if (++fails > 400) { d *= .94; fails = 0; }
+  }
+  return pts;
+}
+function cloud() {
+  return spaced((r) => {
+    const x = r() * 2 - 1, y = r() * 2 - 1, z = r() * 2 - 1;
+    const l = x * x + y * y + z * z;
+    if (l > 1) return null;
+    const k = 2.05 * (.55 + .45 * Math.sqrt(l)) / Math.max(Math.sqrt(l), .001) * Math.sqrt(l);
+    return [x * k * 1.05, y * k, z * k];
+  }, .27, rng(11));
+}
+function cube() {
+  const pts = [], s = .37;
+  for (let y = 0; y < 9; y++) for (let z = 0; z < 9; z++) for (let x = 0; x < 9; x++)
+    pts.push([(x - 4) * s, (y - 4) * s, (z - 4) * s]);
+  return pts;
+}
+function helix() {
+  const r = rng(23), pts = [];
+  for (let i = 0; i < N; i++) {
+    const t = i / (N - 1), strand = i % 3;
+    const a = t * Math.PI * 2 * 2.6 + strand * Math.PI * 2 / 3;
+    const rad = 1.15 + (r() - .5) * .16;
+    pts.push([Math.cos(a) * rad, (t - .5) * 4.3 + (r() - .5) * .1, Math.sin(a) * rad]);
+  }
+  return pts;
+}
+function heart() {
+  const S = 1.72;
+  return spaced((r) => {
+    const x = (r() * 2 - 1) * 1.2, y = r() * 2.4 - 1.1;
+    const a = x * x + y * y - 1;
+    const f = a * a * a - x * x * y * y * y;
+    if (f > 0) return null;
+    // puffed like a cushion: thick in the middle, thin at the rim
+    const thick = .5 * Math.sqrt(Math.min(1, -f * 5));
+    const z = (r() * 2 - 1) * thick;
+    return [x * S, (y - .1) * S, z * S];
+  }, .27, rng(37));
+}
+function ordered(pts, shuffleSeed) {
+  if (shuffleSeed) {
+    const r = rng(shuffleSeed);
+    for (let i = pts.length - 1; i > 0; i--) {
+      const j = Math.floor(r() * (i + 1));
+      [pts[i], pts[j]] = [pts[j], pts[i]];
+    }
+    return pts;
+  }
+  return pts.sort((a, b) => (a[1] - b[1]) || (Math.atan2(a[2], a[0]) - Math.atan2(b[2], b[0])));
+}
+const SHAPES = [ordered(cloud(), 5), ordered(cube()), ordered(helix()), ordered(heart())]
+  .map((pts) => { const f = new Float32Array(N * 3); pts.forEach((p, i) => f.set(p, i * 3)); return f; });
+
+/* ---------- scene ---------- */
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+} catch (e) {
+  document.documentElement.classList.add('no-webgl');
+  throw e;
+}
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, .1, 100);
+
+scene.add(new THREE.HemisphereLight(0xFFFDFB, 0xE8D3E6, 2.1));
+const sun = new THREE.DirectionalLight(0xFFF1E2, 2.3);
+sun.position.set(-4.5, 8, 6);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -5; sun.shadow.camera.right = 5;
+sun.shadow.camera.top = 5; sun.shadow.camera.bottom = -5;
+sun.shadow.camera.near = 1; sun.shadow.camera.far = 24;
+sun.shadow.radius = 7;
+sun.shadow.bias = -.0006;
+sun.shadow.normalBias = .03;
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xDDF4FF, .7);
+fill.position.set(5, 1, -3);
+scene.add(fill);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(40, 40),
+  new THREE.ShadowMaterial({ color: 0x8E5FA8, opacity: .26 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -2.75;
+ground.receiveShadow = true;
+scene.add(ground);
+
+const group = new THREE.Group();
+scene.add(group);
+const beads = new THREE.InstancedMesh(
+  new THREE.SphereGeometry(1, 20, 14),
+  new THREE.MeshStandardMaterial({ roughness: .88, metalness: 0 }),
+  N
+);
+beads.castShadow = true;
+beads.receiveShadow = true;
+beads.frustumCulled = false;
+group.add(beads);
+
+const PALETTE = [
+  ['#F4B8CA', 30], ['#E8E0F2', 18], ['#F7F2ED', 13], ['#B93372', 12],
+  ['#60445D', 7], ['#A9DCF5', 9], ['#C9A4E0', 7], ['#8E3FB8', 4],
+];
+const total = PALETTE.reduce((s, p) => s + p[1], 0);
+const cr = rng(71), col = new THREE.Color();
+const size = new Float32Array(N), phase = new Float32Array(N), delay = new Float32Array(N);
+for (let i = 0; i < N; i++) {
+  let k = cr() * total, c = PALETTE[0][0];
+  for (const [hex, w] of PALETTE) { if ((k -= w) <= 0) { c = hex; break; } }
+  beads.setColorAt(i, col.set(c));
+  size[i] = .1 + cr() * .045;
+  phase[i] = cr() * Math.PI * 2;
+}
+beads.instanceColor.needsUpdate = true;
+
+/* ---------- state ---------- */
+const from = new Float32Array(SHAPES[0]);
+const base = new Float32Array(SHAPES[0]);
+const push = new Float32Array(N * 3);
+let stage = 0, to = SHAPES[0];
+let morphStart = -1e9, morphDur = 1.7;
+let pokeStart = -1e9;
+const VIEW = [ { y: -.45, x: .16, size: 1, uni: 0 }, { y: .62, x: .3, size: 1.34, uni: 1 }, { y: 0, x: .12, size: 1.06, uni: 0 }, { y: 0, x: .04, size: 1, uni: 0 } ];
+let rotY = -.45, rotX = .16, tRotY = rotY, tRotX = rotX, sizeMul = 1, uni = 0;
+const pointer = { active: false, x: 0, y: 0 };
+let now = 0;
+
+function morph(next) {
+  if (next === stage) return;
+  from.set(base);
+  const span = reduced.matches ? 0 : .7;
+  // stagger along the shape the beads are leaving, bottom to top
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < N; i++) { const y = from[i * 3 + 1]; if (y < lo) lo = y; if (y > hi) hi = y; }
+  for (let i = 0; i < N; i++) delay[i] = span * ((from[i * 3 + 1] - lo) / (hi - lo || 1)) * .8 + span * .2 * ((i * 7919) % 97) / 97;
+  morphDur = reduced.matches ? .01 : 1.7;
+  morphStart = now;
+  stage = next;
+  to = SHAPES[stage];
+  // settle on the angle that shows this shape best
+  const turn = Math.PI * 2;
+  tRotY = Math.round((tRotY - VIEW[stage].y) / turn) * turn + VIEW[stage].y;
+  tRotX = VIEW[stage].x;
+  setCopy();
+}
+function poke() { pokeStart = now; }
+
+/* ---------- copy / UI ---------- */
+const $ = (id) => document.getElementById(id);
+const copy = $('copy'), dots = $('dots');
+STAGES.forEach((s, i) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.setAttribute('aria-label', s.step.replace('·', '').replace(/\s+/g, ' '));
+  b.innerHTML = '<span></span>';
+  b.addEventListener('click', () => morph(i));
+  dots.appendChild(b);
+});
+let swapTimer;
+function paint() {
+  const s = STAGES[stage];
+  $('step').textContent = s.step;
+  $('title').textContent = s.title;
+  $('sub').textContent = s.sub;
+  $('nextLabel').textContent = s.cta;
+  [...dots.children].forEach((d, i) => d.setAttribute('aria-current', i === stage ? 'true' : 'false'));
+}
+function setCopy() {
+  clearTimeout(swapTimer);
+  if (reduced.matches) { paint(); return; }
+  copy.classList.add('out');
+  swapTimer = setTimeout(() => { paint(); copy.classList.remove('out'); }, 230);
+}
+paint();
+$('next').addEventListener('click', () => morph((stage + 1) % STAGES.length));
+$('poke').addEventListener('click', poke);
+addEventListener('keydown', (e) => {
+  if (e.target.closest && e.target.closest('button')) return;
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); morph((stage + 1) % STAGES.length); }
+  if (e.key === 'ArrowLeft') morph((stage + STAGES.length - 1) % STAGES.length);
+});
+
+/* ---------- pointer ---------- */
+let drag = null;
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0, t: performance.now() };
+  canvas.classList.add('dragging');
+  pointer.active = true; pointer.x = e.clientX; pointer.y = e.clientY;
+});
+canvas.addEventListener('pointermove', (e) => {
+  pointer.x = e.clientX; pointer.y = e.clientY;
+  if (e.pointerType === 'mouse') pointer.active = true;
+  if (!drag || drag.id !== e.pointerId) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  drag.x = e.clientX; drag.y = e.clientY;
+  drag.moved += Math.abs(dx) + Math.abs(dy);
+  tRotY += dx * .008;
+  tRotX = Math.max(-.7, Math.min(.8, tRotX + dy * .005));
+});
+function release(e) {
+  if (!drag || drag.id !== e.pointerId) return;
+  if (drag.moved < 8 && performance.now() - drag.t < 450) poke();
+  drag = null;
+  canvas.classList.remove('dragging');
+  if (e.pointerType !== 'mouse') pointer.active = false;
+}
+canvas.addEventListener('pointerup', release);
+canvas.addEventListener('pointercancel', release);
+canvas.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && !drag) pointer.active = false; });
+
+/* ---------- layout ---------- */
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  const colW = Math.min(w, h * 9 / 16);
+  const tan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  // the sculpture should span about 62% of the safe column and never more than 44% of the height
+  const dist = Math.max(4.6 / .62 * (h / colW) / (2 * tan), 4.6 / .44 / (2 * tan));
+  camera.position.set(0, dist * .13, dist);
+  camera.lookAt(0, .55, 0);
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+resize();
+
+/* ---------- loop ---------- */
+const m = new THREE.Matrix4(), inv = new THREE.Matrix4();
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+const ro = new THREE.Vector3(), rd = new THREE.Vector3();
+let last = performance.now();
+
+function frame(t) {
+  const dt = Math.min(.05, (t - last) / 1000);
+  last = t;
+  now += dt;
+  const calm = reduced.matches;
+
+  const sk = 1 - Math.exp(-dt * 2.6);
+  sizeMul += (VIEW[stage].size - sizeMul) * sk;
+  uni += (VIEW[stage].uni - uni) * sk;
+  const wob = calm ? 0 : 1 - uni * .85;
+  const sway = calm ? 0 : Math.sin(now * .45) * (.42 - uni * .14) * (stage === 3 ? .7 : 1);
+  const k = 1 - Math.exp(-dt * (drag ? 9 : 3.2));
+  rotY += (tRotY + sway - rotY) * k;
+  rotX += (tRotX - rotX) * k;
+  group.rotation.set(rotX, rotY, 0);
+  group.position.y = calm ? 0 : Math.sin(now * .7) * .07;
+  group.updateMatrixWorld();
+
+  let hasRay = false;
+  if (pointer.active) {
+    ndc.set(pointer.x / innerWidth * 2 - 1, -(pointer.y / innerHeight) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    inv.copy(group.matrixWorld).invert();
+    ro.copy(ray.ray.origin).applyMatrix4(inv);
+    rd.copy(ray.ray.direction).transformDirection(inv);
+    hasRay = true;
+  }
+  const pk = 1 - Math.exp(-dt * 9);
+  const R = 1.05;
+  const pokeT = now - pokeStart;
+
+  for (let i = 0; i < N; i++) {
+    const j = i * 3;
+    const e = ease((now - morphStart - delay[i]) / morphDur);
+    let x = from[j] + (to[j] - from[j]) * e;
+    let y = from[j + 1] + (to[j + 1] - from[j + 1]) * e;
+    let z = from[j + 2] + (to[j + 2] - from[j + 2]) * e;
+    base[j] = x; base[j + 1] = y; base[j + 2] = z;
+
+    const len = Math.hypot(x, y, z) || 1;
+    // swell outward while travelling, then settle
+    const swell = Math.sin(Math.PI * e) * .32;
+    // poke: one soft ripple from the centre outward
+    let u = (pokeT - len * .16) / 1.15, rip = 0;
+    if (u > 0 && u < 1) rip = Math.sin(Math.PI * u) * (1 - u) * (1 - u) * .62;
+    const out = (swell + rip) / len;
+    x += x * out; y += y * out; z += z * out;
+
+    x += Math.sin(now * .9 + phase[i]) * .018 * wob;
+    y += Math.cos(now * .75 + phase[i] * 1.7) * .022 * wob;
+
+    // beads lean away from the pointer
+    let px = 0, py = 0, pz = 0;
+    if (hasRay) {
+      const vx = x - ro.x, vy = y - ro.y, vz = z - ro.z;
+      const d = vx * rd.x + vy * rd.y + vz * rd.z;
+      const qx = vx - rd.x * d, qy = vy - rd.y * d, qz = vz - rd.z * d;
+      const dist = Math.hypot(qx, qy, qz);
+      if (dist < R) {
+        const f = (1 - dist / R); const s = f * f * .75 / (dist || 1);
+        px = qx * s; py = qy * s; pz = qz * s;
+      }
+    }
+    push[j] += (px - push[j]) * pk;
+    push[j + 1] += (py - push[j + 1]) * pk;
+    push[j + 2] += (pz - push[j + 2]) * pk;
+
+    const s = (size[i] + (.135 - size[i]) * uni) * sizeMul * (1 + rip * .5);
+    m.makeScale(s, s, s);
+    m.setPosition(x + push[j], y + push[j + 1], z + push[j + 2]);
+    beads.setMatrixAt(i, m);
+  }
+  beads.instanceMatrix.needsUpdate = true;
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
