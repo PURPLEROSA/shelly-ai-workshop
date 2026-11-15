@@ -49,13 +49,12 @@ Templates written by the site, free to copy: [the showreel prompt](https://promp
 
 ## Skills the gallery links to
 
-The six skills the gallery lists are installed beside this one. Sources, pinned commits and licences are in `../../INSTALLED.md`.
+Five of the six skills the gallery lists are installed beside this one. Sources, pinned commits and licences are in `../../INSTALLED.md`, along with the sixth (`design-taste-frontend`, a website skill) and why it was left out.
 
 | Skill | From | Licence |
 |---|---|---|
 | `product-film` | github.com/Rieranthony/product-film-skill | MIT |
 | `cinetic` | github.com/Leonxlnx/cinetic | MIT |
-| `design-taste-frontend` | github.com/Leonxlnx/taste-skill | MIT |
 | `generative-film` | github.com/buildfastwithai/buildfast-skills | MIT |
 | `session-story` | github.com/heygen-com/hyperframes-community-skills | Apache 2.0 |
 | `html-demo` | github.com/MengTo/Skills | MIT |

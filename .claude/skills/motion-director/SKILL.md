@@ -75,7 +75,6 @@ These are installed beside this one. Use this skill to shape the brief and revie
 | An original film on any topic with frames drawn in Python and a synthesised score | `generative-film` |
 | A film of a working session with the person, from local history (HyperFrames) | `session-story` |
 | A live HTML product demo window for a web page, not a video file | `html-demo` |
-| A website, landing page or dashboard, not motion | `design-taste-frontend` |
 
 ## References
 
@@ -85,4 +84,4 @@ These are installed beside this one. Use this skill to shape the brief and revie
 - `references/build-pipelines.md`: choosing a renderer, the seek(t) contract, springs, camera, motion blur, soundtrack, voice, footage.
 - `references/review-loop.md`: how to ask for a fix, symptom to prompt line, cost and session hygiene, what Claude cannot judge.
 - `references/gotchas.md`: traps by area, including right-to-left text.
-- `references/sources.md`: where this comes from, the gallery in numbers, the six installed skills and their licences.
+- `references/sources.md`: where this comes from, the gallery in numbers, the installed skills and their licences.
