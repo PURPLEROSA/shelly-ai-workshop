@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>seek(t) starter</title>
+<!--
+  Deterministic film starter. The whole film is one pure function of time:
+
+      window.FILM        { width, height, fps, duration, bpm }
+      window.seek(t)     sets every style for time t (seconds). No CSS transitions,
+                         no timers, no state carried from one frame to the next.
+      window.renderAudio optional: returns the soundtrack as a base64 WAV.
+      window.ready       optional promise: resolve when fonts and assets are loaded.
+
+  Open the file in a browser to preview (space = pause, arrows = scrub).
+  Render it with:  node render.mjs seek-starter.html --out film.mp4
+  The demo scene is a placeholder that follows the house rules (one through-line
+  object, text out of mask lines, exits before entries, a flood that overscales
+  past all four corners, last frame equal to the first). Replace the SCENE
+  section, keep the helpers.
+-->
+<style>
+  :root { --paper: #f4f2ec; --ink: #111214; --accent: #ff5a1f; }
+  html, body { margin: 0; background: #000; overflow: hidden; }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden;
+           background: var(--paper); transform-origin: 0 0;
+           font-family: "Geist", "Inter", "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
+  #world { position: absolute; inset: 0; transform-origin: 50% 50%; }
+  .abs { position: absolute; left: 0; top: 0; }
+  #flood { border-radius: 50%; background: var(--accent); }
+  #dot { border-radius: 999px; background: var(--accent); }
+  .line { overflow: hidden; height: 220px; }               /* a mask line: text rises out of it */
+  .word { font-size: 200px; font-weight: 700; letter-spacing: -0.045em; line-height: 220px; white-space: nowrap; }
+  #label { font-size: 56px; font-weight: 600; letter-spacing: -0.015em; line-height: 120px; white-space: nowrap; color: var(--paper); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="world">
+    <div id="flood" class="abs"></div>
+    <div id="l1" class="abs line"><div id="w1" class="word">Every frame</div></div>
+    <div id="l2" class="abs line"><div id="w2" class="word">from time</div></div>
+    <div id="l3" class="abs line"><div id="w3" class="word">then it loops</div></div>
+    <div id="dot" class="abs"></div>
+    <div id="labelA" class="abs" style="overflow:hidden"><div id="label">one object, never cut</div></div>
+  </div>
+</div>
+
+<script>
+/* ───────────── film settings ───────────── */
+const FILM = window.FILM = { width: 1920, height: 1080, fps: 60, bpm: 120, duration: 6 };
+const RENDER = new URLSearchParams(location.search).has('render');
+const beat = n => n * 60 / FILM.bpm;                       // beat number → seconds
+
+/* ───────────── helpers: all pure functions of time ───────────── */
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, u) => a + (b - a) * u;
+const win = (t, t0, t1) => clamp((t - t0) / (t1 - t0));    // linear 0..1 across a window
+const outExpo = u => (u >= 1 ? 1 : 1 - Math.pow(2, -10 * u));
+const inOutCubic = u => (u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2);
+const inCubic = u => u * u * u;
+
+// Closed-form step response of a damped spring (0 → 1, starting at t = 0).
+// f = natural frequency in Hz, z = damping ratio. z 0.8–1 settles cleanly; below 0.6 gets bouncy.
+function spring(t, { f = 2.6, z = 0.82 } = {}) {
+  if (t <= 0) return 0;
+  const w = 2 * Math.PI * f;
+  if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+}
+// A value retargeted many times is the sum of one spring per change, so it stays pure.
+// changes: [[time, target], ...] in order.
+function track(t, start, changes, opt) {
+  let v = start, prev = start;
+  for (const [t0, target] of changes) { v += (target - prev) * spring(t - t0, opt); prev = target; }
+  return v;
+}
+// Camera keys [time, zoom, x, y]; zoom is interpolated in log space so pushes feel even.
+function camera(t, keys, ease = inOutCubic) {
+  if (t <= keys[0][0]) return keys[0].slice(1);
+  for (let i = 1; i < keys.length; i++) {
+    const a = keys[i - 1], b = keys[i];
+    if (t <= b[0]) {
+      const u = ease(win(t, a[0], b[0]));
+      return [Math.exp(lerp(Math.log(a[1]), Math.log(b[1]), u)), lerp(a[2], b[2], u), lerp(a[3], b[3], u)];
+    }
+  }
+  return keys[keys.length - 1].slice(1);
+}
+// Seeded random: never Math.random(), or two renders of the same frame differ.
+function seeded(seed) {
+  let a = seed >>> 0;
+  return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let x = Math.imul(a ^ (a >>> 15), 1 | a);
+                 x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+}
+const $ = id => document.getElementById(id);
+const place = (el, x, y, extra = '') => { el.style.transform = `translate(${x}px, ${y}px) ${extra}`; };
+
+/* ───────────── SCENE (replace this) ─────────────
+   120 BPM, 12 beats. The orange dot is the through-line object and is never cut.
+   b0    the dot leaves centre (frame 0 is also the last frame, so the film loops)
+   b0.4  line one rises out of its mask once the dot has cleared it
+   b2.25 line two rises; the dot rides down to become its full stop
+   b4.5  the dot drops to a third row and stretches into a pill; its label enters after the stretch
+   b7.1  the label leaves, then the lines, before anything new arrives
+   b8    the pill closes and floods the frame past all four corners; a line lives on the flood
+   b10.1 the flood contracts into the dot at centre: frame 0 again                              */
+const W = FILM.width, H = FILM.height, CX = W / 2, CY = H / 2, DOT = 44;
+const L1 = { x: 300, y: 230 }, L2 = { x: 300, y: 450 }, ROW3 = 770;
+let M = null;                                               // measured at runtime, after fonts load: never hard-code text widths
+function measure() {
+  M = { w1: $('w1').offsetWidth, w2: $('w2').offsetWidth, w3: $('w3').offsetWidth, label: $('label').offsetWidth };
+}
+
+window.seek = async function seek(t) {
+  if (!M) measure();
+  t = clamp(t, 0, FILM.duration);
+
+  // camera: one slow push that never reverses mid-scene; it eases home while the flood hides the move
+  const [zoom, cx, cy] = camera(t, [[0, 1.0, 0, 0], [beat(8.9), 1.045, 0, -8], [beat(12), 1.0, 0, 0]]);
+  $('world').style.transform = `translate(${cx}px, ${cy}px) scale(${zoom})`;
+
+  // text: rises out of a mask line, and leaves upward before the next thing arrives
+  const line = (id, wid, at, x, y, out0, out1) => {
+    const rise = spring(t - at, { f: 2.2, z: 0.9 }), exit = inCubic(win(t, out0, out1));
+    place($(id), x, y); place($(wid), 0, lerp(230, 0, rise) - 240 * exit);
+  };
+  line('l1', 'w1', beat(0.4), L1.x, L1.y, beat(7.5), beat(8.2));
+  line('l2', 'w2', beat(2.25), L2.x, L2.y, beat(7.65), beat(8.35));
+  line('l3', 'w3', beat(8.6), CX - M.w3 / 2, CY - 120, beat(10), beat(10.5));
+  $('w3').style.color = 'var(--ink)';
+
+  // the dot: one element for the whole film. x, y is its centre while it is a dot.
+  const way = { f: 2.4, z: 0.86 };
+  const x = track(t, CX, [[beat(0), L1.x + M.w1 + 60], [beat(2.25), L2.x + M.w2 + 30], [beat(4.5), L1.x + DOT / 2], [beat(8.9), CX]], way);
+  const y = track(t, CY, [[beat(0), L1.y + 110], [beat(2.25), L2.y + 158], [beat(4.5), ROW3], [beat(8.9), CY]], way);
+  const pill = track(t, 0, [[beat(5), 1], [beat(8), 0]], { f: 2.8, z: 0.84 });
+  const pillW = lerp(DOT, M.label + 112, pill), pillH = lerp(DOT, 120, pill);
+  const dot = $('dot');
+  dot.style.width = pillW + 'px'; dot.style.height = pillH + 'px';
+  place(dot, x - DOT / 2, y - pillH / 2);
+
+  // label: enters only once the pill has opened and leaves before it closes, so text never overlaps the morph
+  const lin = spring(t - beat(5.5), { f: 2.6, z: 0.9 }), lout = inCubic(win(t, beat(7.1), beat(7.6)));
+  const la = $('labelA');
+  la.style.width = Math.max(0, pillW - 56) + 'px'; la.style.height = pillH + 'px';
+  place(la, x - DOT / 2 + 56, y - pillH / 2);
+  place($('label'), 0, lerp(130, 0, lin) - 130 * lout);
+
+  // flood: grows out of the dot, overscales past the farthest corner, then contracts back into it
+  const far = Math.hypot(Math.max(x, W - x), Math.max(y, H - y)) * 2.2;
+  const fl = clamp(inOutCubic(win(t, beat(8), beat(8.9))) - inOutCubic(win(t, beat(10.1), beat(11.2))));
+  const d = far * fl, flood = $('flood');
+  flood.style.width = d + 'px'; flood.style.height = d + 'px';
+  place(flood, x - d / 2, y - d / 2);
+};
+
+/* ───────────── soundtrack in code (optional) ─────────────
+   A kick on every beat and a soft hit where the scene changes. Rendered offline, so no audio device is needed. */
+window.renderAudio = async function renderAudio() {
+  const sr = 44100, ctx = new OfflineAudioContext(2, Math.ceil(sr * FILM.duration), sr);
+  const master = ctx.createGain(); master.gain.value = 0.8; master.connect(ctx.destination);
+  const kick = at => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.setValueAtTime(140, at); o.frequency.exponentialRampToValueAtTime(42, at + 0.14);
+    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.7, at + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.26);
+    o.connect(g).connect(master); o.start(at); o.stop(at + 0.3);
+  };
+  const hit = at => {
+    const len = Math.floor(sr * 0.35), buf = ctx.createBuffer(1, len, sr), ch = buf.getChannelData(0), rnd = seeded(7);
+    for (let i = 0; i < len; i++) ch[i] = (rnd() * 2 - 1) * Math.pow(1 - i / len, 3);
+    const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    s.buffer = buf; f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 0.7; g.gain.value = 0.35;
+    s.connect(f).connect(g).connect(master); s.start(at);
+  };
+  for (let b = 0; beat(b) < FILM.duration - 0.05; b++) kick(beat(b));
+  [0.4, 2.25, 5, 8, 10.1].forEach(b => hit(beat(b)));
+  const out = await ctx.startRendering();
+  // 16-bit PCM WAV, returned as base64
+  const n = out.length, wav = new DataView(new ArrayBuffer(44 + n * 4)), put = (o, s) => [...s].forEach((c, i) => wav.setUint8(o + i, c.charCodeAt(0)));
+  put(0, 'RIFF'); wav.setUint32(4, 36 + n * 4, true); put(8, 'WAVEfmt '); wav.setUint32(16, 16, true); wav.setUint16(20, 1, true);
+  wav.setUint16(22, 2, true); wav.setUint32(24, sr, true); wav.setUint32(28, sr * 4, true); wav.setUint16(32, 4, true); wav.setUint16(34, 16, true);
+  put(36, 'data'); wav.setUint32(40, n * 4, true);
+  const l = out.getChannelData(0), r = out.getChannelData(1);
+  for (let i = 0; i < n; i++) { wav.setInt16(44 + i * 4, clamp(l[i], -1, 1) * 32767, true); wav.setInt16(46 + i * 4, clamp(r[i], -1, 1) * 32767, true); }
+  let bin = ''; const bytes = new Uint8Array(wav.buffer);
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+};
+
+/* ───────────── boot ───────────── */
+window.ready = (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { measure(); return window.seek(0); });
+
+if (!RENDER) {                                              // live preview only; the renderer never runs this
+  const fit = () => { const s = Math.min(innerWidth / FILM.width, innerHeight / FILM.height); $('stage').style.transform = `scale(${s})`; };
+  addEventListener('resize', fit); fit();
+  let playing = true, t = 0, last = performance.now();
+  addEventListener('keydown', e => {
+    if (e.code === 'Space') playing = !playing;
+    if (e.code === 'ArrowRight') t = Math.min(FILM.duration, t + (e.shiftKey ? 1 : 1 / FILM.fps));
+    if (e.code === 'ArrowLeft') t = Math.max(0, t - (e.shiftKey ? 1 : 1 / FILM.fps));
+  });
+  const tick = now => { if (playing) t = (t + (now - last) / 1000) % FILM.duration; last = now; window.seek(t); requestAnimationFrame(tick); };
+  window.ready.then(() => requestAnimationFrame(tick));
+}
+</script>
+</body>
+</html>
