@@ -1,0 +1,11 @@
+Use the reference video as the exact camera path, timing and scene layout. It is a grey-box 3D previz of one continuous 30-second FPV take; re-render it as photorealistic live-action footage, matching camera position, speed, tilt, roll and composition moment for moment. Grey blocks become real Manhattan buildings with the same windows and storefronts, coloured posters stay billboards in the same places, yellow boxes are New York taxis, grey blob trees are leafy street trees, plain grey figures are ordinary pedestrians.
+
+0-9s: an ultra-wide FPV camera skims ankle-high along a Manhattan sidewalk on a bright spring morning. It sweeps low past the red-haired woman in the emerald-green suit walking toward the lens with her coffee, looking up at her against the towers, then rises past the saxophonist in the cobalt-blue suit playing on the corner and banks right into a narrow alley.
+
+9-17s: the camera races low through the brick alley past dumpsters, trash bags and fire escapes. The Dalmatian sprints toward the lens and leaps clean over the camera above a puddle. The camera lifts past the chef in the white jacket and black apron taking a break beside a steel back door, then bursts out into sunlight.
+
+17-25s: the camera swings onto a wide one-way avenue behind the turquoise 1960s convertible, chases low behind its chrome bumper across a crosswalk, rises over the trunk and glides through the open cabin past the bald white-bearded driver in the red Hawaiian shirt and aviators, hands on the wheel, then out over the hood.
+
+25-30s: the camera surges ahead and climbs straight up, tilting down into a slowly rotating top-down aerial of the avenue grid full of yellow cabs.
+
+Style: one unbroken shot with no cuts, 14mm wide-angle FPV drone look, natural daylight, crisp true-to-life textures and colour, light motion blur. Keep every character and the car exactly as in their reference images, consistent throughout. No on-screen text or captions, no warping, no morphing, no extra limbs.
