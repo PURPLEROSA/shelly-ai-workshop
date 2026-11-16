@@ -1,4 +1,4 @@
-# Roller one-take (grey-box previz) for a "Blender -> Seedance" reel: Tel Aviv seafront, morning to sunset.
+# Roller one-take (grey-box previz) for a "Blender -> Seedance" reel: Venice Beach / LA seafront, morning to sunset.
 # Builds the scene procedurally and renders it with Blender's Workbench (solid viewport) engine.
 #   python rollertake.py -- --mode stills --times 0,7.25,17.4 --res 640x360 --out out/stills
 #   python rollertake.py -- --mode anim --start 0 --end 899 --out out/frames      (resumable)
@@ -222,7 +222,7 @@ def car(x, y, heading=0.0, m=None):
 
 
 # ===================================================================== ROLLER ONE-TAKE
-# Tel Aviv seafront, morning -> sunset: top view -> floor chase -> street -> supermarket -> SHOTCALLER garage -> sunset.
+# LA / Venice Beach, morning -> sunset: top view -> floor chase -> street -> supermarket -> SHOTCALLER garage -> police helicopter.
 SEA = mat('sea', (0.45, 0.72, 0.86)); SAND = mat('sand', (0.92, 0.86, 0.72)); PROM = grey('prom', 0.76); PROM2 = grey('prom2', 0.86)
 ROADM = grey('road', 0.47); WALK = grey('walk', 0.70); WHITE = grey('white', 0.97); REDC = mat('curb_red', (0.82, 0.16, 0.14))
 PINK = mat('top_pink', (0.92, 0.16, 0.46)); HOLO = mat('holo', (0.80, 0.72, 0.96)); HAIR = mat('hair', (0.36, 0.20, 0.12)); SKIN = grey('skin', 0.90)
@@ -266,13 +266,14 @@ box(-750, -20, -760, 880, 0, 0.03, SEA, 'sea'); box(-20, -8, -760, 880, 0, 0.07,
 box(-8, 6, -760, 880, 0, G, PROM, 'promenade'); box(20, 25, -760, 880, 0, 0.04, WALK, 'east_walk')
 box(25, 68, 4, 32, 0, 0.03, YARD, 'yard'); box(34, 68, 30, 74, 0, 0.035, FLOORM, 'super_floor')
 quads('prom_bands', [flat(-7.6, 5.6, y, y + 1.3, G + 0.01) for y in range(-150, 260, 6)], PROM2)
-for i, y in enumerate(range(-90, 190)):
-    box(5.82, 6.12, y, y + 1.0, 0, G + 0.03, REDC if i % 2 == 0 else WHITE, 'curb')
+box(5.82, 6.12, -150, 260, 0, G + 0.03, grey('curb', 0.82), 'curb')
+for y0, y1 in ((-40, -22), (44, 56), (96, 110)):
+    box(5.80, 6.14, y0, y1, 0.001, G + 0.035, REDC, 'curb_red_zone')
 tube((-8, -150, 1.05), (-8, 260, 1.05), 0.08, METAL, name='rail')
 for y in range(-150, 261, 4):
     tube((-8, y, G), (-8, y, 1.05), 0.07, METAL, name='rail_post')
-def palm(x, y, h=9.0):
-    tube((x, y, 0), (x + 0.3, y, h), 0.38, WOOD, name='palm_trunk')
+def palm(x, y, h=9.0, r=0.38):
+    tube((x, y, 0), (x + 0.3, y, h), r, WOOD, name='palm_trunk')
     for k in range(7):
         a = k * 2 * math.pi / 7 + x + y
         o = obj('sph', 'palm_frond', (x + 0.3 + math.cos(a) * 1.7, y + math.sin(a) * 1.7, h - 0.35), (3.8, 0.75, 0.16), PALMG)
@@ -282,7 +283,7 @@ for y in range(-140, 250, 15):
 for y in range(-50, 170, 22):
     box(-7.6, -6.9, y, y + 2.0, G, G + 0.45, WOOD, 'bench')
 for _ in range(34):
-    x, y, m = random.uniform(-19, -10.5), random.uniform(-90, 190), random.choice(UMB)
+    x, y, m = random.uniform(-19, -12.6), random.uniform(-90, 190), random.choice(UMB)
     tube((x, y, 0), (x, y, 2.1), 0.06, METAL, name='umb_pole'); obj('sph', 'umbrella', (x, y, 2.15), (2.7, 2.7, 0.55), m)
     box(x + 0.5, x + 1.2, y - 1.0, y + 0.9, 0.07, 0.36, WHITE, 'sunbed')
 box(-16.5, -13.5, 57.5, 60.5, 2.3, 4.6, WHITE, 'lifeguard_hut'); box(-16.9, -13.1, 57.1, 60.9, 4.6, 4.8, TEALM, 'lifeguard_roof')
@@ -293,22 +294,23 @@ box(3.6, 4.6, 29.4, 31.0, G, G + 1.1, PINK, 'icecream_cart'); obj('sph', 'cart_u
 tube((4.1, 30.2, G + 1.1), (4.1, 30.2, G + 2.3), 0.05, METAL, name='cart_pole')
 
 # coastal road paint + traffic
-paint = [flat(12.92, 13.08, y, y + 3, 0.02) for y in range(-300, 420, 9) if not (55 < y < 64 or 6 < y < 17)]
+paint = []
+quads('double_yellow', [flat(12.80, 12.93, -300, 420, 0.02), flat(13.07, 13.20, -300, 420, 0.02)], YELLOWL)
 for zy0, zy1 in ((58, 62), (10.5, 14.5)):
     x = 6.7
     while x < 19.3:
         paint.append(flat(x, x + 0.6, zy0, zy1, 0.02)); x += 1.2
 quads('road_paint', paint, PAINT)
 for y in range(-140, 300, 7):
-    if not (0 <= y <= 36 or 54 <= y <= 88) and random.random() > 0.25:
+    if not (0 <= y <= 110) and random.random() > 0.2:
         car(18.7, y, 0)
-    if not (0 <= y <= 26 or 40 <= y <= 74) and random.random() > 0.4:
+    if not (40 <= y <= 74) and random.random() > 0.25:
         car(7.35, y, math.pi)
 MOVERS = []
 def mover(x, y_at, t_at, v, m=None):
     o = car(x, 0, 0 if v > 0 else math.pi, m); MOVERS.append((o, x, y_at - v * t_at, v))
-mover(9.8, 70, 4.0, -9.0, CAB); mover(9.8, 140, 8.0, -9.0); mover(16.2, 40, 7.0, 9.0, CARCOL[5]); mover(16.2, 12, 24.6, 9.0, CAB)
-mover(9.8, 13, 28.9, -9.0, CARCOL[6]); mover(16.2, -60, 12.0, 9.0); mover(9.8, 200, 20.0, -9.0, CAB); mover(16.2, 90, 2.0, 9.0, CARCOL[3])
+mover(9.8, 70, 4.0, -9.0, CAB); mover(9.8, 120, 8.0, -9.0); mover(9.8, 60, 26.0, -9.0, CARCOL[6]); mover(9.8, 150, 20.0, -9.0, CAB); mover(9.8, 215, 14.0, -9.0, CARCOL[7])
+mover(16.2, 40, 7.0, 9.0, CARCOL[5]); mover(16.2, 40, 24.0, 9.0, CAB); mover(16.2, -60, 12.0, 9.0); mover(16.2, 90, 2.0, 9.0, CARCOL[3]); mover(16.2, -45, 26.0, 9.0, CARCOL[4])
 
 def ped_at(x, y, z=0.0):
     return ped(x, y, z)
@@ -332,19 +334,19 @@ def round_corner(cx, cy, h, r=3.6, fl=3.4):
     obj('cyl', 'bauhaus_corner', (cx, cy, h / 2), (2 * r, 2 * r, h), WHITE)
     for k in range(1, int(h // fl)):
         obj('cyl', 'bauhaus_ring', (cx, cy, k * fl + 0.43), (2 * r + 2.2, 2 * r + 2.2, 0.95), WHITE)
-building(25, 34, 32, 74, 14, BM[0], ('W', 'N')); balconies(25, 34, 32, 74, 14, ('W', 'N')); round_corner(27.7, 71.3, 14)
-building(25, 58, 86, 120, 17, BM[0], ('W', 'S')); balconies(25, 58, 86, 120, 17, ('W', 'S')); round_corner(27.7, 88.7, 17)
+building(25, 34, 32, 74, 14, BM[0], ('W', 'N'))
+building(25, 58, 86, 120, 17, BM[0], ('W', 'S'))
 building(58, 110, 86, 120, 12, BM[1], ('S',)); building(68, 110, 30, 74, 15, BM[1], ('N',))
-building(25, 62, -46, 4, 16, BM[0], ('W', 'N')); balconies(25, 62, -46, 4, 16, ('W',)); round_corner(27.7, 1.3, 16)
+building(25, 62, -46, 4, 16, BM[0], ('W', 'N'))
 building(62, 110, -46, 4, 11, BM[2], ('N',)); box(84, 110, 4, 30, 0, 9, BM[1], 'bld')
 for y0, y1 in ((126, 160), (170, 205), (215, 250), (260, 300), (310, 350), (360, 400), (-90, -56), (-132, -100), (-176, -142), (-222, -186), (-270, -232)):
-    hh = random.uniform(14, 52); building(25, random.uniform(55, 72), y0, y1, hh, random.choice(BM[:3]), ('W',)); balconies(25, 60, y0, y1, min(hh, 24), ('W',))
+    hh = random.uniform(9, 26); building(25, random.uniform(55, 72), y0, y1, hh, random.choice(BM[:3]), ('W',))
 for x0, x1 in ((76, 112), (122, 170), (180, 230), (240, 292)):
     for y0 in range(-270, 400, 50):
         if x0 < 112 and -50 < y0 < 124:
             continue
         box(x0, x1, y0, y0 + 40, 0, random.uniform(9, 27), random.choice(BM), 'bld_far')
-billboard('bb_sunny', (25 - 0.2, 104, 12.5), 10, 5, '-x', 'sunny'); billboard('bb_soda', (69, 86 - 0.2, 8.5), 9, 4.5, '-y', 'soda')
+billboard('bb_soda', (69, 86 - 0.2, 8.5), 9, 4.5, '-y', 'soda')
 
 # side-street cafe + slalom planters
 for x in (30, 33.2, 36.4, 39.6, 42.8, 46):
@@ -473,14 +475,13 @@ SP = Spline([(t, (x, y, 0)) for t, x, y in [
     (6.8, 5.0, 51.5), (7.0, 6.0, 52.9), (7.6, 8.8, 57.0), (8.4, 11.5, 62.5), (9.2, 15.5, 68.5), (10.0, 20.5, 75.0), (10.8, 26.5, 80.0),
     (11.5, 32.5, 80.6), (12.0, 37.0, 81.3), (12.4, 40.1, 79.2), (12.8, 43.2, 81.1), (13.2, 46.3, 79.2), (13.8, 49.3, 76.3), (14.3, 50.0, 72.6),
     (15.0, 50.2, 67.0), (15.8, 50.0, 60.5), (16.6, 50.0, 53.5), (17.4, 50.0, 46.5), (18.2, 50.0, 39.5), (18.9, 50.0, 34.0), (19.5, 50.0, 29.5),
-    (20.1, 50.0, 25.0), (20.8, 50.0, 19.6), (21.1, 50.0, 17.6), (21.5, 50.0, 15.0), (21.9, 50.0, 12.4), (22.6, 46.5, 9.8), (23.4, 41.0, 9.5),
-    (24.2, 35.0, 10.0), (25.0, 28.5, 10.8), (25.8, 22.0, 11.6), (26.6, 15.5, 12.4), (27.4, 9.5, 13.2), (27.9, 6.2, 13.8), (28.6, 2.0, 14.6),
-    (29.3, -1.5, 15.2), (30.0, -3.0, 15.5), (30.8, -3.2, 15.55)]])
-JUMPS = [(6.9, 7.6, 1.15), (21.1, 21.9, 1.55), (27.75, 28.3, 0.6)]
+    (20.1, 50.0, 25.0), (20.8, 50.0, 19.6), (21.1, 50.0, 17.6), (21.5, 50.0, 15.0), (21.9, 50.0, 12.4), (22.6, 46.5, 9.8), (23.4, 40.5, 9.6),
+    (24.2, 33.5, 10.2), (24.9, 27.0, 12.0), (25.5, 21.8, 15.6), (26.0, 18.2, 20.0), (26.5, 16.4, 25.0), (27.0, 16.2, 30.3), (27.6, 16.2, 36.5)]])
+JUMPS = [(6.9, 7.6, 1.15), (21.1, 21.9, 1.55)]
 def ground(x):
     return G * (1 - smooth(5.6, 6.4, x))
 def sk_heading(t):
-    tt = min(max(t, 0.0), 29.2)
+    tt = min(max(t, 0.0), 26.9)
     v = SP(tt + 0.12) - SP(tt - 0.12)
     return v.normalized() if v.length > 1e-6 else Vector((0, 1, 0))
 def zjump(t):
@@ -493,30 +494,42 @@ TUCK = dict(hLx=rad(80), hRx=rad(80), kL=rad(-110), kR=rad(-110), sLx=rad(45), s
 SPINP = dict(sLy=rad(80), sRy=rad(80), sLx=0.0, sRx=0.0, eL=rad(5), eR=rad(5), hLx=rad(4), hRx=rad(4), kL=rad(-8), kR=rad(-8), lean=rad(2), hair=rad(-70))
 DUCK = dict(zoff=-0.70, hLx=rad(100), kL=rad(-152), hRx=rad(86), kR=rad(-4), lean=rad(36), sLx=rad(75), sRx=rad(75), eL=rad(10), eR=rad(10), hLy=rad(6), hRy=rad(4))
 STAG = dict(hLx=rad(82), kL=rad(-25), hRx=rad(-38), kR=rad(-75), sLx=rad(155), sRx=rad(150), eL=rad(10), eR=rad(10), lean=rad(6), sLy=rad(15), sRy=rad(15))
-STOP = dict(hLx=rad(4), hRx=rad(4), hLy=rad(20), hRy=rad(20), kL=rad(-8), kR=rad(-8), sLx=rad(172), sRx=rad(172), sLy=rad(22), sRy=rad(22), eL=rad(4), eR=rad(4), lean=rad(-3), hair=rad(-6))
+CATCH = dict(sRy=rad(85), sRx=rad(5), eR=rad(12), lean=rad(8))
+SIP = dict(sRx=rad(52), sRy=rad(-16), eR=rad(100), sLx=rad(46), sLy=rad(-14), eL=rad(98), lean=rad(8), head=rad(-6))
+DRINK = dict(sRx=rad(64), sRy=rad(-20), eR=rad(128), sLx=rad(-12), sLy=rad(10), eL=rad(25), lean=rad(3), head=rad(24))
+REACH = dict(sLx=rad(174), sRx=rad(174), sLy=rad(5), sRy=rad(5), eL=rad(4), eR=rad(4), lean=rad(2), head=rad(22))
+HANG = dict(hLx=rad(-16), hRx=rad(12), kL=rad(-58), kR=rad(-28), hLy=rad(6), hRy=rad(6), lean=rad(-5), hair=rad(-55), head=rad(14))
 def pose(t):
     s_ = math.sin(2 * math.pi * 1.3 * t)
     d = dict(zoff=0.0, lean=rad(14), hLx=rad(6 + 26 * s_), hRx=rad(6 - 26 * s_), hLy=rad(5 + 7 * max(0, -s_)), hRy=rad(5 + 7 * max(0, s_)),
              kL=rad(-24 - 16 * max(0, -s_)), kR=rad(-24 - 16 * max(0, s_)), sLx=rad(-30 * s_), sRx=rad(30 * s_), sLy=rad(8), sRy=rad(8),
-             eL=rad(40), eR=rad(40), hair=rad(-28))
+             eL=rad(40), eR=rad(40), hair=rad(-28), head=0.0)
     for target, w in ((POINT, bump(t, 2.5, 2.9, 3.7, 4.2)), (TUCK, bump(t, 6.8, 7.05, 7.45, 7.7)), (SPINP, bump(t, 10.8, 11.0, 11.8, 12.0)),
-                      (DUCK, bump(t, 18.5, 18.9, 19.8, 20.3)), (STAG, bump(t, 21.0, 21.25, 21.75, 22.0)), (TUCK, 0.7 * bump(t, 27.65, 27.85, 28.2, 28.4)),
-                      (STOP, smooth(29.0, 29.6, t))):
+                      (CATCH, bump(t, 15.85, 16.1, 16.3, 16.5)), (SIP, bump(t, 16.35, 16.6, 16.95, 17.15)), (DRINK, bump(t, 16.95, 17.2, 17.95, 18.35)),
+                      (DUCK, bump(t, 18.5, 18.9, 19.8, 20.3)), (STAG, bump(t, 21.0, 21.25, 21.75, 22.0)), (REACH, smooth(26.15, 26.6, t)),
+                      (HANG, smooth(T_GRAB, T_GRAB + 0.35, t))):
         if w > 1e-4:
             for k, v in target.items():
                 d[k] = d[k] * (1 - w) + v * w
+    if t > T_GRAB:                      # dangling: legs kick, then one arm lets go and waves
+        kk = rad(14) * math.sin(7 * t); d['hLx'] += kk; d['hRx'] -= kk
+        w = smooth(28.0, 28.5, t)
+        d['sLx'] += (rad(120) - d['sLx']) * w; d['sLy'] += (rad(55 + 25 * math.sin(9 * t)) - d['sLy']) * w; d['eL'] += (rad(20) - d['eL']) * w
     return d
 
 # ------------------------------------------------------------------ camera: keys relative to the skater ('s': ahead, right, up) or world ('w')
 CK = [(-0.5, 's', 0.5, 0, 15), (0.0, 's', 0.5, 0, 14.5), (1.2, 's', 0.5, 0.3, 12.5), (2.4, 's', 0.2, 1.0, 9.5), (3.4, 's', -2.2, 1.8, 6.5), (4.2, 's', -5.0, 1.0, 3.8),
       (4.9, 's', -4.6, 0.2, 1.8), (5.6, 's', -2.8, 0, 0.55), (6.3, 's', -2.1, 0.1, 0.42), (6.9, 's', -1.3, 0.5, 0.34), (7.25, 's', 0.0, 0.8, 0.30),
-      (7.6, 's', 1.5, 0.65, 0.45), (8.2, 's', 3.2, 0.3, 0.9), (9.0, 's', 3.4, 1.6, 1.3), (10.0, 's', 1.0, 3.4, 1.4), (10.8, 's', 2.6, -2.4, 1.2),
-      (11.6, 's', 3.2, 0, 1.0), (12.4, 'w', 41.0, 82.6, 1.1), (12.9, 'w', 44.6, 82.5, 1.2), (13.4, 'w', 48.0, 81.3, 1.25), (13.8, 's', -3.2, 0, 1.0), (14.3, 's', -3.0, 0, 0.7),
-      (15.0, 's', -2.6, -0.3, 0.5), (15.8, 's', -3.0, 0, 0.45), (16.4, 's', -2.6, 0, 2.2), (17.0, 's', -0.8, 0, 5.2), (17.7, 's', 0.8, 0, 5.4),
-      (18.3, 's', 3.4, 0, 3.0), (18.9, 's', 4.0, 0.2, 0.8), (19.5, 's', 3.3, 0.3, 0.5), (20.1, 's', 2.6, 1.8, 0.9), (20.8, 's', 0.6, 4.2, 1.0),
+      (7.6, 's', 1.5, 0.65, 0.45), (8.2, 's', 3.2, 0.3, 0.9), (9.0, 's', 3.4, 1.6, 1.3), (10.0, 's', 1.0, 3.4, 1.4),
+      (10.6, 's', 2.0, 2.6, 1.3), (11.0, 's', 3.0, 1.0, 1.2), (11.4, 's', 2.9, -0.9, 1.15), (11.9, 's', 1.6, -2.6, 1.1),      # orbit round her spin to the other side
+      (12.4, 'w', 41.0, 82.6, 1.1), (12.9, 'w', 44.6, 82.5, 1.2), (13.4, 'w', 48.0, 81.3, 1.25), (13.8, 's', -3.2, 0, 1.0), (14.3, 's', -3.0, 0, 0.7),
+      (15.0, 's', -2.6, -0.3, 0.5), (15.5, 's', -2.4, 0.5, 0.55), (15.9, 's', -0.5, 1.0, 1.25), (16.3, 's', 1.25, 0.55, 1.6),      # swing round to her face
+      (16.8, 's', 0.95, 0.15, 1.74), (17.4, 's', 0.78, -0.1, 1.78), (18.0, 's', 1.3, -0.2, 1.6), (18.5, 's', 3.2, 0, 1.0),          # close-up: the can, the fizz, the sip
+      (18.9, 's', 4.0, 0.2, 0.8), (19.5, 's', 3.3, 0.3, 0.5), (20.1, 's', 2.6, 1.8, 0.9), (20.8, 's', 0.6, 4.2, 1.0),
       (21.5, 'w', 44.5, 15.6, 4.4), (21.9, 'w', 45.0, 12.5, 2.2), (22.6, 's', 4.0, 0.3, 1.2), (23.4, 's', 3.4, -1.6, 1.0), (24.2, 's', 0.5, -3.2, 1.2),
-      (25.0, 's', -3.4, -1.0, 1.5), (25.8, 's', -3.0, 0, 0.6), (26.6, 's', -2.5, 0, 0.45), (27.4, 's', -2.2, 0.2, 0.45), (28.0, 's', -2.0, 0.3, 0.5),
-      (28.5, 's', -2.8, 0, 1.6), (29.0, 's', -3.2, 0, 4.2), (29.5, 's', -2.2, 0, 8.0), (30.0, 's', -0.8, 0, 12.0), (30.6, 's', 0.0, 0, 15.5)]
+      (24.9, 's', -3.4, -1.0, 1.5), (25.5, 's', -3.0, 0.6, 0.7), (26.0, 's', -1.6, 2.8, 0.7), (26.4, 's', 0.4, 3.6, 0.9), (26.7, 's', 1.2, 4.4, 1.1),
+      (27.2, 'w', 21.0, 29.5, 3.6), (27.8, 'w', 17.5, 33.5, 7.5), (28.6, 'w', 7.5, 32.5, 13.5), (29.4, 'w', -7.5, 30.0, 18.5), (30.0, 'w', -19.5, 28.0, 22.0),
+      (30.8, 'w', -37.5, 25.0, 26.5)]      # chase the helicopter up, easing back from 5 m to 16 m: she dangles and waves against the sun
 def resolve(k):
     t, mode, a, b, c = k
     if mode == 'w':
@@ -524,22 +537,189 @@ def resolve(k):
     h = sk_heading(t); r = Vector((h.y, -h.x, 0)); p = SP(t) + h * a + r * b
     return (t, (p.x, p.y, ground(p.x) + c))
 CP = Spline([resolve(k) for k in CK])
+# ------------------------------------------------------------------ American dressing (Venice Beach / LA), crowds, traffic
+HOT = [(SP(i * 0.1).x, SP(i * 0.1).y) for i in range(0, 268)] + [(CP(i * 0.1).x, CP(i * 0.1).y) for i in range(40, 300) if CP(i * 0.1).z < 3.4]
+def path_clear(x, y, keep=3.2):
+    return all((x - px) ** 2 + (y - py) ** 2 > keep * keep for px, py in HOT)
+WALKERS = []
+def walker(x, y, vy, z=0.0):
+    o = ped(x, y, z); WALKERS.append((o, Vector((x, y, z)), Vector((0, vy, 0)))); return o
+def crowd(n, x0, x1, y0, y1, z=0.0, walk=0.0, speed=(1.1, 1.6), keep=3.2):
+    made = tries = 0
+    while made < n and tries < n * 40:
+        tries += 1
+        x, y = random.uniform(x0, x1), random.uniform(y0, y1)
+        if not path_clear(x, y, keep):
+            continue
+        if random.random() < walk:
+            v = random.uniform(*speed) * random.choice((-1, 1))
+            if not all(path_clear(x, y + v * tt, keep) for tt in range(0, 31, 2)):
+                continue
+            walker(x, y, v, z)
+        else:
+            ped(x, y, z)
+        made += 1
+crowd(48, -7.4, 5.4, -30, 125, G, walk=0.45); crowd(6, -7.2, -5.0, -20, 110, G, walk=1.0, speed=(2.8, 3.6))
+crowd(26, -19.5, -12.4, -60, 140, 0.07, walk=0.2); crowd(24, 20.4, 24.6, -80, 200, 0.04, walk=0.6); crowd(9, 26, 66, 84.1, 85.8)
+for x, y in ((53.6, 75.0), (54.3, 75.7), (46.0, 75.1), (41.6, 42), (41.7, 52), (45.6, 40), (45.8, 58), (54.3, 48), (54.2, 40), (58.5, 45), (58.4, 63),
+             (62.7, 55), (62.6, 38), (36.5, 50), (66.3, 60), (36.4, 67), (63.5, 9.5), (66.2, 8.2), (30.0, 28.6), (36.0, 6.0), (58.0, 6.2), (33.5, 6.4)):
+    ped(x, y, 0.0)
+for x, y in ((41.6, 43.0), (45.8, 59.0), (58.5, 46.0), (62.7, 56.0), (36.5, 51.0)):
+    c = empty('cart', (x, y, 0)); box(-0.3, 0.3, -0.5, 0.5, 0.45, 1.0, METAL, 'cart_basket', parent=c); box(-0.3, 0.3, -0.5, 0.5, 0.12, 0.2, METAL, 'cart_base', parent=c)
+tube((57.3, 50, 0), (57.1, 50, 3.0), 0.07, METAL, name='ladder'); tube((57.9, 50, 0), (57.1, 50, 3.0), 0.07, METAL, name='ladder'); ped(57.45, 50, 1.3)
+# bike path + cyclists
+box(-11.6, -9.2, -760, 880, 0.07, 0.09, grey('bikepath', 0.82), 'bike_path')
+quads('bike_line', [flat(-10.45, -10.35, y, y + 2, 0.095) for y in range(-200, 300, 5)], YELLOWL)
+def bike(x, y, v):
+    r = empty('cyclist', (x, y, 0.09)); r.rotation_euler = (0, 0, 0 if v > 0 else math.pi)
+    for wy in (-0.5, 0.5):
+        obj('cyl', 'bike_wheel', (0, wy, 0.33), (0.66, 0.66, 0.05), DARK, rot=(0, rad(90), 0), parent=r)
+    tube((0, -0.5, 0.33), (0, 0.5, 0.33), 0.05, METAL, parent=r, name='bike_frame'); tube((0, -0.1, 0.33), (0, -0.15, 0.95), 0.05, METAL, parent=r, name='bike_seat')
+    tube((0, 0.45, 0.33), (0, 0.35, 1.05), 0.05, METAL, parent=r, name='bike_fork')
+    obj('sph', 'rider_body', (0, -0.05, 1.3), (0.42, 0.5, 0.8), PED, parent=r); obj('sph', 'rider_head', (0, 0.12, 1.82), (0.22, 0.24, 0.26), PED, parent=r)
+    WALKERS.append((r, Vector((x, y, 0.09)), Vector((0, v, 0))))
+for y, v in ((-20, 5.5), (10, 5.2), (48, 5.8), (95, 5.4)):
+    bike(-9.8, y, v)
+for y, v in ((30, -5.5), (70, -5.2), (120, -5.6), (160, -5.3)):
+    bike(-10.9, y, v)
+# basketball court, volleyball, surfboards
+COURT = mat('court', (0.20, 0.46, 0.76)); KEYM = mat('court_key', (0.92, 0.45, 0.15))
+quads('court', [flat(-19.6, -12.4, 15, 43, 0.085)], COURT); quads('court_keys', [flat(-17.8, -14.2, 15, 20.5, 0.09), flat(-17.8, -14.2, 37.5, 43, 0.09)], KEYM)
+for hy, sg in ((15.3, 1), (42.7, -1)):
+    tube((-16, hy - sg * 0.6, 0), (-16, hy - sg * 0.6, 3.3), 0.14, METAL, name='hoop_pole'); box(-16.9, -15.1, hy - 0.05, hy + 0.05, 2.9, 4.0, WHITE, 'backboard')
+    obj('cyl', 'rim', (-16, hy + sg * 0.3, 3.05), (0.5, 0.5, 0.04), KEYM)
+for x, y in ((-16, 22), (-14.5, 25), (-17.5, 27), (-15.5, 31), (-13.8, 34), (-17.8, 36), (-16.2, 39), (-14.8, 19)):
+    ped(x, y, 0.09)
+box(-17.55, -17.45, 70, 78, 1.0, 2.3, WHITE, 'volley_net'); tube((-17.5, 70, 0), (-17.5, 70, 2.4), 0.09, METAL, name='net_pole'); tube((-17.5, 78, 0), (-17.5, 78, 2.4), 0.09, METAL, name='net_pole')
+for x, y in ((-19, 72), (-19.2, 76), (-15.8, 73), (-16, 77)):
+    ped(x, y, 0.07)
+for k in range(6):
+    o = obj('sph', 'surfboard', (-8.6, 61 + k * 0.8, 1.2), (0.5, 0.1, 2.2), random.choice(UMB)); o.rotation_euler = (0, rad(8), 0)
+# tall LA palms on the street side, street furniture, flags, signs
+for y in range(-140, 262, 18):
+    if not (66 < y + 6 < 92 or 2 < y + 6 < 36):
+        palm(22.3, y + 6, random.uniform(15, 19), 0.3)
+HYD = mat('hydrant', (0.95, 0.80, 0.10))
+for x, y in ((20.6, 68.0), (20.6, -4.0), (20.6, 112.0)):
+    obj('cyl', 'hydrant', (x, y, 0.4), (0.3, 0.3, 0.72), HYD); obj('sph', 'hydrant_top', (x, y, 0.8), (0.3, 0.3, 0.26), HYD)
+box(20.5, 21.1, 91.6, 92.4, 0.04, 1.3, BLUE, 'mailbox'); box(20.55, 21.05, 94.2, 94.7, 0.04, 1.05, RED, 'newsbox'); box(20.55, 21.05, 95.0, 95.5, 0.04, 1.05, BLUE, 'newsbox')
+tube((24.3, 86.9, 0), (24.3, 86.9, 2.5), 0.07, METAL, name='stop_pole'); obj('cyl', 'stop_sign', (24.3, 86.9, 2.5), (0.78, 0.78, 0.05), RED, rot=(0, rad(90), 0))
+tube((20.3, 87.4, 0), (20.3, 87.4, 6.2), 0.18, METAL, name='signal_pole'); tube((20.3, 87.4, 6.0), (13.5, 87.4, 6.0), 0.12, METAL, name='signal_arm')
+for sxx in (16.2, 13.8):
+    box(sxx - 0.2, sxx + 0.2, 87.2, 87.6, 5.0, 6.0, CAB, 'signal')
+def flag(x, y, h):
+    tube((x, y, 0), (x, y, h), 0.09, METAL, name='flag_pole'); billboard('us_flag', (x, y - 1.3, h - 0.8), 2.5, 1.45, '-x', 'flag', frame=False)
+flag(-13.2, 60.8, 8.0); flag(5.2, 22.0, 7.5); flag(5.2, 88.0, 7.5); flag(69.5, 5.5, 9.5); flag(36.0, 73.0, 10.5)
+billboard('diner_sign', (24.75, 50, 9.6), 11, 3.2, '-x', 'diner'); billboard('donuts_sign', (24.75, 104, 13.2), 11, 4.2, '-x', 'donuts')
+billboard('pizza_sign', (82, 74.25, 9.5), 12, 6, '+y', 'pizza'); billboard('open24_sign', (44, 4.25, 9.5), 12, 5.2, '+y', 'open24')
+billboard('mural_shapes', (29.5, 74.22, 6.2), 7.5, 5.2, '+y', 'shapes', frame=False); billboard('mural_sunny', (24.78, -20, 9.5), 14, 7, '-x', 'sunny', frame=False)
+box(3.2, 5.0, 62.0, 64.6, G, G + 2.6, WHITE, 'coffee_kiosk'); billboard('coffee_sign', (3.15, 63.3, G + 1.9), 2.4, 1.2, '-x', 'coffee', frame=False)
+# vehicles: pickups, school bus, taco truck, police cruisers
+def pickup(x, y, heading=0.0, m=None):
+    m = m or random.choice(CARCOL[3:]); key = ('pickup', m.name)
+    if key not in CARMESH:
+        bm = bmesh.new()
+        def add(sx, sy, sz, cx, cy, cz, mi):
+            before = set(bm.faces); r = bmesh.ops.create_cube(bm, size=1.0)
+            bmesh.ops.scale(bm, vec=(sx, sy, sz), verts=r['verts']); bmesh.ops.translate(bm, vec=(cx, cy, cz), verts=r['verts'])
+            for f in set(bm.faces) - before:
+                f.material_index = mi
+        add(1.95, 5.5, 0.6, 0, 0, 0.72, 0); add(1.8, 1.9, 0.7, 0, 0.55, 1.37, 1); add(1.75, 1.7, 0.06, 0, 0.55, 1.75, 0); add(1.95, 0.1, 0.42, 0, -2.7, 1.2, 0)
+        for sx_ in (-0.92, 0.92):
+            add(0.1, 2.3, 0.42, sx_, -1.55, 1.2, 0)
+            for sy_ in (-1.75, 1.75):
+                add(0.28, 0.84, 0.84, sx_ * 0.98, sy_, 0.42, 2)
+        me = bpy.data.meshes.new('pickup_' + m.name); bm.to_mesh(me); bm.free()
+        for mm in (m, GLASS, TIRE):
+            me.materials.append(mm)
+        CARMESH[key] = me
+    o = bpy.data.objects.new('pickup', CARMESH[key]); col.objects.link(o); o.location = (x, y, 0); o.rotation_euler = (0, 0, heading); return o
+def cruiser(x, y, heading=0.0):
+    o = car(x, y, heading, CARCOL[4])
+    box(-0.935, 0.935, -0.75, 0.95, 0.42, 0.87, WHITE, 'cruiser_doors', parent=o); box(-0.55, 0.0, -0.4, -0.15, 1.46, 1.58, RED, 'lightbar_r', parent=o); box(0.0, 0.55, -0.4, -0.15, 1.46, 1.58, BLUE, 'lightbar_b', parent=o)
+    return o
+E = -math.pi / 2
+cruiser(34.5, 75.3, E); pickup(40.9, 75.3, E, CARCOL[6]); car(58.5, 75.3, E, CARCOL[5]); car(64.0, 75.3, E, CAB); car(40.0, 27.2, E, CARCOL[7]); pickup(60.0, 27.3, -E, CARCOL[7])
+pickup(18.7, -12, 0, CARCOL[5]); pickup(7.35, 100, math.pi, CARCOL[3]); pickup(18.7, 118, 0, CARCOL[6]); car(18.7, 52.5, 0, CARCOL[7])
+BUSY = mat('schoolbus', (0.98, 0.76, 0.10))
+box(17.65, 20.15, 92, 103, 0.45, 3.1, BUSY, 'school_bus'); box(17.62, 20.18, 93, 102.4, 1.9, 2.6, GLASS, 'bus_windows'); box(17.62, 20.18, 92, 103, 1.2, 1.34, DARK, 'bus_stripe')
+for sx_ in (17.8, 20.0):
+    for sy_ in (94, 101):
+        obj('cyl', 'bus_wheel', (sx_, sy_, 0.5), (1.0, 1.0, 0.3), TIRE, rot=(0, rad(90), 0))
+box(17.7, 20.1, 40, 46.5, 0.4, 3.2, TEALM, 'taco_truck'); box(17.7, 20.1, 46.5, 48.2, 0.4, 2.3, TEALM, 'taco_cab'); box(20.1, 21.4, 41, 45.5, 2.4, 2.5, PINK, 'taco_awning')
+billboard('tacos_sign_e', (20.13, 43.2, 2.85), 4.6, 0.7, '+x', 'tacos', frame=False); billboard('tacos_sign_w', (17.67, 43.2, 2.3), 4.6, 1.3, '-x', 'tacos', frame=False)
+for y in (41.6, 42.6, 43.7, 44.9):
+    ped(21.9, y, 0.04)
+MOVERS.append((cruiser(9.8, 0, math.pi), 9.8, 20 + 9.0 * 29.0, -9.0)); MOVERS.append((pickup(16.2, 0, 0, CARCOL[5]), 16.2, 20 - 9.0 * 29.2, 9.0))
+MOVERS.append((pickup(9.8, 0, math.pi, CARCOL[7]), 9.8, 95 + 9.0 * 17.0, -9.0)); MOVERS.append((pickup(16.2, 0, 0, CARCOL[3]), 16.2, 120 - 9.0 * 16.0, 9.0))
+# pier + ferris wheel down the coast
+box(-170, -8, -76, -64, 2.6, 3.1, WOOD, 'pier')
+for px in range(-165, -10, 12):
+    for py in (-75, -65):
+        tube((px, py, 0), (px, py, 2.6), 0.35, WOOD, name='pier_post')
+FW = Vector((-128, -70, 21.5))
+for k in range(20):
+    a0, a1 = k * math.pi / 10, (k + 1) * math.pi / 10
+    p0 = FW + Vector((0, 16 * math.cos(a0), 16 * math.sin(a0))); p1 = FW + Vector((0, 16 * math.cos(a1), 16 * math.sin(a1)))
+    tube(p0, p1, 0.4, WHITE, name='wheel_rim')
+    if k % 2 == 0:
+        tube(FW, p0, 0.16, WHITE, name='wheel_spoke'); box(p0.x - 0.9, p0.x + 0.9, p0.y - 0.8, p0.y + 0.8, p0.z - 1.9, p0.z - 0.3, random.choice(UMB), 'wheel_cabin')
+tube((-128, -76, 3.1), FW, 0.5, WHITE, name='wheel_leg'); tube((-128, -64, 3.1), FW, 0.5, WHITE, name='wheel_leg')
+GULLS = []
+for k in range(7):
+    g = empty('gull'); obj('sph', 'gull_body', (0, 0, 0), (0.22, 0.5, 0.18), WHITE, parent=g); obj('sph', 'gull_wings', (0, 0.02, 0.03), (1.5, 0.3, 0.05), WHITE, parent=g)
+    GULLS.append((g, random.uniform(-10, 4), random.uniform(4, 46), random.uniform(3, 7), random.choice((-1, 1)) * random.uniform(0.5, 0.9), random.uniform(0, 6.28), random.uniform(5.0, 8.0)))
+
+# ------------------------------------------------------------------ police helicopter, the Zero can, fizz
+T_GRAB = 26.7; SKID = 1.3; REACH_H = 2.3
+HWHITE = grey('heli_white', 0.96); HBLACK = grey('heli_black', 0.12)
+heli = empty('police_heli')
+obj('sph', 'heli_body', (0, 0.3, 0), (2.1, 5.0, 2.3), HWHITE, parent=heli); obj('sph', 'heli_nose', (0, 2.0, -0.1), (1.7, 2.0, 1.7), GLASS, parent=heli)
+obj('sph', 'heli_belly', (0, 0.2, -0.55), (2.0, 4.4, 1.3), HBLACK, parent=heli)
+tube((0, -1.8, 0.35), (0, -7.4, 0.95), 0.5, HBLACK, parent=heli, name='heli_boom'); box(-0.06, 0.06, -7.9, -6.9, 0.6, 2.3, HWHITE, 'heli_fin', parent=heli)
+obj('cyl', 'heli_tailrotor', (0.22, -7.4, 1.6), (1.7, 1.7, 0.04), METAL, rot=(0, rad(90), 0), parent=heli)
+for sx in (-1, 1):
+    tube((sx * 1.0, -1.9, -SKID), (sx * 1.0, 2.3, -SKID), 0.1, METAL, parent=heli, name='heli_skid')
+    for sy in (-1.0, 1.3):
+        tube((sx * 0.7, sy, -0.9), (sx * 1.0, sy, -SKID), 0.08, METAL, parent=heli, name='heli_strut')
+tube((-1.0, 0.4, -SKID), (1.0, 0.4, -SKID), 0.08, METAL, parent=heli, name='heli_grab_bar')
+tube((0, 0.2, 1.1), (0, 0.2, 1.75), 0.25, METAL, parent=heli, name='heli_mast')
+box(-0.3, 0.0, 0.9, 1.1, -1.16, -1.06, RED, 'heli_beacon_r', parent=heli); box(0.0, 0.3, 0.9, 1.1, -1.16, -1.06, BLUE, 'heli_beacon_b', parent=heli)
+rotor = empty('heli_rotor', (0, 0.2, 1.75), parent=heli)
+box(-5.2, 5.2, -0.16, 0.16, -0.03, 0.03, HBLACK, 'blade_a', parent=rotor); box(-0.16, 0.16, -5.2, 5.2, -0.03, 0.03, HBLACK, 'blade_b', parent=rotor)
+for nm, xx, nn in (('heli_police_r', 1.07, '+x'), ('heli_police_l', -1.07, '-x')):
+    b_ = billboard(nm, (xx, 0.2, 0.2), 2.7, 0.62, nn, 'police', frame=False); b_.parent = heli
+_hg = sk_heading(T_GRAB); _sg = SP(T_GRAB)
+def _rel(t, dx, dy, dz):
+    p = SP(t); return (t, (p.x + dx, p.y + dy, dz))
+HP = Spline([(21.0, (150, -175, 95)), (22.0, (140, -160, 90)), (24.0, (70, -70, 50)), (25.0, (34, -14, 26)), _rel(25.6, 4.0, -10.0, 12.0), _rel(26.2, 0.6, -1.5, 5.0),
+             _rel(26.45, 0.2, -0.6, 4.1), (T_GRAB, (_sg.x - _hg.x * 0.4, _sg.y - _hg.y * 0.4, SKID + REACH_H)), (27.2, (15.0, 32.0, 5.2)), (27.8, (9.0, 36.5, 9.0)),
+             (28.6, (-4.0, 36.0, 15.0)), (29.4, (-20.0, 33.0, 20.0)), (30.0, (-32.0, 31.0, 23.5)), (30.8, (-50.0, 28.0, 28.0))])
+def heli_heading(t):
+    v = HP(t + 0.15) - HP(t - 0.15); v.z = 0
+    return v.normalized() if v.length > 1e-4 else Vector((0, 1, 0))
+can = empty('zero_can')
+obj('cyl', 'can_body', (0, 0, 0), (0.09, 0.09, 0.17), HBLACK, parent=can); obj('cyl', 'can_band', (0, 0, 0), (0.094, 0.094, 0.05), RED, parent=can)
+obj('cyl', 'can_top', (0, 0, 0.088), (0.08, 0.08, 0.006), CHROME, parent=can)
+T_CATCH = 16.25; T_FIZZ = 16.85; T_TOSS = 24.7
+FIZZ = []
+for k in range(34):
+    sz = random.uniform(0.03, 0.065)
+    FIZZ.append((obj('sph', 'fizz', (0, 0, -5), (sz, sz, sz), WHITE), Vector((random.uniform(-1.3, 1.3), random.uniform(-1.4, 1.2), random.uniform(1.2, 3.6))), random.uniform(0, 0.5)))
 def hv(deg):
     return Vector((math.sin(rad(deg)), math.cos(rad(deg)), 0))
-ROLL = [(0, 0), (4.6, 0), (5.6, -6), (7.25, 10), (8.2, 0), (10.2, -8), (11.2, 6), (12.6, 0), (14.0, 8), (15.0, 0), (20.4, 0), (21.5, -8), (22.6, 0),
-        (24.2, 7), (25.4, 0), (30.1, 0)]
+ROLL = [(0, 0), (4.6, 0), (5.6, -6), (7.25, 10), (8.2, 0), (10.2, -8), (11.2, 6), (12.6, 0), (14.0, 8), (15.0, 0), (16.0, -5), (17.0, 0), (20.4, 0), (21.5, -8),
+        (22.6, 0), (24.2, 7), (25.4, 0), (26.6, 0), (27.6, -7), (29.2, 0), (30.1, 0)]
 def roll_at(t):
     for (ta, ra), (tb, rb) in zip(ROLL, ROLL[1:]):
         if ta <= t <= tb:
             return ra + (rb - ra) * smooth(ta, tb, t)
     return 0.0
-def cam_state(t):
+def cam_state(t, chest, face):
     P = CP(t)
-    d0 = pose(t)
-    S = SP(t); target = Vector((S.x, S.y, ground(S.x) + zjump(t) + 1.0 + d0['zoff'] + 0.28))
+    target = chest.lerp(face, bump(t, 15.7, 16.3, 18.0, 18.5)); target.z += 1.3 * smooth(26.8, 27.8, t)
     v = target - P; vh = Vector((v.x, v.y, 0)); hd = vh.normalized() if vh.length > 1e-4 else Vector((0, 1, 0))
-    for w, deg in ((1 - smooth(2.6, 4.4, t), -100 + 100 * smooth(0, 4.2, t)), (bump(t, 16.5, 17.0, 17.8, 18.3), 180 + 180 * smooth(16.7, 18.2, t)),
-                   (smooth(29.0, 29.7, t), 270 - 22 * smooth(29.0, 30.0, t))):
+    for w, deg in ((1 - smooth(2.6, 4.4, t), -100 + 100 * smooth(0, 4.2, t)),):
         if w > 1e-4:
             hd = (hd * (1 - w) + hv(deg) * w); hd = hd.normalized() if hd.length > 1e-4 else hv(deg)
     p = math.atan2(v.z, max(vh.length, 1e-4))
@@ -554,7 +734,7 @@ camd = bpy.data.cameras.new('cam'); camd.lens = 15; camd.sensor_width = 36; camd
 cam = bpy.data.objects.new('camera', camd); col.objects.link(cam); scene.camera = cam; cam.rotation_mode = 'QUATERNION'
 world = bpy.data.worlds.new('world'); scene.world = world
 SKY = [(0, (0.86, 0.92, 0.98)), (9, (0.80, 0.89, 0.98)), (17, (0.97, 0.90, 0.76)), (22, (0.99, 0.80, 0.60)), (26, (0.98, 0.66, 0.58)), (30.1, (0.86, 0.56, 0.80))]
-SEAC = [(0, (0.45, 0.72, 0.86)), (17, (0.48, 0.70, 0.82)), (24, (0.80, 0.66, 0.62)), (30.1, (0.78, 0.52, 0.70))]
+SEAC = [(0, (0.45, 0.72, 0.86)), (17, (0.48, 0.70, 0.82)), (24, (0.90, 0.74, 0.70)), (30.1, (0.95, 0.70, 0.82))]
 def ramp(keys, t):
     for (ta, ca), (tb, cb) in zip(keys, keys[1:]):
         if ta <= t <= tb:
@@ -568,22 +748,53 @@ for f in FALLERS:
         tt += 0.02
     f[4] = tt + random.uniform(0.05, 0.4)
 
-ANIM = [cam, sk, body, torso, hairj, pcar, sun, door_l, door_r] + list(J.values()) + [o[0] for o in ORANGES] + [f[0] for f in FALLERS] + [m[0] for m in MOVERS]
-_prevq = [None]
-def apply(t):
-    P, q = cam_state(t)
-    if _prevq[0] is not None and q.dot(_prevq[0]) < 0:
-        q.negate()
-    _prevq[0] = q.copy(); cam.location = P; cam.rotation_quaternion = q
-    camd.lens = 22 - 7 * smooth(1.5, 4.5, t)
-    S = SP(t); h = sk_heading(t); d = pose(t)
-    yaw = math.atan2(-h.x, h.y) + 2 * math.pi * smooth(10.9, 11.9, t)
-    sk.location = (S.x, S.y, ground(S.x) + zjump(t)); sk.rotation_euler = (0, 0, yaw)
-    body.location = (0, 0, 1.0 + d['zoff']); torso.rotation_euler = (-d['lean'], 0, 0); hairj.rotation_euler = (d['hair'], 0, 0)
+def set_rig(t):
+    d = pose(t)
+    if t < T_GRAB:
+        S = SP(t); h = sk_heading(t); R = Vector((S.x, S.y, ground(S.x) + zjump(t)))
+    else:
+        Hh = HP(t); h = heli_heading(t); R = Vector((Hh.x + h.x * 0.4, Hh.y + h.y * 0.4, Hh.z - SKID - REACH_H))
+    sk.location = R; sk.rotation_euler = (0, 0, math.atan2(-h.x, h.y) + 2 * math.pi * smooth(10.9, 11.9, t))
+    body.location = (0, 0, 1.0 + d['zoff']); torso.rotation_euler = (-d['lean'], 0, 0); head.rotation_euler = (d['head'], 0, 0); hairj.rotation_euler = (d['hair'], 0, 0)
     J['hipL'].rotation_euler = (d['hLx'], d['hLy'], 0); J['hipR'].rotation_euler = (d['hRx'], -d['hRy'], 0)
     J['kneeL'].rotation_euler = (d['kL'], 0, 0); J['kneeR'].rotation_euler = (d['kR'], 0, 0)
     J['shL'].rotation_euler = (d['sLx'], d['sLy'], 0); J['shR'].rotation_euler = (d['sRx'], -d['sRy'], 0)
     J['elL'].rotation_euler = (d['eL'], 0, 0); J['elR'].rotation_euler = (d['eR'], 0, 0)
+    return d, R
+def hand_pos():
+    bpy.context.view_layer.update()
+    return J['elR'].matrix_world @ Vector((0, 0.05, -0.36))
+set_rig(T_CATCH); HAND_C = hand_pos().copy(); CAN0 = Vector((48.3, HAND_C.y, 2.32))
+set_rig(T_TOSS); HAND_T = hand_pos().copy(); _vt = (SP(T_TOSS + 0.05) - SP(T_TOSS - 0.05)) * 10; VTOSS = Vector((_vt.x * 0.5, _vt.y * 0.5 - 2.5, 4.5))
+
+ANIM = [cam, sk, body, torso, head, hairj, pcar, sun, door_l, door_r, heli, rotor, can] + list(J.values()) + [o[0] for o in ORANGES] + [f[0] for f in FALLERS] \
+       + [m[0] for m in MOVERS] + [w[0] for w in WALKERS] + [g[0] for g in GULLS] + [f[0] for f in FIZZ]
+_prevq = [None]
+def apply(t):
+    d, R = set_rig(t)
+    Hh = HP(t); hh = heli_heading(t)
+    heli.location = Hh; heli.rotation_euler = (rad(-8) * smooth(26.8, 27.6, t), 0, math.atan2(-hh.x, hh.y)); rotor.rotation_euler = (0, 0, t * 38.0)
+    hand = hand_pos(); face = head.matrix_world.translation + Vector((0, 0, 0.06))
+    if t < T_CATCH - 0.42:
+        can.location = CAN0; can.rotation_euler = (0, 0, 0)
+    elif t < T_CATCH:
+        s = (t - T_CATCH + 0.42) / 0.42
+        can.location = (CAN0.x + (HAND_C.x - CAN0.x) * s, CAN0.y, CAN0.z + (HAND_C.z - CAN0.z) * s * s); can.rotation_euler = (4.0 * s, 2.0 * s, 0)
+    elif t < T_TOSS:
+        can.location = hand; can.rotation_euler = (rad(72) * bump(t, 16.95, 17.2, 17.95, 18.3), 0, sk.rotation_euler.z)
+    else:
+        tau = t - T_TOSS; tf = (VTOSS.z + math.sqrt(VTOSS.z ** 2 + 19.6 * (HAND_T.z - 0.09))) / 9.8; tc = min(tau, tf)
+        can.location = (HAND_T.x + VTOSS.x * tc, HAND_T.y + VTOSS.y * tc, max(0.09, HAND_T.z + VTOSS.z * tc - 4.9 * tc * tc))
+        can.rotation_euler = (9 * tc, 5 * tc, 0) if tau < tf else (math.pi / 2, 0, 1.0)
+    ctop = Vector(can.location) + Vector((0, 0, 0.1))
+    for o, v, dl in FIZZ:
+        tau = t - T_FIZZ - dl
+        o.location = ctop + v * tau + Vector((0, 2.5 * tau * tau, -4.9 * tau * tau)) if 0 <= tau <= 0.55 else Vector((0, 0, -5))
+    P, q = cam_state(t, R + Vector((0, 0, 1.28 + d['zoff'])), face)
+    if _prevq[0] is not None and q.dot(_prevq[0]) < 0:
+        q.negate()
+    _prevq[0] = q.copy(); cam.location = P; cam.rotation_quaternion = q
+    camd.lens = 22 - 7 * smooth(1.5, 4.5, t)
     op = bump(t, 13.5, 14.0, 15.2, 15.8) * 1.35
     door_l.location.x = 49.3 - op; door_r.location.x = 50.7 + op
     for o, p0, v, dl in ORANGES:
@@ -604,9 +815,14 @@ def apply(t):
         o.location = (p0.x + v.x * tc, p0.y + v.y * tc, max(0.16, p0.z + v.z * tc - 4.9 * tc * tc))
         o.rotation_euler = (wv.x * tc, wv.y * tc, wv.z * tc) if tau < tf else (math.pi / 2, 0, wv.z * tf)
     pcar.location = (car_x(t), 15.0, 0)
-    sun.location = (-900, 40, -300 if t < 17.5 else 345 - (t - 17.5) * 25.6)
+    sun.location = (-900, 34, -300 if t < 17.5 else 400 - (t - 17.5) * 25.6)
     for o, x, y0, v in MOVERS:
         o.location = (x, y0 + v * t, 0)
+    for o, p0, v in WALKERS:
+        o.location = p0 + v * t
+    for g, cx, cy, r_, w_, ph, z_ in GULLS:
+        a = w_ * t + ph
+        g.location = (cx + r_ * math.cos(a), cy + r_ * math.sin(a), z_ + 0.3 * math.sin(2 * t + ph)); g.rotation_euler = (0, 0, a if w_ > 0 else a + math.pi)
     world.color = ramp(SKY, t); SEA.diffuse_color = ramp(SEAC, t) + (1.0,)
 
 # ------------------------------------------------------------------ render setup

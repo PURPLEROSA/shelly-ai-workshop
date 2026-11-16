@@ -14,11 +14,13 @@ the Blender grey-box previz it was driven by underneath, and the tool marks bott
 - `layout/compose.sh <previz.mp4> <out.mp4> [seedance.mp4|-] [thumb1 ... thumb6]` assembles the final reel
   (needs `ffmpeg`, `node` + `playwright`, and the Inter font). With `-` the top panel is a placeholder.
 
-## Roller one-take (Tel Aviv, morning to sunset)
+## Roller one-take (Venice Beach / LA, morning to sunset)
 
 Second scene, same pipeline: `blender/rollertake.py` (and `blender/rollertake.blend`) is a rollerblade one-take that opens
-on a top view of the promenade, drops to wheel height, cuts through a supermarket and the SHOTCALLER garage yard, and
-ends on a top view at sunset. `roller/previz.mp4` is the render and `roller/seedance_prompt.txt` the matching prompt.
+on a top view of the boardwalk, drops to wheel height, orbits a 360 spin, cuts through a supermarket (orange avalanche,
+a close-up as a can of zero-sugar cola drops into her hand), crosses the SHOTCALLER garage yard, and ends with a police
+helicopter lifting her off the coast road into the sunset. `roller/previz.mp4` is the render and
+`roller/seedance_prompt.txt` the matching prompt.
 
 Light-pink layout with a name and logo tiles:
 `OVERLAY=overlay_pink.html NAME="Shelly Or Gisser" layout/compose.sh roller/previz.mp4 out.mp4 [seedance.mp4|-] ref1 ref2 ref3 ref4`
