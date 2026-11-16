@@ -1,0 +1,43 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;padding:0}
+  #c{position:relative;width:1080px;height:1920px;background:var(--bg);overflow:hidden;font-family:'Inter',sans-serif;font-weight:500;color:#1d0b22;-webkit-font-smoothing:antialiased}
+  .lbl{position:absolute;font-size:27.6px;line-height:1;letter-spacing:-0.35px;white-space:nowrap}
+  .thumb{position:absolute;top:114px;width:100px;height:184px;border-radius:8px;background:#e9b9cf center/cover no-repeat;overflow:hidden;box-shadow:0 4px 14px rgba(120,20,80,.18)}
+  .ph{position:absolute;left:0;top:376px;width:1080px;height:615px;background:#f7c3d9;display:flex;align-items:center;justify-content:center;font-size:24px;color:#a8527c;letter-spacing:.2px}
+  .tile{position:absolute;top:1641px;width:86px;height:86px;border-radius:19px;background:#fff;box-shadow:0 8px 22px rgba(120,20,80,.20);display:flex;align-items:center;justify-content:center}
+  .tile svg{display:block}
+  #name{position:absolute;right:384px;top:1662px;font-family:'Inter Display','Inter',sans-serif;font-weight:800;font-size:43px;line-height:1;letter-spacing:-1.1px;color:#1d0b22;white-space:nowrap}
+</style></head><body><div id="c">
+  <div class="lbl" id="ref" style="top:75px">Ref.</div>
+  <div id="thumbs"></div>
+  <div class="lbl" id="l1" style="left:46px;top:331px"></div>
+  <div class="lbl" id="l2" style="left:46px;top:1638px">Blender</div>
+  <div id="ph"></div>
+  <div id="name"></div>
+  <div class="tile" id="seedance" style="left:728px"></div>
+  <div class="tile" id="blender" style="left:838px"></div>
+  <div class="tile" id="claude" style="left:948px"></div>
+</div>
+<script>
+  const cfg = JSON.parse(new URLSearchParams(location.search).get('cfg') || '{}');
+  document.getElementById('c').style.setProperty('--bg', cfg.bg || '#ffdcea');
+  document.getElementById('l1').textContent = cfg.label || 'seedance 2.5';
+  document.getElementById('name').textContent = cfg.name || '';
+  const thumbs = cfg.thumbs || []; const first = 6 - thumbs.length;
+  document.getElementById('ref').style.left = (368 + 116 * first) + 'px';
+  thumbs.forEach((t, i) => { const d = document.createElement('div'); d.className = 'thumb'; d.style.left = (367 + 116 * (first + i)) + 'px';
+    d.style.backgroundImage = `url("${t}")`; document.getElementById('thumbs').appendChild(d); });
+  if (cfg.placeholder) { const p = document.createElement('div'); p.className = 'ph'; p.textContent = cfg.placeholder; document.getElementById('ph').appendChild(p); }
+  const paths = f => fetch(f).then(r => r.text()).then(t => t.match(/ d="([^"]+)"/)[1]);
+  Promise.all([paths('logos/blender.svg'), paths('logos/claude.svg'), document.fonts.ready]).then(([b, c]) => {
+    document.getElementById('blender').innerHTML = `<svg viewBox="0 0 24 24" width="58" height="58"><path fill="#EA7600" d="${b}"/><circle cx="15.75" cy="13.4" r="2.55" fill="#265787"/></svg>`;
+    document.getElementById('claude').innerHTML = `<svg viewBox="0 0 24 24" width="54" height="54"><path fill="#D97757" d="${c}"/></svg>`;
+    // ByteDance mark (Seedance's maker), one colour per bar, left to right
+    const bars = [['#325AB4', 'M0 2.572l4.115 1.0642v16.7354L0 21.428V2.572z'], ['#78E6DC', 'M6.5291 10.8965l4.115 1.0641v8.9786l-4.115 1.0642v-11.107z'],
+                  ['#3C8CFF', 'M17.4553 8.1925v11.107l-4.1228-1.0642V9.2568l4.1228-1.0642z'], ['#00C8D2', 'M19.8772 1.4685L24 2.5326v18.9426l-4.1228 1.0563V1.4685z']];
+    document.getElementById('seedance').innerHTML = `<svg viewBox="0 0 24 24" width="52" height="52">` + bars.map(([c, d]) => `<path fill="${c}" d="${d}"/>`).join('') + `</svg>`;
+    document.body.setAttribute('data-ready', '1');
+  });
+</script></body></html>
