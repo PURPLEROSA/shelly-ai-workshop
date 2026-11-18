@@ -1,0 +1,34 @@
+REFERENCES
+@video1  = Blender grey-box previz, 30 s. It is the camera and layout master.
+@image1 @image2 @image3 = the skater, front / side / back. Same woman in all three.
+@image4  = the SHOTCALLER garage and its 80s sedan (mood, building, sign).
+
+PROMPT
+Follow @video1 exactly: one continuous 30-second FPV take. Match its camera path, speed, height, tilt, roll and framing moment for moment, and re-render every grey-box shape as photoreal live action in Venice Beach, Los Angeles. Everything is American: US street signs and stars-and-stripes flags, a diner, a taco truck, a yellow school bus, pickup trucks, a black-and-white police cruiser, tall skinny palms, a pier with a Ferris wheel. The grey figures are a lively crowd: skaters, cyclists, joggers, basketball players, beachgoers, shoppers. The coloured mannequin is the woman from @image1 @image2 @image3 on white inline skates.
+
+Camera, by the second:
+0-4s: straight-down drone view over the boardwalk in clear morning light, gulls gliding under the lens, corkscrewing down toward her as she carves S-curves through the crowd; she glances up and points at the lens.
+4-7s: the camera drops to ankle height and chases her wheels.
+7-8s: she tucks and jumps the kerb; the camera slides underneath her, tilting up at the holographic cargo pants against the sky, and comes out in front of her.
+8-10.5s: flying backward ahead of her as she crosses the coast road between passing cars.
+10.5-12s: she throws a full 360 spin; the camera orbits around her the opposite way and ends on her other side.
+12-14s: she slaloms between café planters past a parked police cruiser; the camera swings in behind her as supermarket glass doors slide open.
+14-16s: low chase down the aisle. Her hand clips a pyramid of oranges, they avalanche and roll along with the lens; boxes rain off the top shelves in her wake.
+16-18.3s: the camera whips around to a close-up of her face, flying backward. A black can of zero-sugar cola drops off the shelf straight into her hand; she cracks it open, fizz and mist burst out of the can, she takes a long sip and grins while boxes keep crashing behind her.
+18.3-20s: the camera drops low in front of her as she sinks into a one-leg squat and slides under a half-lowered steel shutter into warm late-afternoon light, can raised.
+20-23s: the yard of the SHOTCALLER garage from @image4. Its 80s sedan, repainted deep metallic purple with teal and pink pinstripes, rolls out; she stag-leaps over the hood while the camera rises above them.
+23-25.5s: golden hour. She skates beside the purple car toward the ocean; the camera orbits from in front of her to behind.
+25.5-26.7s: she cuts onto the coast road. A black-and-white police helicopter suddenly drops out of the sky and paces her just overhead, rotor wash whipping her hair. She tosses the can, reaches up and grabs the bar under its skids.
+26.7-30s: the helicopter lifts her off the road and banks out over the boardwalk and the ocean. The camera climbs with them and eases back to a wide aerial: she hangs by one hand, kicking her skates and waving, laughing, right beside the huge setting sun, the coastline below.
+
+Subject: maintain exact identity from @image1 @image2 @image3. Long straight brown hair, hot-pink ribbed crop tank, low-rise holographic iridescent wide cargo pants, gold pendant necklace. White inline skates replace the sneakers. Playful, fearless, clearly having the time of her life. No identity drift, same face and body throughout.
+
+Light: one day passes inside the take. Cool clear morning sun, hard white noon in the street, flat fluorescent in the supermarket, amber low sun in the garage yard, pink and violet sunset over the Pacific. The holographic fabric flashes a different colour in each light.
+
+Style: one unbroken shot, no cuts. 14mm wide-angle FPV drone, photoreal, natural motion blur, true-to-life colour.
+
+Audio: skate wheels buzzing on concrete, ocean and gulls, a car passing close, a door chime, oranges thudding and rolling, boxes hitting the floor, the crack and hiss of the can, a boombox synth beat from the garage, an engine purr, then helicopter blades thundering in, wind, and her whoop of laughter as she lifts off. No dialogue, no voice-over.
+
+Format: 30 seconds, 16:9, 720p or higher, 30 fps.
+
+Avoid: cuts, identity drift, face changes, extra limbs, warped skate wheels, floating feet, reference blending artifacts, captions or added on-screen text. The garage sign reads exactly SHOTCALLER and the helicopter reads POLICE.

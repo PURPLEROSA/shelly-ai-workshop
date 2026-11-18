@@ -16,11 +16,14 @@ the Blender grey-box previz it was driven by underneath, and the tool marks bott
 
 ## Roller one-take (Venice Beach / LA, morning to sunset)
 
-Second scene, same pipeline: `blender/rollertake.py` (and `blender/rollertake.blend`) is a rollerblade one-take that opens
-on a top view of the boardwalk, drops to wheel height, orbits a 360 spin, cuts through a supermarket (orange avalanche,
-a close-up as a can of zero-sugar cola drops into her hand), crosses the SHOTCALLER garage yard, and ends with a police
-helicopter lifting her off the coast road into the sunset. `roller/previz.mp4` is the render and
-`roller/seedance_prompt.txt` the matching prompt.
+Second scene, same pipeline: `blender/rollertake.py` (and `blender/rollertake.blend`) is a rollerblade one-take. It opens
+on a top view of the boardwalk, corkscrews down and whips a full circle round the skater, slides under her kerb jump,
+orbits a 360 spin, pushes in and out through a supermarket (orange avalanche, a can of zero-sugar cola dropping into her
+hand), and ends at sunset in the SHOTCALLER garage yard, where she grabs a police cruiser and is towed away up the coast
+road while the camera cranes up. `roller/previz.mp4` is the render and `roller/seedance_prompt.txt` the matching prompt.
+
+An earlier ending, where a police helicopter lifts her off the road, is kept as `blender/rollertake_helicopter.py`,
+`roller/previz_helicopter.mp4` and `roller/seedance_prompt_helicopter.txt`.
 
 Light-pink layout with a name and logo tiles:
 `OVERLAY=overlay_pink.html NAME="Shelly Or Gisser" layout/compose.sh roller/previz.mp4 out.mp4 [seedance.mp4|-] ref1 ref2 ref3 ref4`
