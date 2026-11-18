@@ -1,0 +1,15 @@
+ORO bundles the following third-party work.
+
+three.js r128 (vendor/three.min.js)
+  Copyright 2010-2021 Three.js Authors. MIT License.
+  https://github.com/mrdoob/three.js
+
+Lilita One (fonts/lilita-one.woff2), latin subset
+  SIL Open Font License 1.1.
+  https://fonts.google.com/specimen/Lilita+One
+
+Fredoka (fonts/fredoka.woff2), latin subset
+  SIL Open Font License 1.1.
+  https://fonts.google.com/specimen/Fredoka
+
+Licence texts: https://opensource.org/licenses/MIT and https://openfontlicense.org

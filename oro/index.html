@@ -32,7 +32,7 @@
 html{height:100%;box-sizing:border-box}
 body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--sky2);
   background-image:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 44%,var(--sky3) 100%);
-  color:var(--ink);font-family:var(--f-ui);font-weight:500;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+  color:var(--ink);font-family:var(--f-ui);font-weight:500;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 /* a sunburst behind the dial */
 body::before{content:"";position:fixed;z-index:0;left:50%;top:34%;width:120vmax;height:120vmax;margin:-60vmax 0 0 -60vmax;pointer-events:none;
   background:repeating-conic-gradient(rgba(255,255,255,.2) 0 9deg,rgba(255,255,255,0) 9deg 18deg);
@@ -50,13 +50,26 @@ body::after{content:"";position:fixed;z-index:0;inset:0 -6vw;pointer-events:none
 @keyframes drift{to{transform:translateX(5vw)}}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;touch-action:manipulation}
 #app{position:relative;z-index:1;height:100%;max-width:560px;margin:0 auto;overflow:hidden;box-sizing:border-box;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  opacity:0;transition:opacity .4s}
+#app.ready{opacity:1}
 @media (orientation:landscape) and (max-height:540px){#app{max-width:940px}}
+/* the dock: a fixed home for the three pieces. It sits under both canvases, so the 3D pieces and their shadows land on it */
+#dock{position:absolute;z-index:0;left:var(--dx,16px);top:var(--dy,72%);width:var(--dw,300px);height:var(--dh,150px);box-sizing:border-box;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;border-radius:28px;
+  background:rgba(255,255,255,.32);box-shadow:inset 0 0 0 3px rgba(255,255,255,.6),0 6px 0 rgba(43,42,122,.16);
+  opacity:0;transform:translateY(18px);transition:opacity .3s,transform .3s}
+#dock i{border-radius:19px;background:rgba(43,42,122,.13)}
+#app[data-state="playing"] #dock,#app[data-state="ending"] #dock{opacity:1;transform:none}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 
-#top{position:relative;z-index:4;height:56px;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.grp{display:flex;align-items:center;gap:8px;min-width:0}
+/* top bar: three fixed zones. Left is the one control for this screen, centre is the mode, right is your best. */
+#top{position:relative;z-index:2;height:56px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+.zone{display:flex;align-items:center;gap:8px;min-width:0}
+.zone.r{justify-content:flex-end}
+#btnPause,#btnSound{display:none}
+#app[data-state="home"] #btnSound,#app[data-state="playing"] #btnPause{display:grid}
 #chip,#bestLbl{font-family:var(--f-display);font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:#fff;white-space:nowrap;
   padding:6px 13px;border-radius:999px;background:rgba(43,42,122,.6);box-shadow:inset 0 0 0 2px rgba(255,255,255,.4)}
 #chip:empty,#bestLbl:empty{display:none}
@@ -84,18 +97,35 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   font-family:var(--f-display);font-size:20px;color:#fff;text-shadow:var(--stroke);opacity:0;transition:opacity .35s}
 #hint.on{opacity:1}
 
-#panel{position:absolute;z-index:3;left:var(--pleft,0px);right:0;top:var(--ptop,60%);bottom:0;pointer-events:none}
+#veil{position:absolute;inset:0;z-index:3;background:rgba(18,28,110,.44);opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
+#app.modal #veil{opacity:1;visibility:visible}
+#panel{position:absolute;z-index:4;left:var(--pleft,0px);right:0;top:var(--ptop,60%);bottom:0;pointer-events:none}
 .pane{position:absolute;inset:0;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:clamp(9px,1.9vh,15px);padding-block:6px 14px;
+  gap:clamp(8px,1.7vh,14px);padding-block:4px 14px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   opacity:0;visibility:hidden;transform:translateY(10px);transition:opacity .3s,transform .3s,visibility .3s}
 .pane.on{opacity:1;visibility:visible;transform:none;pointer-events:auto}
-.pane h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(27px,4.4vh,38px);line-height:1.1;text-align:center;text-wrap:balance;
+.pane h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(27px,4.4vh,36px);line-height:1.1;text-align:center;text-wrap:balance;
   color:#fff;text-shadow:var(--stroke)}
-.pane p{margin:0;max-width:34ch;text-align:center;font-size:15px;line-height:1.4;color:var(--ink);text-wrap:balance;
-  background:rgba(255,255,255,.85);padding:8px 14px;border-radius:14px}
-.pane p.tag{background:none;padding:0;font-family:var(--f-display);font-size:clamp(23px,3.7vh,31px);line-height:1.1;color:#fff;text-shadow:var(--stroke)}
-.pane p.meta{background:none;padding:0;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
+.pane p{margin:0;max-width:34ch;text-align:center;font-size:15px;line-height:1.4;color:var(--ink);text-wrap:balance}
+.pane p.tag{font-family:var(--f-display);font-size:clamp(23px,3.7vh,31px);line-height:1.1;color:#fff;text-shadow:var(--stroke)}
+/* a sheet: one white card, anchored to the bottom where the thumb is. It may grow up over the dial. */
+.pane.sheet{inset:auto max(12px,env(safe-area-inset-right,0px)) 14px max(12px,env(safe-area-inset-left,0px));margin:0 auto;max-width:420px;
+  max-height:calc(var(--app-h,100vh) - 28px);overflow:auto;justify-content:flex-start;gap:12px;padding:22px 20px 20px;
+  background:#fff;border-radius:28px;box-shadow:0 8px 0 rgba(43,42,122,.3),0 26px 44px rgba(12,27,107,.34);transform:translateY(28px)}
+.pane.sheet.on{transform:none}
+.pane.sheet h2{color:var(--metal);text-shadow:none;font-size:clamp(26px,4vh,32px)}
+.pane.sheet .btn{width:100%;min-width:0;flex:none}
+.pane.sheet .row .btn{flex:1 1 0}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.chipx{font-size:13px;font-weight:600;line-height:1.2;color:var(--ink);padding:8px 14px;border-radius:999px;white-space:nowrap;
+  background:rgba(255,255,255,.82);box-shadow:0 2px 0 rgba(43,42,122,.28)}
+button.chipx:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(43,42,122,.28)}
+.pane.sheet .chipx{background:#eaf3ff;box-shadow:0 2px 0 rgba(43,42,122,.16)}
+.score{display:flex;flex-direction:column;align-items:center;gap:2px}
+.score span{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.score b{font-family:var(--f-display);font-weight:400;font-size:clamp(40px,6.4vh,54px);line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.score small{font-size:13px;font-weight:600;color:var(--ink2);min-height:16px}
 /* buttons: a glossy slab with a white edge, a darker lip below, and a real press */
 .btn{position:relative;isolation:isolate;height:clamp(50px,7vh,60px);min-width:min(250px,100%);padding:0 26px;box-sizing:border-box;border-radius:20px;
   border:3px solid #fff;font-family:var(--f-display);font-size:clamp(19px,2.9vh,23px);letter-spacing:.03em;text-transform:uppercase;color:#fff;
@@ -110,10 +140,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .btn em{font-style:normal;font-size:.82em;color:var(--sun)}
 .row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;width:100%}
 .row .btn{min-width:0;flex:1 1 130px;max-width:210px;padding:0 12px}
-.lnk{font-size:14px;font-weight:600;color:var(--ink);padding:7px 15px;border-radius:999px;background:rgba(255,255,255,.78);box-shadow:0 2px 0 rgba(43,42,122,.28)}
-.lnk:active{transform:translateY(1px)}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;width:100%;max-width:380px;box-sizing:border-box;padding:10px 6px;
-  background:rgba(255,255,255,.9);border-radius:18px;box-shadow:0 4px 0 rgba(43,42,122,.25)}
+  background:#eaf3ff;border-radius:18px}
 .stats div{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
 .stats b{font-family:var(--f-display);font-weight:400;font-size:clamp(22px,3.4vh,28px);line-height:1;color:var(--metal);font-variant-numeric:tabular-nums}
 .stats span{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2)}
@@ -135,56 +163,57 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 #toast{position:absolute;z-index:12;left:50%;bottom:22px;transform:translate(-50%,8px);padding:9px 18px;border-radius:999px;
   background:var(--ink);color:#fff;font-family:var(--f-display);font-size:14px;letter-spacing:.04em;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none}
 #toast.on{opacity:1;transform:translate(-50%,0)}
-@media (prefers-reduced-motion: reduce){.pane,#sheet,#toast,.btn,.ic{transition:none}body::after{animation:none}}
+@media (max-height:540px){.pane.sheet{gap:8px;padding:14px 16px}.pane.sheet .btn{height:44px}.score b{font-size:34px}}
+@media (prefers-reduced-motion: reduce){.pane,#sheet,#toast,.btn,.ic,#dock,#veil,#app{transition:none}body::after{animation:none}}
 </style>
 </head>
 <body>
-<div id="app">
+<div id="app" data-state="home">
+  <div id="dock" aria-hidden="true"><i></i><i></i><i></i></div>
   <canvas id="gl" aria-hidden="true"></canvas>
   <canvas id="cv" role="img" aria-label="ORO dial"></canvas>
   <header id="top">
-    <div class="grp">
-      <button class="ic" id="btnPause" aria-label="Pause" hidden><svg viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></svg></button>
-      <span id="chip"></span>
-    </div>
-    <div class="grp">
-      <span id="bestLbl"></span>
+    <div class="zone">
+      <button class="ic" id="btnPause" aria-label="Pause"><svg viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></svg></button>
       <button class="ic" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><path d="M4 10v4h3l5 4V6L7 10H4z"/><path id="sndOn" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></button>
-      <button class="ic" id="btnInfo" aria-label="How it works"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></button>
     </div>
+    <span id="chip"></span>
+    <div class="zone r"><span id="bestLbl"></span></div>
   </header>
   <div id="hub"><div id="hubTop"></div><div id="hubMain" class="wm">ORO</div><div id="hubSub"></div></div>
   <div id="hint"></div>
+  <div id="veil"></div>
   <section id="panel">
     <div class="pane on" id="paneHome">
       <p class="tag" data-i="tagline"></p>
       <button class="btn pri" id="btnPlay" data-i="play"></button>
       <button class="btn" id="btnDaily"><span data-i="daily"></span><em id="dailyNo"></em></button>
-      <p class="meta" id="reserveLbl"></p>
-      <button class="lnk" id="btnHow" data-i="how"></button>
+      <div class="chips"><span class="chipx" id="reserveLbl"></span><button class="chipx" id="btnHow" data-i="how"></button></div>
     </div>
-    <div class="pane" id="panePause">
-      <h2 data-i="paused"></h2>
+    <div class="pane sheet" id="panePause" role="dialog" aria-modal="true" aria-labelledby="ttlPause">
+      <h2 id="ttlPause" data-i="paused"></h2>
       <button class="btn pri" id="btnResume" data-i="resume"></button>
       <div class="row"><button class="btn" id="btnRestart" data-i="restart"></button><button class="btn" id="btnPauseHome" data-i="home"></button></div>
+      <div class="chips"><button class="chipx" id="btnSound2"></button><button class="chipx" id="btnInfo" data-i="how"></button></div>
     </div>
-    <div class="pane" id="paneRevive">
-      <h2 data-i="noMoves"></h2>
+    <div class="pane sheet" id="paneRevive" role="dialog" aria-modal="true" aria-labelledby="ttlRevive">
+      <h2 id="ttlRevive" data-i="noMoves"></h2>
       <p data-i="windSub"></p>
       <button class="btn pri" id="btnWind" data-i="wind"></button>
-      <button class="lnk" id="btnEnd" data-i="endRun"></button>
+      <button class="chipx" id="btnEnd" data-i="endRun"></button>
     </div>
-    <div class="pane" id="paneOver">
+    <div class="pane sheet" id="paneOver" role="dialog" aria-modal="true" aria-labelledby="ovTitle">
       <h2 id="ovTitle"></h2>
+      <div class="score"><span data-i="score"></span><b id="ovScore"></b><small id="ovSub"></small></div>
       <div class="stats">
         <div><b id="stHour"></b><span data-i="stHour"></span></div>
         <div><b id="stRings"></b><span data-i="stRings"></span></div>
         <div><b id="stSpokes"></b><span data-i="stSpokes"></span></div>
         <div><b id="stStreak"></b><span data-i="stStreak"></span></div>
       </div>
-      <div class="row"><button class="btn pri" id="btnAgain" data-i="again"></button><button class="btn" id="btnShare" data-i="share"></button></div>
+      <button class="btn pri" id="btnAgain" data-i="again"></button>
+      <div class="row"><button class="btn" id="btnShare" data-i="share"></button><button class="btn" id="btnOverHome" data-i="home"></button></div>
       <textarea id="shareBox" readonly hidden aria-label="Share text"></textarea>
-      <button class="lnk" id="btnOverHome" data-i="home"></button>
     </div>
   </section>
   <div id="sheet" role="dialog" aria-modal="true">
@@ -358,7 +387,8 @@ const T={
   how:'How it works',endless:'Endless',best:'Best',hintTut:'Close the circle!',hint2:'A full ring or a full spoke clears',
   noMoves:'No moves left!',windSub:'Second Wind sweeps your two fullest rings. Once per run.',wind:'Second Wind',endRun:'End run',
   again:'Play again',share:'Share',home:'Home',resume:'Resume',restart:'New run',paused:'Paused',close:'Got it',
-  newBest:'New best!',fromBest:'{n} short of your best',rests:'Run over',
+  newBest:'New best!',fromBest:'{n} short of your best',rests:'Run over',score:'Score',ovPrev:'Previous best {n}',ovFirst:'Your first score on the board',
+  soundOn:'Sound on',soundOff:'Sound off',
   stHour:'Hour',stRings:'Circles',stSpokes:'Spokes',stStreak:'Streak',
   cRing:'Full Circle!',cDouble:'Double!',cTriple:'Triple!',cPerfect:'Perfect Dial!',cHour:'Hour {r}!',cBest:'New Best!',cWind:'Second Wind!',
   praise:['Nice!','Great!','Brilliant!','Unstoppable!'],copied:'Copied',copyFail:'Select and copy',
@@ -449,19 +479,21 @@ function readTheme(){
 const jStops=(g,c)=>{g.addColorStop(0,rgb(mix(c,WHITE,.3)));g.addColorStop(.5,rgb(c));g.addColorStop(1,rgb(mix(c,BLACK,.26)));return g};
 function layout(){
   const r=$('app').getBoundingClientRect(),W=r.width,H=r.height;if(W<50||H<50)return;
-  const dpr=Math.min(window.devicePixelRatio||1,3),top=54,gut=16;
+  const dpr=Math.min(window.devicePixelRatio||1,3),top=56,gut=16;
   cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
-  // Portrait: dial on top, tray and panels below. Short landscape windows: dial left, tray and panels right.
-  const side=H<540&&W>H*1.35;let dr,cx,cy,px,trayTop,pw,trayH;
-  if(side){dr=Math.max(80,Math.min((H-top-14)/2,(W*.5-gut)/2));cx=gut+dr+4;cy=top+(H-top)/2-4;px=cx+dr+14;trayTop=top;pw=W-px-gut;trayH=H-top-8}
-  else{const trayMin=clamp(H*.22,128,210);dr=Math.max(92,Math.min((W-2*gut)/2,(H-top-trayMin-22)/2,250));
-    cx=W/2;cy=top+4+dr;px=0;trayTop=cy+dr+10;pw=W;trayH=Math.max(90,H-trayTop-8)}
-  if(V3)dr*=.97;   // the tilted dial needs a little air at the near edge
-  const rout=dr*.875,rin=dr*.335,w=(rout-rin)/R,slotW=Math.min((pw-(side?0:2*gut))/3,170),mid=px+pw/2;
-  G={W,H,dpr,cx,cy,dr,rout,rin,w,hubR:rin-dr*.03,trayTop,trayH,px,slotW,slotX:[mid-slotW,mid,mid+slotW],slotY:trayTop+trayH*.54,
-     gap:Math.max(1.1,w*.065),corner:Math.max(1.4,w*.17),lift:clamp(dr*.4,52,84)};
-  const st=document.documentElement.style;
-  st.setProperty('--cx',cx+'px');st.setProperty('--cy',cy+'px');st.setProperty('--hub',(G.hubR*2)+'px');st.setProperty('--ptop',trayTop+'px');st.setProperty('--pleft',px+'px');
+  // Portrait: top bar, dial, a hint line, then the dock at the thumb. Short landscape windows: dial left, dock and panels right.
+  const side=H<540&&W>H*1.35;let dr,cx,cy,px,pw,ptop,dx,dy,dw,dh=clamp(H*.19,118,172);
+  // The tilted 3D dial reads shorter than a flat one, and reaches further down than up: place it by what the eye sees.
+  const up=V3?.82:1,dn=V3?.95:1,k3=V3?.97:1;
+  if(side){dr=Math.max(80,Math.min((H-top-14)/2,(W*.5-gut)/2))*k3;cx=gut+dr+4;cy=top+(H-top)/2-4;px=cx+dr+14;pw=W-px-gut;ptop=top;
+    dw=Math.min(pw,520);dx=px+(pw-dw)/2;dh=Math.min(dh,H-top-24);dy=top+(H-top-dh)/2}
+  else{px=0;pw=W;dw=Math.min(W-24,520);dx=(W-dw)/2;dy=H-16-dh;const free=dy-top-38;
+    dr=Math.max(92,Math.min((W-2*gut)/2*k3,free/(up+dn),250));cx=W/2;cy=top+Math.max(0,free-(up+dn)*dr)*.5+up*dr;ptop=cy+dn*dr+10}
+  const rout=dr*.875,rin=dr*.335,w=(rout-rin)/R,col=(dw-20-16)/3,slotW=col+8;
+  G={W,H,dpr,cx,cy,dr,rout,rin,w,hubR:rin-dr*.03,trayTop:ptop,trayH:dh,px,dock:{x:dx,y:dy,w:dw,h:dh},slotW,
+     slotX:[0,1,2].map(i=>dx+10+col/2+i*slotW),slotY:dy+dh/2,gap:Math.max(1.1,w*.065),corner:Math.max(1.4,w*.17),lift:clamp(dr*.4,52,84)};
+  const st=document.documentElement.style,sv=(k,v)=>st.setProperty(k,v+'px');
+  sv('--cx',cx);sv('--cy',cy);sv('--hub',G.hubR*2);sv('--ptop',ptop);sv('--pleft',px);sv('--dx',dx);sv('--dy',dy);sv('--dw',dw);sv('--dh',dh);sv('--app-h',H);
   C.grad=[null];for(let i=1;i<=6;i++)C.grad.push(jStops(ctx.createLinearGradient(cx-dr,cy-dr,cx+dr,cy+dr),C.j[i]));
   buildStatic();if(V3)R3.resize();
 }
@@ -515,7 +547,7 @@ const U={state:'home',run:null,show:null,pop:new Float64Array(N).fill(-1e9),fx:[
 const trayRho=sh=>clamp(2,sh.cr,R-sh.h+sh.cr);
 function trayFit(sh){const rho=trayRho(sh),maxR=G.rin+(rho-sh.cr+sh.h)*G.w,span=sh.ws*SEC,half=Math.min(span/2,Math.PI/2);
   const wpx=2*maxR*Math.sin(half),sag=maxR*(1-Math.cos(half)),hpx=sh.h*G.w+sag;
-  return {sc:Math.min(.7,(G.slotW-14)/wpx,(G.trayH*.62)/hpx),sag}}
+  return {sc:Math.min(.8,(G.slotW-36)/wpx,(G.trayH*.58)/hpx),sag}}
 function pieceGrad(c,col,x,y,e){return jStops(c.createLinearGradient(x-e,y-e,x+e,y+e),C.j[col])}
 function drawPiece(c,sh,px,py,phi,rho,sc,alpha){
   const ux=Math.cos(phi),uy=Math.sin(phi),radC=(G.rin+(rho+.5)*G.w)*sc,vx=px-ux*radC,vy=py-uy*radC;
@@ -542,6 +574,7 @@ const cancelTimers=()=>{U.token++;U.timers.forEach(clearTimeout);U.timers=[]};
 function frame(ts){
   requestAnimationFrame(frame);
   const real=Math.min(100,ts-U.last),rate=U.stop>0?.25:U.rate,c=ctx,d=G.dpr,f=clamp(real*rate/16.67,.01,3);U.last=ts;if(U.stop>0)U.stop-=real;U.t+=real*rate;const now=U.t;if(!G.W)return;
+  if(U.state!==U.ds){U.ds=U.state;$('app').dataset.state=U.state}
   c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,G.W,G.H);
   if(V3){R3.frame(now,f);if(U.state==='playing')drawFinger(c,now)}
   else{
@@ -841,9 +874,8 @@ function refreshHud(){
   txt($('chip'),home||!run?'':run.mode==='daily'?t('daily')+' #'+dailyNo():t('endless'));
   const daily=!home&&run&&run.mode==='daily',bv=daily?(P.dDay===today()?P.dBest:0):P.best,bl=$('bestLbl'),bh=bv>0?(daily?t('today'):t('best'))+'<b>'+fmt(bv)+'</b>':'';
   if(bl._s!==bh){bl._s=bh;bl.innerHTML=bh}
-  $('btnPause').hidden=!(U.state==='playing'||U.state==='paused');
 }
-function setPane(name){['Home','Pause','Revive','Over'].forEach(n=>$('pane'+n).classList.toggle('on',n===name))}
+function setPane(name){['Home','Pause','Revive','Over'].forEach(n=>$('pane'+n).classList.toggle('on',n===name));$('app').classList.toggle('modal',!!name&&name!=='Home')}
 function setHint(h){U.hint=h;const el=$('hint');el.classList.toggle('on',!!h&&U.state==='playing');if(h)txt(el,t(h==='tut'?'hintTut':'hint2'))}
 function applyLang(){
   document.documentElement.lang='en';
@@ -916,7 +948,8 @@ function finish(){
 }
 function fillOver(){
   const o=U.over,run=o.run,gap=o.prev-run.score;
-  $('ovTitle').textContent=o.isBest?t('newBest'):(o.prev>0&&gap>0&&run.score>=o.prev*.6)?t('fromBest',{n:fmt(gap)}):t('rests');
+  $('ovTitle').textContent=o.isBest?t('newBest'):t('rests');$('ovScore').textContent=fmt(run.score);
+  $('ovSub').textContent=o.isBest?(o.prev>0?t('ovPrev',{n:fmt(o.prev)}):t('ovFirst')):gap>0?t('fromBest',{n:fmt(gap)}):'';
   $('stHour').textContent=roman(run.hourNo);$('stRings').textContent=run.rings;$('stSpokes').textContent=run.spokes;$('stStreak').textContent=run.bestStreak;
 }
 function shareText(){const run=U.over.run,clock=String.fromCodePoint(0x1F550+((run.hourNo-1)%12));
@@ -930,7 +963,7 @@ function doShare(){
 const pos=e=>{const r=cv.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]};
 cv.addEventListener('pointerdown',e=>{
   if(U.state!=='playing'||U.drag||!U.run)return;const [x,y]=pos(e);let slot=-1;
-  if(y>G.trayTop-8&&x>G.px-8)for(let i=0;i<3;i++)if(Math.abs(x-G.slotX[i])<G.slotW/2&&U.run.hand[i]!=null&&U.t>=U.dealT[i])slot=i;
+  const k=G.dock;if(y>k.y-14&&y<k.y+k.h+14&&x>k.x-8&&x<k.x+k.w+8)for(let i=0;i<3;i++)if(Math.abs(x-G.slotX[i])<G.slotW/2&&U.run.hand[i]!=null&&U.t>=U.dealT[i])slot=i;
   if(slot<0)return;e.preventDefault();Snd.unlock();try{cv.setPointerCapture(e.pointerId)}catch(_){}
   const sh=Core.SHAPES[U.run.hand[slot]],tf=trayFit(sh);
   U.drag={slot,sh,id:e.pointerId,lift:e.pointerType==='mouse'?0:G.lift,fx:x,fy:y,x:G.slotX[slot],y:G.slotY,sc:tf.sc,rho:trayRho(sh),phi:Math.PI/2,key:-1,wx:null,wz:null};
@@ -946,25 +979,24 @@ const on=(id,fn)=>$(id).addEventListener('click',fn);
 on('btnPlay',()=>startRun('endless'));on('btnDaily',()=>startRun('daily'));
 on('btnAgain',()=>startRun(U.over.run.mode));on('btnShare',doShare);on('btnOverHome',goHome);
 on('btnWind',doRevive);on('btnEnd',()=>{setPane(null);finish()});
-on('btnPause',()=>{if(U.state==='playing'){U.state='paused';U.drag=null;setHint(null);setPane('Pause')}else if(U.state==='paused')resume()});
+function pause(){if(U.state!=='playing')return;U.state='paused';U.drag=null;setHint(null);setPane('Pause')}
+on('btnPause',pause);on('veil',()=>{if(U.state==='paused')resume()});
 function resume(){U.state='playing';setPane(null);if(U.hint)setHint(U.hint)}
 on('btnResume',resume);on('btnRestart',()=>startRun(U.run.mode));on('btnPauseHome',goHome);
 const sheet=o=>$('sheet').classList.toggle('on',o);
 on('btnInfo',()=>sheet(true));on('btnHow',()=>sheet(true));on('btnClose',()=>sheet(false));
 $('sheet').addEventListener('click',e=>{if(e.target===$('sheet'))sheet(false)});
-const sndIcon=()=>{$('sndOn').style.display=Snd.on?'':'none';$('btnSound').style.opacity=Snd.on?'':'.5'};
-on('btnSound',()=>{Snd.toggle();sndIcon()});
+const sndIcon=()=>{$('sndOn').style.display=Snd.on?'':'none';$('btnSound').style.opacity=Snd.on?'':'.55';$('btnSound2').textContent=t(Snd.on?'soundOn':'soundOff')};
+on('btnSound',()=>{Snd.toggle();sndIcon()});on('btnSound2',()=>{Snd.toggle();sndIcon()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')sheet(false)});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){Snd.sleep();save()}else Snd.wake()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){pause();Snd.sleep();save()}else Snd.wake()});
 
 /* ================= BOOT ================= */
 function start(data){
   readTheme();layout();applyLang();sndIcon();
   new ResizeObserver(layout).observe($('app'));
-  const retheme=()=>{readTheme();layout()};
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change',retheme);
-  new MutationObserver(retheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{});
+  const show=()=>$('app').classList.add('ready');   // fade in once the type is ready, or after a beat if it is slow
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{layout();show()});setTimeout(show,1200);
   U.last=performance.now();U.t=1000;
   let resumed=false;
   try{if(data&&data.run&&!data.run.over){U.run=Core.restore(data.run);U.state='playing';U.disp=U.run.score;U.dispH=U.run.hours;
