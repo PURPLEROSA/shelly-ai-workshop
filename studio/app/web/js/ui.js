@@ -48,6 +48,28 @@ export const icons = {
   start: P('<path d="M19 5v14L8 12z" fill="currentColor"/><path d="M5 5v14"/>'),
   mic: P('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>'),
   film: P('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 4v16M16 4v16M3 9h5M3 15h5M16 9h5M16 15h5"/>'),
+  plus: P('<path d="M12 5v14M5 12h14"/>'),
+  rin: P('<path d="M9 4H6v16h3M12 12h7M15 8l4 4-4 4"/>'),
+  rout: P('<path d="M15 4h3v16h-3M5 12h7M8 8l-4 4 4 4"/>'),
+  cutx: P('<path d="M4 5v14M20 5v14M9 9l6 6M15 9l-6 6"/>'),
+  fit: P('<path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/>'),
+  vol: P('<path d="M4 10v4h3l5 4V6L7 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/>'),
+  volx: P('<path d="M4 10v4h3l5 4V6L7 10z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>'),
+  eyex: P('<path d="M3 3l18 18M10.6 5.2A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.5 6.6C3.6 8.6 2 12 2 12s3.6 7 10 7c1.6 0 3-.4 4.3-1"/>'),
+  key: P('<path d="M12 3l7 9-7 9-7-9z"/>'),
+  layers: P('<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>'),
+  music: P('<path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>'),
+  type: P('<path d="M5 6h14M12 6v13M9 19h6"/>'),
+  sun: P('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+  moon: P('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>'),
+  plug: P('<path d="M9 3v5M15 3v5M7 8h10v4a5 5 0 0 1-10 0zM12 17v4"/>'),
+  search: P('<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/>'),
+  zoom: P('<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3M8 11h6M11 8v6"/>'),
+  speed: P('<path d="M4 16a8 8 0 1 1 16 0"/><path d="M12 16l4-6"/>'),
+  prev: P('<path d="M18 6L9 12l9 6z" fill="currentColor"/><path d="M6 6v12"/>'),
+  next: P('<path d="M6 6l9 6-9 6z" fill="currentColor"/><path d="M18 6v12"/>'),
+  stepb: P('<path d="M14 7l-6 5 6 5z" fill="currentColor"/><path d="M18 7v10"/>'),
+  stepf: P('<path d="M10 7l6 5-6 5z" fill="currentColor"/><path d="M6 7v10"/>'),
 };
 
 export function icon(name, cls = '') {
@@ -61,6 +83,9 @@ export function fmt(t, withTenths = false) {
   if (withTenths) return `${m}:${s.toFixed(1).padStart(4, '0')}`;
   return `${m}:${String(Math.floor(s)).padStart(2, '0')}`;
 }
+
+// Width by height, kept left-to-right inside Hebrew text.
+export const dims = (w, h) => `\u2066${w}×${h}\u2069`;
 
 export function fmtSize(bytes) {
   if (bytes > 1e9) return (bytes / 1e9).toFixed(1) + ' GB';
@@ -144,14 +169,16 @@ export function toggle(checked, onChange, label) {
   return wrap;
 }
 
-export function slider({ min, max, step, value, onInput, label, format }) {
+export function slider({ min, max, step, value, onInput, onChange, label, format }) {
   const out = el('output', { text: format ? format(value) : value });
   const input = el('input', {
     type: 'range', min, max, step, value, 'aria-label': label,
-    oninput: () => { out.textContent = format ? format(+input.value) : input.value; onInput(+input.value); },
+    oninput: () => { out.textContent = format ? format(+input.value) : input.value; onInput && onInput(+input.value); },
+    onchange: () => { onChange && onChange(+input.value); },
   });
   const wrap = el('label', { class: 'field slider' }, el('span', { class: 'lbl' }, label, out), input);
   wrap.setValue = (v) => { input.value = v; out.textContent = format ? format(+v) : v; };
+  wrap.value = () => +input.value;
   return wrap;
 }
 

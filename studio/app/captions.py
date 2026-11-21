@@ -70,6 +70,9 @@ PRESETS = [
     {"id": "bubble", "name": "בועה", "style": {
         "font": "Fredoka-Bold", "color": "#FFFFFF", "active_color": "#FFE14D",
         "bg_color": "#8E3FB8", "size": 0.064}},
+    {"id": "spot", "name": "זרקור", "style": {
+        "font": "Rubik-ExtraBold", "color": "#FFFFFF", "highlight": "box", "active_color": "#1E1E24",
+        "active_bg": "#FFC53D", "bg": "none", "stroke": 0.08, "shadow": 0.7, "size": 0.068}},
 ]
 
 RENDER_KEYS = ("font", "size", "y", "color", "highlight", "active_color", "active_bg", "bg",

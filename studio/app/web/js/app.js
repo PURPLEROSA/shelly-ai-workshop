@@ -1,7 +1,7 @@
 // Boot, header, home screen and settings.
 import { api, uploadVideo, followJob } from './api.js';
 import { el, icon, fmt, toast, modal, confirmBox, toggle, progressBar } from './ui.js';
-import { openEditor, closeEditor } from './editor.js';
+import { openEditor, closeEditor } from './studio.js';
 
 export const App = { state: null, view: null };
 const view = document.getElementById('view');
@@ -12,6 +12,14 @@ const uploads = new Map(); // temp id -> {name, progress}
 export async function refreshState() {
   App.state = await api('/api/state');
   return App.state;
+}
+
+export function setTheme(theme, save = true) {
+  document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+  const meta = document.querySelector('meta[name=theme-color]');
+  if (meta) meta.content = theme === 'light' ? '#DDF4FF' : '#1b1b21';
+  try { localStorage.setItem('studio-theme', document.documentElement.dataset.theme); } catch { /* private mode */ }
+  if (save && App.state && App.state.local) api('/api/settings', { method: 'PUT', body: { theme: document.documentElement.dataset.theme } }).catch(() => {});
 }
 
 // ---------------------------------------------------------------- header
@@ -38,20 +46,20 @@ export function renderTop(editorBits = null) {
 // ------------------------------------------------------------------ home
 
 function statusPill(p) {
-  if (p.status === 'error') return el('span', { class: 'pill-s err', text: 'שגיאה' });
-  if (p.job) {
-    const pct = Math.round(p.job.progress * 100);
-    const label = p.status !== 'ready' ? 'מכין' : 'מתמלל';
-    return el('span', { class: 'pill-s live' }, el('i', { class: 'live' }), `${label} ${pct}%`);
+  if (p.job || p.busy) {
+    const pct = p.job ? ` ${Math.round(p.job.progress * 100)}%` : '';
+    const label = p.job && p.job.kind === 'transcribe' ? 'מתמלל' : p.job && p.job.kind === 'export' ? 'מייצא' : 'מכין';
+    return el('span', { class: 'pill-s live' }, el('i', { class: 'live' }), label + pct);
   }
-  if (p.transcript === 'done') return el('span', { class: 'pill-s ok', text: p.exports ? `יוצא ${p.exports}×` : 'מוכן לעריכה' });
-  if (p.status === 'ready') return el('span', { class: 'pill-s', text: 'בלי תמלול' });
-  return el('span', { class: 'pill-s', text: 'בהכנה' });
+  if (p.error) return el('span', { class: 'pill-s err', text: 'שגיאה' });
+  if (p.exports) return el('span', { class: 'pill-s ok', text: `יוצא ${p.exports}×` });
+  if (p.clips) return el('span', { class: 'pill-s ok', text: p.clips === 1 ? 'קליפ אחד' : `${p.clips} קליפים` });
+  return el('span', { class: 'pill-s', text: 'ריק' });
 }
 
 function projectCard(p) {
   const thumb = el('div', { class: 'thumb' });
-  const img = el('img', { src: `/api/projects/${p.id}/thumb.jpg`, alt: '', loading: 'lazy' });
+  const img = el('img', { src: `/api/projects/${p.id}/thumb.jpg?${Math.floor(p.updated)}`, alt: '', loading: 'lazy' });
   img.onerror = () => img.remove();
   thumb.append(img, el('span', { class: 'dur', text: fmt(p.duration) }));
   const del = el('button', {
@@ -99,8 +107,8 @@ async function loadHome() {
 
 async function startUpload(file) {
   if (!file) return;
-  if (!file.type.startsWith('video/') && !/\.(mp4|mov|m4v|webm|mkv|avi|3gp)$/i.test(file.name)) {
-    toast('זה לא נראה כמו קובץ וידאו. נתמכים MP4, MOV, WEBM ועוד.', { error: true });
+  if (!/^(video|audio|image)\//.test(file.type) && !/\.(mp4|mov|m4v|webm|mkv|avi|3gp|mp3|wav|m4a|jpg|jpeg|png|webp)$/i.test(file.name)) {
+    toast('סוג הקובץ לא נתמך. מעלים וידאו, אודיו או תמונה.', { error: true });
     return;
   }
   const id = Math.random().toString(36).slice(2);
@@ -124,13 +132,17 @@ async function startUpload(file) {
 function renderHome() {
   homeAlive = true;
   renderTop();
-  const input = el('input', { type: 'file', accept: 'video/*', hidden: true, onchange: () => { startUpload(input.files[0]); input.value = ''; } });
+  const input = el('input', { type: 'file', accept: 'video/*,audio/*,image/*', hidden: true, onchange: () => { startUpload(input.files[0]); input.value = ''; } });
+  const blank = el('button', { class: 'tlink', type: 'button', text: 'או מתחילים מפרויקט ריק', onclick: async (e) => {
+    e.preventDefault(); e.stopPropagation();
+    try { const r = await api('/api/projects/new', { method: 'POST', body: { name: 'פרויקט חדש' } }); location.hash = '#/p/' + r.project.id; } catch (err) { toast(err.message, { error: true }); }
+  } });
   const drop = el('label', { class: 'drop card', tabindex: '0' },
     input,
     el('span', { class: 'drop-ic' }, icon('upload')),
     el('b', { text: 'גוררים לכאן סרטון' }),
     el('span', { class: 'btn btn-cta' }, 'בחירת קובץ', el('i', { class: 'ar' }, icon('arrow'))),
-    el('small', { text: 'MP4, MOV ועוד. הקובץ נשאר אצלך במחשב.' }));
+    el('small', { text: 'MP4, MOV ועוד. הקובץ נשאר אצלך במחשב.' }), blank);
   drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
   for (const ev of ['dragenter', 'dragover']) drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); });
   for (const ev of ['dragleave', 'drop']) drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); });
@@ -139,11 +151,11 @@ function renderHome() {
   view.replaceChildren(el('section', { class: 'home' },
     el('div', { class: 'hero' },
       el('div', { class: 'hero-copy' },
-        el('span', { class: 'eyebrow', text: 'TRANSCRIBE · CUT · CAPTION' }),
+        el('span', { class: 'eyebrow', text: 'EDIT · CAPTION · VOICE · AGENTS' }),
         el('h1', {}, 'וידאו נכנס.', el('br'), el('span', { class: 'mag', text: 'תוכן יוצא.' })),
-        el('p', { class: 'lead', text: 'תמלול בעברית, עריכה ישר מהטקסט, כתוביות ו-AI. הכל רץ אצלך על המחשב, בלי מנוי ובלי ענן.' }),
+        el('p', { class: 'lead', text: 'עורך וידאו שלם שרץ אצלך על המחשב: טיימליין, חיתוך מהטקסט, כתוביות בעברית ובאנגלית, קריינות, וסוכן AI שעורך לצידך. בלי מנוי ובלי ענן.' }),
         el('div', { class: 'facts' },
-          ...['תמלול מקומי', 'חיתוך דרך הטקסט', 'כתוביות צרובות', 'גם מהנייד'].map((t) => el('span', { text: t })))),
+          ...['טיימליין רב-ערוצי', 'חיתוך דרך הטקסט', 'כתוביות ותרגום', 'קריינות בקול שלך', `${App.state.tools} כלי MCP`, 'גם מהנייד'].map((t) => el('span', { text: t })))),
       drop),
     el('div', { class: 'projects' },
       el('div', { class: 'sec-head' }, el('span', { class: 'eyebrow', text: 'PROJECTS' }), el('h2', { text: 'הפרויקטים שלי' })),
@@ -169,6 +181,8 @@ export async function openSettings(section = 'transcribe') {
       const r = await api('/api/settings', { method: 'PUT', body: patch });
       App.state.settings = r.settings;
       App.state.ai = r.ai;
+      App.state.voice = r.voice;
+      App.state.stock = r.stock;
       document.dispatchEvent(new CustomEvent('studio:settings'));
       return r;
     } catch (e) { toast(e.message, { error: true }); return null; }
@@ -264,9 +278,43 @@ export async function openSettings(section = 'transcribe') {
     phone.append(el('p', { class: 'muted', text: 'נכנסת מהנייד. את ההגדרות אפשר לשנות רק מהמחשב שהסטודיו רץ עליו.' }));
   }
 
+  // --- voice
+  const vs = s.voice;
+  const voiceBox = el('div', { class: 'prov-fields' });
+  const drawVoice = (prov) => {
+    voiceBox.replaceChildren();
+    if (prov === 'none') { voiceBox.append(el('p', { class: 'muted', text: 'בלי שירות קול אין קריינות ואין שיבוט קול. כל השאר עובד כרגיל.' })); return; }
+    const cfg = vs[prov];
+    const key = el('input', { type: 'password', dir: 'ltr', autocomplete: 'off', placeholder: cfg.has_key ? `מפתח שמור ${cfg.key_hint}` : 'המפתח', disabled: readonly,
+      onchange: async () => { if (key.value.trim() && await save({ voice: { [prov]: { api_key: key.value.trim() } } })) { key.value = ''; key.placeholder = 'המפתח נשמר'; toast('המפתח נשמר במחשב הזה בלבד.'); } } });
+    voiceBox.append(field('מפתח API', key, prov === 'cartesia' ? 'יוצרים מפתח ב-play.cartesia.ai. תומך בעברית, כולל שיבוט קול.' : 'יוצרים מפתח ב-elevenlabs.io. לעברית נדרש המודל Eleven v3.'),
+      el('p', { class: 'muted small', text: 'את הקול עצמו בוחרים בלשונית הקריינות שבעורך.' }));
+  };
+  const voiceProvs = el('div', { class: 'choices' });
+  for (const pv of [{ id: 'none', label: 'בלי קריינות', hint: '' }, { id: 'cartesia', label: 'Cartesia', hint: 'קריינות ושיבוט קול, עברית מלאה' }, { id: 'elevenlabs', label: 'ElevenLabs', hint: 'קריינות ושיבוט קול' }]) {
+    const input = el('input', { type: 'radio', name: 'vprov', value: pv.id, disabled: readonly,
+      onchange: async () => { vs.provider = pv.id; await save({ voice: { provider: pv.id } }); drawVoice(pv.id); } });
+    input.checked = vs.provider === pv.id;
+    voiceProvs.append(el('label', { class: 'choice' }, input, el('span', {}, el('b', { text: pv.label }), pv.hint ? el('small', { text: pv.hint }) : null)));
+  }
+  drawVoice(vs.provider);
+
+  // --- stock
+  const stockKey = (name, label, hint) => {
+    const input = el('input', { type: 'password', dir: 'ltr', autocomplete: 'off', placeholder: s.stock['has_' + name] ? `מפתח שמור ${s.stock[name + '_hint']}` : 'המפתח', disabled: readonly,
+      onchange: async () => { if (input.value.trim() && await save({ stock: { [name]: input.value.trim() } })) { input.value = ''; input.placeholder = 'המפתח נשמר'; } } });
+    return field(label, input, hint);
+  };
+  const stockBox = el('div', {},
+    el('p', { class: 'muted', text: 'תמונות ומוזיקה מ-Openverse עובדות בלי מפתח. לווידאו (B-roll ואוברליי) צריך מפתח חינמי של אחד המאגרים.' }),
+    stockKey('pexels_key', 'Pexels', 'מפתח חינמי ב-pexels.com/api'),
+    stockKey('pixabay_key', 'Pixabay', 'מפתח חינמי ב-pixabay.com/api/docs'));
+
   const sections = [
     { id: 'transcribe', label: 'תמלול', node: el('div', {}, el('h3', { text: 'מודל תמלול' }), models, field('שפת הדיבור בסרטונים', lang)) },
-    { id: 'ai', label: 'AI', node: el('div', {}, el('h3', { text: 'מודל לעריכה חכמה' }), provs, provBox) },
+    { id: 'ai', label: 'AI', node: el('div', {}, el('h3', { text: 'מודל לעריכה חכמה ולתרגום' }), provs, provBox) },
+    { id: 'voice', label: 'קול', node: el('div', {}, el('h3', { text: 'שירות קריינות' }), voiceProvs, voiceBox) },
+    { id: 'stock', label: 'מאגר', node: el('div', {}, el('h3', { text: 'מאגר חינמי' }), stockBox) },
     { id: 'phone', label: 'נייד', node: el('div', {}, el('h3', { text: 'גישה מהנייד' }), phone) },
   ];
   const nav = el('div', { class: 'seg wide' });
@@ -326,11 +374,15 @@ window.addEventListener('dragover', (e) => e.preventDefault());
 window.addEventListener('drop', (e) => e.preventDefault());
 
 (async function boot() {
+  let saved = null;
+  try { saved = localStorage.getItem('studio-theme'); } catch { /* private mode */ }
+  setTheme(saved || 'dark', false);
   try {
     await refreshState();
   } catch (e) {
     view.replaceChildren(el('div', { class: 'fatal card' }, el('h2', { text: 'הסטודיו לא זמין' }), el('p', { text: e.message })));
     return;
   }
+  if (!saved) setTheme(App.state.settings.theme || 'dark', false);
   route();
 })();

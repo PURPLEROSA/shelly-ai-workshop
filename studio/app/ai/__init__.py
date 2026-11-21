@@ -227,3 +227,133 @@ def write_text(p: dict, kind: str, instruction: str = "") -> str:
         raise UserError("אין תמלול לעבוד איתו.")
     out = complete(TEXT_SYSTEM, f"{task}\n\nתמלול הסרטון:\n{text}")
     return out.strip()
+
+
+# ------------------------------------------------------------ translation
+
+LANG_NAMES = {"he": "Hebrew", "en": "English", "ar": "Arabic", "ru": "Russian", "fr": "French", "es": "Spanish"}
+
+TRANSLATE_SYSTEM = """You translate the subtitles of a video. You receive numbered lines, each one a sentence spoken in the video. Translate every line into {language}, keeping the speaker's tone and register: natural spoken language, not a literal word-for-word rendering. Keep names and product names as they are. Do not merge, split, drop or reorder lines.
+
+Reply with JSON only, in this shape:
+{{"lines": [{{"n": 0, "text": "..."}}]}}"""
+
+LINES_SCHEMA = {
+    "type": "object",
+    "properties": {"lines": {"type": "array", "items": {
+        "type": "object", "properties": {"n": {"type": "integer"}, "text": {"type": "string"}},
+        "required": ["n", "text"], "additionalProperties": False}}},
+    "required": ["lines"], "additionalProperties": False,
+}
+
+
+def sentences(words: list[dict]) -> list[dict]:
+    """Group words into sentences: {s, e, text, first, last}."""
+    out, cur = [], []
+    for i, w in enumerate(words):
+        if not w["t"].strip():
+            continue
+        if cur:
+            prev = words[cur[-1]]
+            if prev["t"].rstrip("\"'”’)")[-1:] in ".?!…" or w["s"] - prev["e"] > 1.2 or len(cur) >= 28:
+                out.append(cur)
+                cur = []
+        cur.append(i)
+    if cur:
+        out.append(cur)
+    return [{"s": words[ix[0]]["s"], "e": words[ix[-1]]["e"], "first": ix[0], "last": ix[-1],
+             "text": " ".join(words[i]["t"] for i in ix)} for ix in out]
+
+
+def spread_words(text: str, s: float, e: float) -> list[dict]:
+    """Give the words of a translated sentence timings spread across the sentence's span."""
+    parts = text.split()
+    if not parts:
+        return []
+    weights = [len(p) + 1.5 for p in parts]
+    total = sum(weights)
+    out, t = [], s
+    for part, wgt in zip(parts, weights):
+        d = (e - s) * wgt / total
+        out.append({"t": part, "s": round(t, 3), "e": round(t + d, 3)})
+        t += d
+    return out
+
+
+def translate_words(words: list[dict], lang: str, on_progress=None) -> list[dict]:
+    """Translate a transcript. Returns timed words in the target language."""
+    sents = sentences(words)
+    if not sents:
+        return []
+    system = TRANSLATE_SYSTEM.format(language=LANG_NAMES.get(lang, lang))
+    out: list[dict] = []
+    batch = 40
+    for start in range(0, len(sents), batch):
+        chunk = sents[start:start + batch]
+        user = "\n".join(f"{n}: {s['text']}" for n, s in enumerate(chunk))
+        data = extract_json(complete(system, user, LINES_SCHEMA))
+        got = {}
+        for line in data.get("lines") or []:
+            try:
+                got[int(line["n"])] = " ".join(str(line["text"]).split())
+            except (KeyError, TypeError, ValueError):
+                continue
+        if len(got) < max(1, len(chunk) // 2):
+            raise UserError("המודל לא החזיר תרגום מלא. מנסים שוב, או בוחרים מודל חזק יותר.")
+        for n, s in enumerate(chunk):
+            out.extend(spread_words(got.get(n, ""), s["s"], s["e"]))
+        if on_progress:
+            on_progress(min(1.0, (start + batch) / len(sents)))
+    return out
+
+
+# ------------------------------------------------------- the in-app editor
+
+PLAN_SYSTEM = """You are the editor inside a video editing studio. The person tells you what they want, and you answer with the list of studio operations that does it. The studio runs your operations in order.
+
+You get a description of the project (tracks, items, timing), the transcript as numbered words (index|word) per media file, and the catalogue of operations with their parameters. Times are timeline seconds unless a parameter says otherwise.
+
+How to work:
+- Use only operations from the catalogue, with only the parameters they list.
+- Prefer the fewest operations that fully do the job. For cutting speech, use delete_words with the word indices and include the exact words in "text" so the cut can be verified.
+- When the person names a target length, land as close to it as you can without going over, and keep what remains coherent.
+- What is left around every cut must still sound like natural speech.
+- If the request cannot be done with these operations, return no steps and say why in the summary.
+
+Write "summary" (one or two sentences on what you did and why) in the language the person wrote in.
+
+Reply with JSON only, in this shape:
+{"summary": "...", "steps": [{"op": "operation_name", "args_json": "{\\"param\\": value}"}]}
+"args_json" is the operation's arguments as a JSON object written as a string."""
+
+PLAN_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "summary": {"type": "string"},
+        "steps": {"type": "array", "items": {
+            "type": "object", "properties": {"op": {"type": "string"}, "args_json": {"type": "string"}},
+            "required": ["op", "args_json"], "additionalProperties": False}},
+    },
+    "required": ["summary", "steps"], "additionalProperties": False,
+}
+
+
+def plan(instruction: str, project_description: dict, transcripts: list[dict], catalogue: list[dict]) -> dict:
+    """Ask the model for a list of operations. Returns {"summary", "steps": [{"op", "args"}]}."""
+    cat = "\n".join(f"- {c['name']}({', '.join(c['params'])}): {c['desc']}" for c in catalogue)
+    tx = "\n\n".join(f"Media {t['media']} ({t['name']}):\n{t['text']}" for t in transcripts) or "(no transcript)"
+    user = (f"Request: {instruction.strip()}\n\nProject:\n{json.dumps(project_description, ensure_ascii=False)}\n\n"
+            f"Transcript:\n{tx}\n\nOperations:\n{cat}")
+    data = extract_json(complete(PLAN_SYSTEM, user, PLAN_SCHEMA))
+    steps = []
+    for s in data.get("steps") or []:
+        if not isinstance(s, dict) or not s.get("op"):
+            continue
+        raw = s.get("args_json", s.get("args", {}))
+        if isinstance(raw, str):
+            try:
+                raw = json.loads(raw) if raw.strip() else {}
+            except ValueError:
+                raise UserError("המודל החזיר פעולה במבנה לא תקין. מנסים שוב, או בוחרים מודל חזק יותר.")
+        steps.append({"op": str(s["op"]), "args": raw if isinstance(raw, dict) else {}})
+    return {"summary": str(data.get("summary", ""))[:800], "steps": steps}

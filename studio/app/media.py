@@ -82,12 +82,12 @@ def probe(path: Path) -> dict:
     return info
 
 
-def run(args: list[str], on_progress=None, total: float | None = None, cancel=None) -> None:
+def run(args: list[str], on_progress=None, total: float | None = None, cancel=None, cwd: Path | None = None) -> None:
     """Run ffmpeg. Reports progress as 0..1 of `total` seconds and honours `cancel`."""
     cmd = [ffmpeg(), "-hide_banner", "-nostdin", "-y", "-loglevel", "error", "-progress", "pipe:1",
            "-nostats"] + args
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-                            errors="replace", **_quiet())
+                            errors="replace", cwd=str(cwd) if cwd else None, **_quiet())
     err_lines: list[str] = []
 
     def drain() -> None:
@@ -173,3 +173,24 @@ def audio_16k(src: Path):
     if proc.returncode != 0 or len(proc.stdout) < 3200:
         raise MediaError(proc.stderr.decode("utf-8", "replace")[-400:] or "could not read the audio track")
     return np.frombuffer(proc.stdout, dtype="<i2").astype(np.float32) / 32768.0
+
+
+def make_strip(src: Path, dst: Path, duration: float) -> dict | None:
+    """A row of small frames across the video, shown inside its clips on the timeline."""
+    n = int(min(40, max(1, round(duration / 2.5))))
+    try:
+        run(["-i", str(src), "-vf", f"fps={n / max(duration, 0.1):.5f},scale=-2:64,tile={n}x1", "-frames:v", "1",
+             "-q:v", "6", str(dst)])
+    except MediaError:
+        return None
+    return {"n": n} if dst.exists() else None
+
+
+def make_audio_proxy(src: Path, dst: Path) -> None:
+    run(["-i", str(src), "-vn", "-map", "0:a:0", "-c:a", "aac", "-b:a", "128k", "-ac", "2", str(dst)])
+
+
+def cut_wav(src: Path, dst: Path, start: float, end: float) -> None:
+    """A mono WAV of one stretch of a file's sound."""
+    run(["-ss", f"{max(0.0, start):.3f}", "-t", f"{max(0.1, end - start):.3f}", "-i", str(src), "-vn", "-map", "0:a:0",
+         "-ac", "1", "-ar", "44100", "-c:a", "pcm_s16le", str(dst)])

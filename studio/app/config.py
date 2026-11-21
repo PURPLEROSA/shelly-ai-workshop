@@ -36,7 +36,16 @@ DEFAULT_SETTINGS = {
         "ollama": {"base_url": "http://localhost:11434/v1", "model": ""},
         "openai": {"base_url": "https://api.openai.com/v1", "api_key": "", "model": ""},
     },
+    "voice": {
+        "provider": "none",  # none | cartesia | elevenlabs
+        "cartesia": {"api_key": "", "voice_id": ""},
+        "elevenlabs": {"api_key": "", "voice_id": ""},
+        "cloned": [],        # voices cloned from the user's own recordings
+    },
+    "stock": {"pexels_key": "", "pixabay_key": ""},
+    "theme": "dark",
 }
+SECRET_KEYS = ("api_key", "pexels_key", "pixabay_key")
 
 _lock = threading.RLock()
 _cache: dict | None = None
@@ -93,6 +102,15 @@ def _save(s: dict) -> None:
         pass
 
 
+def _strip_blank_secrets(node) -> None:
+    if isinstance(node, dict):
+        for k in list(node):
+            if k in SECRET_KEYS and node[k] in ("", None, "__keep__"):
+                node.pop(k)
+            else:
+                _strip_blank_secrets(node[k])
+
+
 def update_settings(patch: dict) -> dict:
     """Merge a patch into the stored settings. Blank secrets keep their old value."""
     global _cache
@@ -100,22 +118,28 @@ def update_settings(patch: dict) -> dict:
         cur = load_settings()
         patch = deepcopy(patch or {})
         patch.pop("token", None)
-        for prov in ("claude", "openai"):
-            sub = (patch.get("ai") or {}).get(prov)
-            if isinstance(sub, dict) and sub.get("api_key") in ("", None, "__keep__"):
-                sub.pop("api_key", None)
+        _strip_blank_secrets(patch)
         new = _merge(cur, patch)
         _cache = new
         _save(new)
         return deepcopy(new)
 
 
+def _mask(node) -> None:
+    if isinstance(node, dict):
+        for k in list(node):
+            if k in SECRET_KEYS:
+                key = node.pop(k) or ""
+                name = "key" if k == "api_key" else k
+                node["has_" + name] = bool(key)
+                node[name + "_hint"] = ("…" + key[-4:]) if len(key) >= 8 else ""
+            else:
+                _mask(node[k])
+
+
 def public_settings() -> dict:
     """Settings as the browser may see them: secrets are replaced by a flag."""
     s = load_settings()
     s.pop("token", None)
-    for prov in ("claude", "openai"):
-        key = s["ai"][prov].pop("api_key", "")
-        s["ai"][prov]["has_key"] = bool(key)
-        s["ai"][prov]["key_hint"] = ("…" + key[-4:]) if len(key) >= 8 else ""
+    _mask(s)
     return s

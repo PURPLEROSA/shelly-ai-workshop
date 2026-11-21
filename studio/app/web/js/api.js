@@ -26,12 +26,12 @@ export async function api(path, { method = 'GET', body, signal } = {}) {
   return type.includes('json') ? res.json() : res;
 }
 
-export function uploadVideo(file, onProgress) {
+export function uploadFile(url, file, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/projects?name=' + encodeURIComponent(file.name));
+    xhr.open('POST', url);
     xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total); };
     xhr.onload = () => {
       let data = null;
       try { data = JSON.parse(xhr.responseText); } catch { /* ignore */ }
@@ -42,6 +42,9 @@ export function uploadVideo(file, onProgress) {
     xhr.send(file);
   });
 }
+
+export const uploadVideo = (file, onProgress) =>
+  uploadFile('/api/projects?name=' + encodeURIComponent(file.name), file, onProgress);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
