@@ -1,0 +1,31 @@
+[project]
+name = "sheli-studio"
+version = "1.0.0"
+description = "הסטודיו שלי: סטודיו מקומי לעריכת תוכן. תמלול, עריכה דרך טקסט, כתוביות ו-AI."
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.32",
+    "python-multipart>=0.0.12",
+    "faster-whisper>=1.1.0",
+    "numpy>=1.26",
+    "pillow>=11.0",
+    "imageio-ffmpeg>=0.5.1",
+    "segno>=1.6",
+    "anthropic>=0.70",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "python-bidi>=0.6"]
+
+[tool.uv]
+package = false
+# Newer builds of these two need macOS 14 and Apple Silicon. Holding them back on
+# Macs keeps the studio installable on Intel Macs and on macOS 12 and 13.
+constraint-dependencies = [
+    "onnxruntime<1.20 ; sys_platform == 'darwin'",
+    "av<14 ; sys_platform == 'darwin'",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
