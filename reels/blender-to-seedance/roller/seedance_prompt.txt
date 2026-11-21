@@ -4,31 +4,33 @@ REFERENCES
 @image4  = the SHOTCALLER garage and its 80s sedan (mood, building, sign).
 
 PROMPT
-Follow @video1 exactly: one continuous 30-second FPV take. Match its camera path, speed, height, tilt, roll and framing moment for moment, and re-render every grey-box shape as photoreal live action in Venice Beach, Los Angeles. Everything is American: US street signs and stars-and-stripes flags, a diner, a taco truck, a yellow school bus, pickup trucks, tall skinny palms, a pier with a Ferris wheel. The grey figures are a lively crowd: skaters, cyclists, joggers, basketball players, beachgoers, shoppers. The coloured mannequin is the woman from @image1 @image2 @image3 on white inline skates. The camera never settles: it dives, whips, pushes in and yanks back the whole way.
+Real footage, not CG, not animation: one continuous 30-second take filmed for real on a cinema FPV drone on location in Venice Beach, Los Angeles. Follow @video1 exactly: match its camera path, speed, height, tilt, roll and framing moment for moment, and replace every grey-box shape with the real thing. The coloured mannequin is the woman from @image1 @image2 @image3 on white inline skates.
+
+Camera and optics: full-frame sensor, 14mm lens, 180-degree shutter with true motion blur, faint prop vibration, the horizon banking in turns. Whenever the sun is in or near frame the lens flares for real: a hot core, a chain of ghosts sliding across the frame, warm veiling glare that lifts the blacks, highlights that bloom and clip softly, dust on the front element catching the light. Exposure breathes like a real camera, blowing out for a beat when it meets daylight and taking a moment to open up indoors. Fine film grain, slight fringing and vignetting at the edges.
 
 Camera, by the second:
-0-3s: straight-down drone view over the boardwalk in clear morning light, gulls gliding under the lens. The camera corkscrews down fast toward her as she tears through the crowd in S-curves; she glances up and points at the lens.
-3-5.5s: at head height the camera whips a full circle around her at speed, front and back, as she snaps a quick 360 of her own.
-5.5-8s: it drops to ankle height behind her wheels; she tucks and jumps the kerb, the camera slides underneath her, tilting up at the holographic cargo pants against the sky, and comes out in front of her.
-8-10.5s: flying backward ahead of her as she crosses the coast road between passing cars.
-10.5-12s: she throws a full 360 spin; the camera orbits around her the opposite way and ends on her other side.
-12-14s: she slaloms between café planters past a parked police cruiser; the camera swings in behind her as supermarket glass doors slide open.
-14-16s: the camera rushes in over her shoulder, then yanks back low as her hand clips a pyramid of oranges; they avalanche and roll along with the lens while boxes rain off the top shelves.
-16-17.2s: it whips around to her face and pushes in tight. A black can of zero-sugar cola drops off the shelf straight into her hand; she cracks it open and fizz and mist burst out of the can.
-17.2-18.5s: the camera snaps back wide, her whole body gliding through the falling boxes as she drinks, then punches in again on the sip and her grin, then pulls out.
-18.5-20s: the camera drops low in front of her as she sinks into a one-leg squat and slides under a half-lowered steel shutter straight into a blazing orange sunset.
-20-21.5s: the yard of the SHOTCALLER garage from @image4, its 80s sedan, repainted deep metallic purple with teal and pink pinstripes, rolling out with headlights on. A black-and-white police cruiser cruises past. She tosses the can, sprints after it, and, boom, grabs its trunk with both hands as the camera whips around behind her.
-21.5-25.5s: the cruiser tows her across the lot and onto the coast road, light bar flashing; she rides crouched on her skates, lets one hand go, twists back to wave and laugh at the lens, then throws a fist in the air. The camera rides low just behind her with the sun dead ahead.
-25.5-30s: the camera lets them go. The cruiser accelerates away up the palm-lined coast road with her in tow, getting smaller, while the camera cranes straight up into a wide aerial: road, boardwalk, ocean, the huge sun on the horizon.
+0-3s: straight-down view over the boardwalk, low morning sun raking long palm shadows across the concrete, gulls under the lens. The camera corkscrews down fast toward her as she tears through the crowd in S-curves; she glances up and points at the lens.
+3-5.5s: at head height it whips a full circle around her as she snaps a quick 360; each time it faces the sun a flare sweeps the frame.
+5.5-8s: it drops to ankle height behind her wheels; she tucks and jumps the kerb, the camera slides underneath her and looks up, the sun bursting through her hair, and comes out in front of her.
+8-10.5s: flying backward ahead of her as she crosses the coast road, windshields glinting.
+10.5-12s: she throws a full 360 spin; the camera orbits the opposite way and ends on her other side.
+12-14s: she slaloms between café planters past a parked police cruiser; the camera swings in behind her as supermarket glass doors slide open and the image dips dark for a beat.
+14-16s: under flat greenish fluorescent tubes the camera rushes in over her shoulder, then yanks back low as her hand clips a pyramid of oranges; they avalanche and roll with the lens while boxes rain off the top shelves.
+16-17.2s: it whips to her face and pushes in tight. A black can of zero-sugar cola drops off the shelf into her hand; she cracks it and fizz bursts out, two droplets landing on the lens and staying there.
+17.2-18.5s: it snaps back wide as she drinks among the falling boxes, punches in again on the sip and her grin, then pulls out.
+18.5-20s: it drops low in front of her as she slides in a one-leg squat under a half-lowered steel shutter. The frame blows out white-orange, then settles on a blazing sunset, the sun punching straight into the lens.
+20-21.5s: the yard of the SHOTCALLER garage from @image4, its 80s sedan, repainted deep metallic purple with teal and pink pinstripes, rolling out with headlights on. A black-and-white police cruiser passes. She tosses the can, sprints, and grabs its trunk with both hands as the camera whips around behind her.
+21.5-25.5s: the cruiser tows her onto the coast road, red and blue strobes flashing across her holographic pants; she lets one hand go, twists back to wave and laugh at the lens, then throws a fist in the air. The sun sits dead ahead, flare ghosts drifting, dust glowing gold, the droplets on the lens lit up.
+25.5-30s: the camera lets them go. The cruiser pulls away up the palm-lined road with her in tow, getting smaller, as the camera cranes straight up: hazy coastline, the ocean a sheet of glare, the huge sun on the horizon.
 
-Subject: maintain exact identity from @image1 @image2 @image3. Long straight brown hair, hot-pink ribbed crop tank, low-rise holographic iridescent wide cargo pants, gold pendant necklace. White inline skates replace the sneakers. Playful, fearless, clearly having the time of her life. No identity drift, same face and body throughout.
+Subject: exact identity from @image1 @image2 @image3. Long straight brown hair, hot-pink ribbed crop tank, low-rise holographic iridescent cargo pants, gold pendant. Real skin: pores, sweat sheen, flyaway hairs, natural asymmetry, no beauty filter. Fearless and having the time of her life.
 
-Light: one day passes inside the take. Cool clear morning sun, hard white noon in the street, flat fluorescent in the supermarket, then orange, pink and violet sunset over the Pacific from the moment she leaves the store. The holographic fabric flashes a different colour in each light.
+World: everything American and lived-in. Sun-faded signs, cracked asphalt, oil stains, chipped paint, litter, scuffed wheels. The crowd acts like real people who are not being filmed: they glance, flinch, step aside, keep walking. Weight, momentum, wheel contact, hair and cloth all obey real physics.
 
-Style: one unbroken shot, no cuts. 14mm wide-angle FPV drone, photoreal, natural motion blur, true-to-life colour.
+Light: only real sources. Morning sun, hard noon, store tubes, then orange to violet sunset over the Pacific and the cruiser's light bar. Graded like a film print: natural contrast, restrained colour, warm highlights.
 
-Audio: skate wheels buzzing on concrete, ocean and gulls, a car passing close, a door chime, oranges thudding and rolling, boxes hitting the floor, the crack and hiss of the can, a boombox synth beat from the garage, then a short police siren whoop, the cruiser's engine pulling away and her laughter fading up the road. No dialogue, no voice-over.
+Audio: production sound only. Wheels on concrete, ocean, gulls, a car passing close, a door chime, oranges and boxes hitting the floor, the crack and hiss of the can, a short siren whoop, the engine pulling away, her laugh, wind on the microphone. No music, no dialogue.
 
-Format: 30 seconds, 16:9, 720p or higher, 30 fps.
+Format: 30 seconds, 16:9, 1080p.
 
-Avoid: cuts, identity drift, face changes, extra limbs, warped skate wheels, floating feet, reference blending artifacts, captions or added on-screen text. The garage sign reads exactly SHOTCALLER and the cruiser reads POLICE.
+Avoid: CG or game-engine look, plastic or waxy skin, airbrushed faces, oversaturated colour, HDR glow, uniform sharpness, spotless surfaces, melting background faces, gibberish signs, warped wheels, floating feet, sliding contact, extra limbs or fingers, identity drift, cuts, captions. Signs read exactly SHOTCALLER, SUPERMARKET, DINER, TACOS and POLICE.
