@@ -24,7 +24,8 @@ def ffmpeg() -> str:
 
 @lru_cache(maxsize=1)
 def ffmpeg_major() -> int:
-    out = subprocess.run([ffmpeg(), "-version"], capture_output=True, text=True, **_quiet()).stdout
+    out = subprocess.run([ffmpeg(), "-version"], capture_output=True, text=True, encoding="utf-8",
+                         errors="replace", **_quiet()).stdout
     m = re.search(r"ffmpeg version n?(\d+)\.", out)
     return int(m.group(1)) if m else 99
 
@@ -45,7 +46,7 @@ def _time_to_s(text: str) -> float:
 def probe(path: Path) -> dict:
     """Read duration, display size, frame rate and audio presence of a media file."""
     res = subprocess.run([ffmpeg(), "-hide_banner", "-i", str(path)], capture_output=True,
-                         text=True, errors="replace", **_quiet())
+                         text=True, encoding="utf-8", errors="replace", **_quiet())
     err = res.stderr
     info = {"duration": 0.0, "width": 0, "height": 0, "fps": 30.0, "has_audio": False,
             "has_video": False, "rotation": 0}
@@ -87,7 +88,7 @@ def run(args: list[str], on_progress=None, total: float | None = None, cancel=No
     cmd = [ffmpeg(), "-hide_banner", "-nostdin", "-y", "-loglevel", "error", "-progress", "pipe:1",
            "-nostats"] + args
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-                            errors="replace", cwd=str(cwd) if cwd else None, **_quiet())
+                            encoding="utf-8", errors="replace", cwd=str(cwd) if cwd else None, **_quiet())
     err_lines: list[str] = []
 
     def drain() -> None:

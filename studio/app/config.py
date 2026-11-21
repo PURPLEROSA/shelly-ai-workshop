@@ -5,6 +5,7 @@ import json
 import os
 import secrets
 import threading
+import time
 from copy import deepcopy
 from pathlib import Path
 
@@ -71,14 +72,31 @@ def write_json(path: Path, data) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + f".{os.getpid()}.{threading.get_ident()}.tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
-    os.replace(tmp, path)
+    replace(tmp, path)
+
+
+def replace(src, dst) -> None:
+    """Move `src` over `dst`. Windows refuses while another reader, an antivirus scan or a sync
+    tool holds the target for a moment, so the move is retried briefly."""
+    for attempt in range(10):
+        try:
+            os.replace(src, dst)
+            return
+        except PermissionError:
+            if attempt == 9:
+                raise
+            time.sleep(0.02 * (attempt + 1))
 
 
 def read_json(path: Path, default=None):
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return default
+    for attempt in range(6):
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except PermissionError:
+            time.sleep(0.02 * (attempt + 1))   # Windows: the file is being replaced right now
+        except (OSError, ValueError):
+            return default
+    return default
 
 
 def load_settings() -> dict:

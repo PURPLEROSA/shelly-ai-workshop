@@ -20,7 +20,7 @@ def test_every_sound_effect_is_audible_and_unclipped():
 
 def test_look_cube_matches_the_curves_the_browser_uses():
     for look in looks.LOOKS:
-        lines = looks.cube_path(look["id"]).read_text().splitlines()
+        lines = looks.cube_path(look["id"]).read_text(encoding="utf-8").splitlines()
         assert lines[0] == f"LUT_3D_SIZE {looks.CUBE}" and len(lines) == looks.CUBE ** 3 + 1
         n = looks.CUBE
         for r, g, b in ((0, 0, 0), (n - 1, n - 1, n - 1), (16, 8, 24), (5, 30, 11)):

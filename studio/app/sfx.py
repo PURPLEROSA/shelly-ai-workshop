@@ -8,6 +8,7 @@ from __future__ import annotations
 import wave
 from pathlib import Path
 
+from . import config
 from .config import DATA_DIR
 
 SR = 48000
@@ -215,7 +216,7 @@ def path(name: str) -> Path:
         wf.setsampwidth(2)
         wf.setframerate(SR)
         wf.writeframes(pcm.tobytes())
-    tmp.replace(out)
+    config.replace(tmp, out)
     return out
 
 

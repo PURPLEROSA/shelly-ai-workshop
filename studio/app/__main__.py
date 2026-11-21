@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import socket
 import sys
 import threading
@@ -11,7 +12,11 @@ import webbrowser
 def _free_port(start: int) -> int:
     for port in range(start, start + 40):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            # on Windows SO_REUSEADDR would let the bind succeed on a port that is already taken
+            if os.name == "nt":
+                s.setsockopt(socket.SOL_SOCKET, getattr(socket, "SO_EXCLUSIVEADDRUSE", socket.SO_REUSEADDR), 1)
+            else:
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 s.bind(("0.0.0.0", port))
                 return port

@@ -89,15 +89,51 @@ def _download(key: str, job: Job) -> str:
         done.set()
 
 
+def _gpu_ready() -> bool:
+    """Whether to try the graphics card. STUDIO_DEVICE=cpu or =cuda overrides the check.
+
+    On Windows a card whose cuBLAS or cuDNN library is missing ends the whole program in the
+    middle of a transcription instead of raising an error, so the libraries are looked for first."""
+    choice = os.environ.get("STUDIO_DEVICE", "").strip().lower()
+    if choice in ("cpu", "cuda"):
+        return choice == "cuda"
+    if os.name != "nt":
+        return True
+    import ctypes
+    try:
+        for name in ("cublas64_12.dll", "cudnn_ops64_9.dll"):
+            ctypes.WinDLL(name)
+    except OSError:
+        return False
+    return True
+
+
+def _plain_path(path: str) -> str:
+    """On Windows the model loader cannot open files under a folder with non-English letters
+    (a Hebrew user name, for example), so such a path is swapped for its short 8.3 form."""
+    if os.name != "nt" or path.isascii():
+        return path
+    try:
+        import ctypes
+        buf = ctypes.create_unicode_buffer(1024)
+        n = ctypes.windll.kernel32.GetShortPathNameW(path, buf, 1024)
+        if 0 < n < 1024 and buf.value.isascii():
+            return buf.value
+    except Exception:
+        pass
+    return path
+
+
 def _load(key: str, path: str, force_cpu: bool = False):
     from faster_whisper import WhisperModel
     import ctranslate2
+    path = _plain_path(path)
     if _loaded["key"] == key and _loaded["model"] is not None and not (force_cpu and _loaded["device"] != "cpu"):
         return _loaded["model"]
     _loaded.update(key=None, model=None, device=None)
     model = None
     device = "cpu"
-    if not force_cpu:
+    if not force_cpu and _gpu_ready():
         try:
             if ctranslate2.get_cuda_device_count() > 0:
                 model = WhisperModel(path, device="cuda", compute_type="float16")
@@ -106,17 +142,36 @@ def _load(key: str, path: str, force_cpu: bool = False):
             model = None
     if model is None:
         threads = max(2, min(8, os.cpu_count() or 4))
-        model = WhisperModel(path, device="cpu", compute_type="int8", cpu_threads=threads)
+        try:
+            model = WhisperModel(path, device="cpu", compute_type="int8", cpu_threads=threads)
+        except Exception as e:
+            if os.name == "nt" and not path.isascii():
+                raise UserError("מודל התמלול לא נטען כי תיקיית הסטודיו נמצאת בנתיב עם אותיות שאינן באנגלית. "
+                                "מעבירים את התיקייה studio ל-C:\\studio ומפעילים שוב.") from e
+            raise
         device = "cpu"
     _loaded.update(key=key, model=model, device=device)
     return model
 
 
+def _filter_problem(e: BaseException) -> bool:
+    if isinstance(e, (ImportError, OSError)) or isinstance(e.__cause__, (ImportError, OSError)):
+        return True
+    return "onnxruntime" in str(e).lower()
+
+
 def _run(model, audio, language: str | None, duration: float, job: Job, lo: float) -> list[dict]:
-    segments, _info = model.transcribe(
-        audio, language=language, word_timestamps=True, beam_size=5,
-        vad_filter=True, vad_parameters={"min_silence_duration_ms": 400},
-        condition_on_previous_text=False)
+    opts = {"language": language, "word_timestamps": True, "beam_size": 5, "condition_on_previous_text": False}
+    try:
+        segments, _info = model.transcribe(audio, vad_filter=True,
+                                           vad_parameters={"min_silence_duration_ms": 400}, **opts)
+    except (ImportError, OSError, RuntimeError) as e:
+        if not _filter_problem(e):
+            raise
+        # the pause filter needs onnxruntime, which cannot load on a Windows machine with an old
+        # Visual C++ runtime. Transcription works without it.
+        print(f"[transcribe] pause filter unavailable ({type(e).__name__}: {e}), continuing without it")
+        segments, _info = model.transcribe(audio, vad_filter=False, **opts)
     words: list[dict] = []
     for seg in segments:
         for k, w in enumerate(seg.words or []):

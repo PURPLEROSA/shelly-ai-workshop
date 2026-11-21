@@ -13,7 +13,7 @@ import time
 from fractions import Fraction
 from pathlib import Path
 
-from . import captions, compose, looks, media, model
+from . import captions, compose, config, looks, media, model
 from .jobs import Job, UserError
 
 SR = 48000
@@ -56,7 +56,7 @@ def media_pcm(pid: str, m: dict, cancel=None) -> Path:
     if not pcm.exists():
         tmp = folder / f"audio.{time.time_ns()}.tmp"
         media.extract_pcm(folder / m["file"], tmp, cancel)
-        tmp.replace(pcm)
+        config.replace(tmp, pcm)
     return pcm
 
 
@@ -382,7 +382,7 @@ def render(job: Job, pid: str, p: dict, ratio: str, quality: str, with_captions:
         name = f"{stem}{tag}-{time.strftime('%m%d-%H%M%S')}.mp4"
         (pd / "exports").mkdir(exist_ok=True)
         final = pd / "exports" / name
-        (work / "out.mp4").replace(final)
+        config.replace(work / "out.mp4", final)
         return {"file": name, "created": time.time(), "duration": round(T, 3), "width": w, "height": h,
                 "size": final.stat().st_size, "captions": bool(with_captions and (d["cues"] or d["cues2"])),
                 "ratio": ratio, "fps": round(f, 2)}

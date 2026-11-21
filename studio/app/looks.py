@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from . import config
 from .config import DATA_DIR
 
 N = 17        # points per curve
@@ -98,6 +99,6 @@ def cube_path(look_id: str) -> Path | None:
                 lines.append(" ".join(f"{min(1.0, max(0.0, m[row][0] * v[0] + m[row][1] * v[1] + m[row][2] * v[2])):.5f}"
                                       for row in range(3)))
     tmp = path.with_suffix(".tmp")
-    tmp.write_text("\n".join(lines) + "\n")
-    tmp.replace(path)
+    tmp.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    config.replace(tmp, path)
     return path

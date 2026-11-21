@@ -10,7 +10,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-from . import ai, compose, export, ingest, media, model, ops, sfx, stock, voice
+from . import ai, compose, config, export, ingest, media, model, ops, sfx, stock, voice
 from .jobs import Job, UserError, jobs
 from .ops import AT, BOOL, INT, ITEM, MEDIA, NUM, STR, op
 
@@ -132,7 +132,7 @@ def _narration_job(job: Job, pid: str, text: str, at: float, voice_id: str | Non
     try:
         path = voice.synthesize(text, dest.parent, voice_id, language)
         final = dest.with_suffix(path.suffix)
-        path.replace(final)
+        config.replace(path, final)
         ingest._update(pid, m["id"], file=final.name, meta={"text": text})
         with model.lock(pid):
             cur = model.load(pid)
