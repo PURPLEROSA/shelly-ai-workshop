@@ -10,6 +10,7 @@ Installed on 14 November 2026 from the skills listed on [prompt-motion.com](http
 | `cinetic` | [Leonxlnx/cinetic](https://github.com/Leonxlnx/cinetic) | `skills/cinetic` | `f4bbfc8` | MIT | 19 MB |
 | `html-demo` | [MengTo/Skills](https://github.com/MengTo/Skills) | `agent-skills/web-design/html-demo` | `07274a3` | MIT | 332 KB |
 | `motion-director` | Written here, distilled from the Prompt Motion gallery and guides | | | yours | 280 KB |
+| `component-director` | Written here on 24 November 2026, distilled from the Scrolltide component gallery's public previews | | | yours | 250 KB |
 
 ## The install commands the site lists
 
@@ -30,6 +31,15 @@ npx skills add MengTo/Skills --skill html-demo
 - **`cinetic` expects a toolchain**: Node 22+, ffmpeg 6+, Python 3.11+ with numpy, scipy, soundfile, pyloudnorm, opencv-python and librosa. It sets projects up on first use.
 - **`product-film` targets Remotion.** Check Remotion's licence terms before commercial use.
 - `cinetic` is 19 MB of the 22 MB here. Delete its folder to remove it; nothing else depends on it.
+
+## `component-director` and Scrolltide
+
+`component-director` is for single interactive pieces (a switch, a loader, a card that opens), where `motion-director` is for video. It was written from the public side of [scrolltide.co/components](https://www.scrolltide.co/components): the listing page and its 132 preview clips.
+
+- **Scrolltide's prompts are not in it.** They are the paid product (the page says Yearly and Lifetime plans). The skill's index holds names, tags and links to the public preview clips, plus labels worked out here. A purchased prompt can be pasted into a session and built and checked with this skill like any other.
+- **Its examples are original:** `fever` (a model-temperature slider), `spill` (a context-window loader) and `spike` (a done-list on a desk spike), each one HTML file, each with `?lang=he`.
+- **It needs** Node 22 with Playwright Chromium for `probe.mjs`, Python 3.11+ for `gallery.py`, and ffmpeg only for `gallery.py clip`.
+- **The site refuses automated requests** after the first page load, so the index is a snapshot from 24 November 2026 and has no live refresh. To update it, save the gallery page from a browser and rebuild from that.
 
 ## Left out on purpose
 

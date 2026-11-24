@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spill · a context-window loader</title>
+<!--
+  Spill. A loader for an agent reading your files, where the context window is a window: tokens print in at
+  the bottom, the tape climbs, and what no longer fits leaves over the sill and thins to an outline.
+  The counters stay honest: read, holding, let go.
+
+  job: loader · material: light on glass · gesture: plays by itself, drag to rewind, hover a file · family: story
+  The trick: the settled picture is a pure function of progress p, so any moment can be redrawn exactly;
+  only the tape's scroll is a spring. Add ?lang=he for Hebrew. window.PIECE.scrub(p) draws any moment at once.
+-->
+<style>
+  html, body { height: 100%; margin: 0; }
+  body { display: grid; place-items: center; background: #15151a; color: #ecebf1; overflow-x: hidden;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Heebo, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+
+  .spill { --lh: 30px; --rows: 6; --p: 0; inline-size: min(640px, 100vw - 40px); padding: 20px 0; }
+  .spill header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 0 0 calc(var(--lh) * 2.5); }
+  .spill .eyebrow { margin: 0; font: 500 12px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .14em; text-transform: uppercase; opacity: .5; white-space: nowrap; }
+  .spill .cap { margin: 0; font-size: 15px; opacity: .86; text-align: end; }
+  .spill .cap bdi { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13.5px; }
+
+  /* The window. The canvas reaches above it: that band is where forgotten lines thin out. */
+  .spill .win { position: relative; block-size: calc(var(--lh) * var(--rows) + 16px); border-radius: 14px; cursor: ew-resize; touch-action: pan-y;
+    background: linear-gradient(#ffffff0f, #ffffff05 30%, #ffffff03); box-shadow: inset 0 0 0 1px #ffffff24, inset 0 1px 0 0 #ffffff59, 0 24px 60px -30px #000; user-select: none; -webkit-user-select: none; }
+  .spill canvas { position: absolute; inset-inline: 0; inset-block-start: calc(var(--lh) * -2.5); inline-size: 100%; block-size: calc(100% + var(--lh) * 2.5); display: block; }
+
+  .spill .meter { block-size: 2px; margin: 18px 0 0; background: #ffffff1c; border-radius: 2px; overflow: hidden; }
+  .spill .meter i { display: block; block-size: 100%; inline-size: calc(var(--p) * 100%); background: #ecebf1; }
+
+  .spill .foot { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 18px 0 0; }
+  .spill dl { display: flex; gap: 28px; margin: 0; }
+  .spill dt { font: 500 12px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .1em; text-transform: uppercase; opacity: .5; margin: 0 0 8px; }
+  .spill dd { margin: 0; font: 500 24px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .spill dd.gone { opacity: .5; }
+  .spill button { font: inherit; font-size: 14px; color: inherit; background: none; border: 0; border-radius: 999px; padding: 12px 18px; min-block-size: 44px; cursor: pointer;
+    box-shadow: inset 0 0 0 1px #ffffff40; transition: background .2s, box-shadow .2s; }
+  .spill button:hover { background: #ffffff14; }
+  .spill button:focus-visible { outline: 2px solid #f4b8ca; outline-offset: 3px; }
+  @media (max-width: 520px) { .spill { --lh: 24px; } .spill dl { gap: 18px; } .spill dd { font-size: 19px; } .spill header { flex-direction: column; gap: 10px; } .spill .cap { text-align: start; } }
+</style>
+</head>
+<body>
+<section class="spill" data-piece="spill">
+  <header>
+    <p class="eyebrow"></p>
+    <p class="cap" aria-live="polite"></p>
+  </header>
+  <div class="win" data-grab role="progressbar" aria-valuemin="0" aria-valuemax="100"><canvas aria-hidden="true"></canvas></div>
+  <div class="meter" aria-hidden="true"><i></i></div>
+  <div class="foot">
+    <dl>
+      <div><dt data-t="read"></dt><dd data-n="read">0</dd></div>
+      <div><dt data-t="hold"></dt><dd data-n="hold">0</dd></div>
+      <div><dt data-t="gone"></dt><dd data-n="gone" class="gone">0</dd></div>
+    </dl>
+    <button type="button"></button>
+  </div>
+</section>
+
+<script>
+/* kit:start — helpers a self-contained piece inlines. No dependencies. Source: component-director/scripts/kit.js */
+const K = (() => {
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  // Remap x from a..b to c..d, clamped. map(p, .2, .6) is "the part of p between 20% and 60%, as 0..1".
+  const map = (x, a, b, c = 0, d = 1) => c + (d - c) * clamp((x - a) / (b - a || 1e-9));
+  const smooth = (t) => { t = clamp(t); return t * t * (3 - 2 * t); };
+  const gauss = (d, sigma) => Math.exp(-(d * d) / (2 * sigma * sigma));
+  // Seeded random: the same piece looks the same on every load and in every screenshot.
+  const rand = (seed = 1) => () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+
+  // A damped spring stepped at a fixed 1/120 s, so it feels the same at 60, 120 or 30 fps.
+  // z is the damping ratio: 1 arrives without overshoot, 0.7 overshoots a hair, below 0.4 rings.
+  function spring(x = 0, { k = 180, z = 1, eps = 5e-4 } = {}) {
+    const s = {
+      x, v: 0, to: x, k, z,
+      step(dt) {
+        const c = 2 * s.z * Math.sqrt(s.k);
+        for (let t = Math.min(dt, 0.1); t > 1e-6; t -= 1 / 120) {
+          const h = Math.min(t, 1 / 120);
+          s.v += (-s.k * (s.x - s.to) - c * s.v) * h;
+          s.x += s.v * h;
+        }
+        if (Math.abs(s.x - s.to) < eps && Math.abs(s.v) < eps * 20) { s.x = s.to; s.v = 0; return false; }
+        return true;
+      },
+      snap(v = s.to) { s.x = s.to = v; s.v = 0; },
+    };
+    return s;
+  }
+
+  // One requestAnimationFrame loop per piece. tick(dt, t) returns false when nothing is moving and the
+  // loop goes to sleep; call wake() from any input. It also sleeps while the piece is off screen or the
+  // tab is hidden, and picks up where it left off.
+  function loop(root, tick) {
+    let raf = 0, last = 0, want = false, seen = true;
+    const frame = (now) => {
+      raf = 0;
+      const dt = last ? Math.min((now - last) / 1000, 0.05) : 1 / 60;
+      last = now;
+      want = tick(dt, now / 1000) !== false;
+      if (want && seen && !document.hidden) raf = requestAnimationFrame(frame); else last = 0;
+    };
+    const wake = () => { want = true; if (!raf && seen && !document.hidden) raf = requestAnimationFrame(frame); };
+    const io = new IntersectionObserver(([e]) => { seen = e.isIntersecting; if (seen && want) wake(); }, { rootMargin: '64px' });
+    io.observe(root);
+    const vis = () => { if (!document.hidden && want) wake(); };
+    document.addEventListener('visibilitychange', vis);
+    return { wake, stop() { cancelAnimationFrame(raf); raf = 0; want = false; io.disconnect(); document.removeEventListener('visibilitychange', vis); } };
+  }
+
+  // Mouse, touch and pen through one path, with pointer capture and a release velocity in px/s measured
+  // over the last 90 ms. Coordinates are local to el. Set touch-action in CSS on el (pan-y for a
+  // horizontal drag) or the browser will scroll instead. Returns an unsubscribe function.
+  function drag(el, on) {
+    let id = null, hist = [], x0 = 0, y0 = 0;
+    const pt = (e) => { const r = el.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height }; };
+    const down = (e) => {
+      if (id !== null || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      id = e.pointerId; el.setPointerCapture(id);
+      const p = pt(e); x0 = p.x; y0 = p.y; hist = [{ ...p, t: e.timeStamp }];
+      on.start?.({ ...p, e });
+    };
+    const move = (e) => {
+      if (e.pointerId !== id) return;
+      const p = pt(e); hist.push({ ...p, t: e.timeStamp });
+      while (hist.length > 2 && e.timeStamp - hist[0].t > 90) hist.shift();
+      on.move?.({ ...p, dx: p.x - x0, dy: p.y - y0, e });
+    };
+    const up = (e) => {
+      if (e.pointerId !== id) return;
+      id = null;
+      const p = pt(e), a = hist[0], b = hist[hist.length - 1], dt = (b.t - a.t) / 1000;
+      const stale = e.timeStamp - b.t > 60;                  // held still before letting go: no throw
+      const vx = dt > 0.005 && !stale ? (b.x - a.x) / dt : 0, vy = dt > 0.005 && !stale ? (b.y - a.y) / dt : 0;
+      on.end?.({ ...p, dx: p.x - x0, dy: p.y - y0, vx, vy, e });
+    };
+    el.addEventListener('pointerdown', down); el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    return () => { el.removeEventListener('pointerdown', down); el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); };
+  }
+
+  // Keep a canvas sharp: size its backing store to its CSS box times the device pixel ratio (capped at 2).
+  function fit(canvas, onSize) {
+    const ro = new ResizeObserver(() => {
+      const r = canvas.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.max(1, Math.round(r.width * d)); canvas.height = Math.max(1, Math.round(r.height * d));
+      onSize?.(r.width, r.height, d);
+    });
+    ro.observe(canvas);
+    return () => ro.disconnect();
+  }
+
+  const rm = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reduced = () => rm.matches;
+
+  // Split text so each letter (or each word) can move alone, without breaking right-to-left text, line
+  // wrapping or screen readers. A word and its punctuation stay on one line; every word keeps its own
+  // direction, so a Latin word or "16:30" inside a Hebrew sentence is not reversed. The readable text
+  // stays in the page for assistive tech. Never split Arabic or other joined scripts by letter: pass 'word'.
+  function split(el, by = 'grapheme') {
+    const text = el.textContent, lang = el.closest('[lang]')?.lang || undefined, S = 'Segmenter' in Intl;
+    const letters = (s) => (S ? [...new Intl.Segmenter(lang, { granularity: 'grapheme' }).segment(s)].map((x) => x.segment) : [...s]);
+    const words = (s) => (S ? [...new Intl.Segmenter(lang, { granularity: 'word' }).segment(s)].map((x) => ({ s: x.segment, word: !!x.isWordLike })) : [{ s, word: true }]);
+    const rtl = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+    const mk = (css, txt) => { const n = document.createElement('span'); if (css) n.style.cssText = css; if (txt) n.textContent = txt; return n; };
+    const sr = mk('position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap', text);
+    const box = mk();
+    box.setAttribute('aria-hidden', 'true');
+    const out = [];
+    for (const chunk of text.split(/(\s+)/)) {
+      if (!chunk) continue;
+      if (/^\s+$/.test(chunk)) { box.append(document.createTextNode(chunk)); continue; }
+      if (by === 'word') { const w = mk('display:inline-block;white-space:nowrap', chunk); out.push(w); box.append(w); continue; }
+      // group: no line break inside. core: first word to last word, in its own direction. Punctuation before
+      // and after the core follows the sentence, so the full stop after a Latin word lands on the correct side.
+      const group = mk('white-space:nowrap'), parts = words(chunk);
+      const first = parts.findIndex((x) => x.word), last = parts.length - 1 - [...parts].reverse().findIndex((x) => x.word);
+      let core = null;
+      parts.forEach(({ s, word }, k) => {
+        const inCore = first >= 0 && k >= first && k <= last;
+        if (inCore && !core) { core = mk(); core.dir = rtl.test(parts.slice(first, last + 1).map((x) => x.s).join('')) ? 'rtl' : 'ltr'; group.append(core); }
+        let into = inCore ? core : group;
+        if (word) { const w = mk('display:inline-block;white-space:nowrap'); w.dir = rtl.test(s) ? 'rtl' : 'ltr'; into.append(w); into = w; }
+        for (const g of letters(s)) { const n = mk('display:inline-block', g); into.append(n); out.push(n); }
+      });
+      box.append(group);
+    }
+    el.textContent = '';
+    el.append(sr, box);
+    return out;
+  }
+
+  return { clamp, lerp, map, smooth, gauss, rand, spring, loop, drag, fit, reduced, onReduced: (f) => rm.addEventListener('change', f), split };
+})();
+/* kit:end */
+
+(() => {
+  const COPY = {
+    en: { eyebrow: 'Context window', read: 'read', hold: 'holding', gone: 'let go', again: 'Read it again', label: 'Reading progress',
+      ready: 'Ready.', reading: (f) => `Reading <bdi>${f}</bdi>`, full: (f) => `Reading <bdi>${f}</bdi>, letting the oldest go`, done: (n) => `Done. Holding the last ${n} tokens.` },
+    he: { eyebrow: 'חלון ההקשר', read: 'נקרא', hold: 'בזיכרון', gone: 'שוחרר', again: 'לקרוא שוב', label: 'התקדמות הקריאה',
+      ready: 'מוכן.', reading: (f) => `קורא את <bdi>${f}</bdi>`, full: (f) => `קורא את <bdi>${f}</bdi>, ומשחרר את הישן`, done: (n) => `סיימתי. בזיכרון: ${n} הטוקנים האחרונים.` },
+  };
+  const lang = new URLSearchParams(location.search).get('lang') === 'he' ? 'he' : 'en';
+  if (lang === 'he') { document.documentElement.lang = 'he'; document.documentElement.dir = 'rtl'; }
+  const T = COPY[lang], fmt = new Intl.NumberFormat(lang === 'he' ? 'he-IL' : 'en-US');
+
+  const root = document.querySelector('[data-piece="spill"]');
+  const $ = (s) => root.querySelector(s);
+  const win = $('.win'), canvas = $('canvas'), ctx = canvas.getContext('2d'), cap = $('.cap'), again = $('button');
+  $('.eyebrow').textContent = T.eyebrow;
+  again.textContent = T.again;
+  win.setAttribute('aria-label', T.label);
+  for (const k of ['read', 'hold', 'gone']) $(`[data-t="${k}"]`).textContent = T[k];
+  const rtl = getComputedStyle(root).direction === 'rtl';
+
+  // The tape: five files laid out as lines of token runs, the same on every load.
+  const FILES = [{ name: 'brief.md', lines: 4, tone: [244, 184, 202] }, { name: 'calls.txt', lines: 5, tone: [150, 208, 240] }, { name: 'notes.pdf', lines: 3, tone: [196, 178, 240] },
+    { name: 'invoices.csv', lines: 5, tone: [170, 226, 196] }, { name: 'site.html', lines: 4, tone: [247, 205, 160] }];
+  const COLS = 26, ROWS = 6, GHOST = 2.5;
+  const rnd = K.rand(11), tokens = [];
+  let line = 0;
+  FILES.forEach((f, file) => {
+    for (let l = 0; l < f.lines; l++, line++) {
+      const stop = l === f.lines - 1 ? COLS * (0.35 + rnd() * 0.4) : COLS - rnd() * 3;      // a file's last line ends short
+      for (let col = 0; ;) {
+        const w = 1 + Math.floor(rnd() * rnd() * 5.4);
+        if (col + w > stop) break;
+        tokens.push({ file, line, col, w, weight: w * 3 + 1 });
+        col += w + 0.42;
+      }
+    }
+  });
+  const N = tokens.length, LINES = line;
+  let run = 0;
+  for (const t of tokens) { t.before = run; run += t.weight; }
+
+  let p = 0.52, goal = 0.52;                                // progress, and where it is heading
+  const scroll = K.spring(0, { k: 110, z: 1 });             // the one thing that is not a pure function of p
+  const dim = FILES.map(() => K.spring(1, { k: 160, z: 1 })); // 1 = lit; hovering a file dims the others
+  let W = 0, H = 0, unit = 30, hoverFile = -1, dragging = false;   // unit: one line of tape in px, read from --lh on resize
+
+  const headLine = (q) => tokens[Math.min(N - 1, Math.floor(q * N))].line;
+  const scrollFor = (q) => Math.max(0, headLine(q) - (ROWS - 1));
+
+  // Draw the settled picture for progress q with the tape at scroll position s.
+  function draw(q, s) {
+    const pad = 16, cw = (W - pad * 2) / COLS, th = Math.round(unit * 0.56), top = unit * GHOST + 8, n = q * N;
+    ctx.clearRect(0, 0, W, H);
+    for (let i = 0; i < Math.min(N, Math.ceil(n)); i++) {
+      const t = tokens[i], row = t.line - s;
+      if (row < -GHOST - 0.5 || row > ROWS) continue;
+      const grow = K.smooth(n - i), kept = K.clamp(row + 1), fade = K.clamp(1 + row / (GHOST - 0.3)), head = K.clamp(1 - (n - i) / 6);
+      const w = t.w * cw * (0.4 + 0.6 * grow), h = th, x0 = pad + t.col * cw, x = rtl ? W - x0 - w : x0;
+      const y = top + row * unit + (unit - h) / 2 - (1 - fade) * 10;
+      const [r, g, b] = FILES[t.file].tone, lit = dim[t.file].x;
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, Math.min(6, h / 2));
+      if (kept > 0.01) {
+        const mix = head * 0.75;
+        ctx.fillStyle = `rgba(${Math.round(K.lerp(r, 255, mix))},${Math.round(K.lerp(g, 255, mix))},${Math.round(K.lerp(b, 255, mix))},${((0.8 + 0.2 * head) * kept * grow * (0.25 + 0.75 * lit)).toFixed(3)})`;
+        ctx.fill();
+      }
+      if (kept < 0.99) {
+        ctx.strokeStyle = `rgba(${r},${g},${b},${((1 - kept) * fade * 0.7 * (0.25 + 0.75 * lit)).toFixed(3)})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+  }
+
+  let shownCap = '';
+  function readout(q) {
+    const i = Math.min(N - 1, Math.floor(q * N)), t = tokens[i], first = scrollFor(q);
+    const read = q >= 1 ? run : Math.round(t.before + t.weight * (q * N - i));
+    const gone = tokens.find((x) => x.line >= first).before, hold = read - Math.min(read, gone);
+    $('[data-n="read"]').textContent = fmt.format(read);
+    $('[data-n="hold"]').textContent = fmt.format(hold);
+    $('[data-n="gone"]').textContent = fmt.format(read - hold);
+    root.style.setProperty('--p', K.clamp(q).toFixed(4));
+    win.setAttribute('aria-valuenow', Math.round(q * 100));
+    const f = FILES[t.file].name;
+    const text = q <= 0 ? T.ready : q >= 1 ? T.done(fmt.format(hold)) : first > 0 ? T.full(f) : T.reading(f);
+    if (text !== shownCap) { cap.innerHTML = shownCap = text; win.setAttribute('aria-valuetext', cap.textContent); }
+  }
+
+  const pace = (q) => (q > 0.2 && q < 0.27 ? 0.4 : 1);       // it hesitates as the window fills for the first time
+  const loop = K.loop(root, (dt) => {
+    let moving = false;
+    if (p < goal) { p = Math.min(goal, p + (dt / 9) * pace(p)); moving = true; }
+    else if (p > goal) { p = Math.max(goal, p - dt * 0.9); moving = true; }
+    scroll.to = scrollFor(p);
+    moving = scroll.step(dt) || moving;
+    dim.forEach((d, i) => { d.to = hoverFile < 0 || hoverFile === i ? 1 : 0.22; moving = d.step(dt) || moving; });
+    draw(p, scroll.x);
+    readout(p);
+    return moving;
+  });
+
+  function settle(q) { p = goal = K.clamp(q); scroll.snap(scrollFor(p)); dim.forEach((d) => d.snap(1)); draw(p, scroll.x); readout(p); }
+  function go(q) { goal = K.clamp(q); if (K.reduced()) settle(q); else loop.wake(); }
+  again.addEventListener('click', () => { if (K.reduced()) return settle(1); p = 0; scroll.snap(0); go(1); });
+
+  // Drag across the window to wind the tape back and forth; hover a line to pick out its file.
+  let p0 = 0;
+  K.drag(win, {
+    start: () => { dragging = true; p0 = p; },
+    move: ({ dx, w }) => { const q = K.clamp(p0 + ((rtl ? -dx : dx) / w) * 0.6); if (K.reduced()) settle(q); else { p = goal = q; loop.wake(); } },
+    end: () => { dragging = false; },
+  });
+  win.addEventListener('pointermove', (e) => {
+    if (dragging || e.pointerType === 'touch') return;
+    const r = canvas.getBoundingClientRect();
+    const row = Math.floor((e.clientY - r.top - unit * GHOST - 8) / unit + scroll.x), t = tokens.find((x) => x.line === row);
+    const f = t && t.before < p * run ? t.file : -1;
+    if (f !== hoverFile) { hoverFile = f; loop.wake(); }
+  });
+  win.addEventListener('pointerleave', () => { hoverFile = -1; loop.wake(); });
+
+  K.fit(canvas, (w, h, d) => { W = w; H = h; unit = parseFloat(getComputedStyle(root).getPropertyValue('--lh')) || 30; ctx.setTransform(d, 0, 0, d, 0, 0); draw(p, scroll.x); });
+
+  window.PIECE = { name: 'spill', get value() { return goal; }, set: go, scrub: (q) => { hoverFile = -1; settle(q); } };
+  settle(0.52);
+})();
+</script>
+</body>
+</html>
