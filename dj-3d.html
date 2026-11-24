@@ -45,6 +45,7 @@ body{background:radial-gradient(120% 80% at 50% 30%,#3a2140,#120c18);color:var(-
 <div class="panel" role="group" aria-label="התאמת הדמות">
   <button class="btn" id="play" type="button">הפעילי ביט</button>
   <button class="btn alt" id="shot" type="button">שוט הבא</button>
+  <button class="btn alt" id="rebuild" type="button">בני אותי מחדש</button>
   <label for="cSkin">עור <input id="cSkin" type="color" value="#eab08f"></label>
   <label for="cHair">שיער <input id="cHair" type="color" value="#5c3a20"></label>
   <label for="cTop">טופ <input id="cTop" type="color" value="#e3246d"></label>
@@ -86,13 +87,13 @@ const jogTex = tex(64,64,(g,w,h)=>{g.fillStyle='#16161a';g.fillRect(0,0,w,h);g.s
 const skyTex = tex(4,256,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#3f9cff');gr.addColorStop(.42,'#a9dbff');gr.addColorStop(.5,'#eef8ff');gr.addColorStop(1,'#dff0ff');g.fillStyle=gr;g.fillRect(0,0,w,h);});
 
 /* ---------- materials: glossy toy plastic ---------- */
-const plastic=(color,o={})=>new T.MeshPhysicalMaterial(Object.assign({color,roughness:.35,metalness:0,clearcoat:.8,clearcoatRoughness:.04,envMapIntensity:.35},o));
+const plastic=(color,o={})=>new T.MeshPhysicalMaterial(Object.assign({color,roughness:.22,metalness:0,clearcoat:1,clearcoatRoughness:.03,envMapIntensity:.45},o));
 const lam=(color,opt={})=>plastic(color,opt);
 const M = {
   skin: plastic(0xeab08f), hair: plastic(0x5c3a20), top: plastic(0xe3246d),
   silver: plastic(0xdfe3ea,{metalness:.95,roughness:.16,clearcoat:0,envMapIntensity:1}),
   dark: plastic(0x2b2b33), black: plastic(0x18181d), lips: plastic(0xb5303e), nail: plastic(0xffffff),
-  glass: plastic(0x0e0e12,{roughness:.04}), white: plastic(0xf7f4ef), brow: plastic(0x241612)
+  glass: plastic(0x0e0e12,{roughness:.04}), white: plastic(0xf7f4ef), brow: plastic(0x241612), white2: plastic(0xffffff)
 };
 /* rounded-edge bricks, cached per size */
 function rboxGeo(w,h,d,r,seg){const sh=new T.Shape(),e=1e-5,rr=r-e;
@@ -114,7 +115,7 @@ function studs(mat,x0,x1,z0,z1,y,step){const pts=[];for(let x=x0;x<=x1+1e-6;x+=s
 /* ---------- lights ---------- */
 scene.add(new T.HemisphereLight(0xeaf4ff,0x8a6a50,.45));
 const sun = new T.DirectionalLight(0xfff1dc,2.8); sun.position.set(-3,6,4); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
-Object.assign(sun.shadow.camera,{left:-3,right:3,top:3,bottom:-3,near:1,far:20}); sun.shadow.bias=-.0004; sun.shadow.radius=4; scene.add(sun);
+Object.assign(sun.shadow.camera,{left:-3,right:3,top:3,bottom:-3,near:1,far:20}); sun.shadow.bias=-.0004; sun.shadow.radius=2; scene.add(sun);
 const rim = new T.DirectionalLight(0xffc0e8,.7); rim.position.set(3,2,-3); scene.add(rim);
 
 
@@ -123,7 +124,8 @@ const sky = new T.Mesh(new T.SphereGeometry(80,12,8),new T.MeshBasicMaterial({ma
 const sea = new T.Mesh(new T.PlaneGeometry(400,400),plastic(0x2a8fe0,{roughness:.12})); sea.rotation.x=-Math.PI/2; sea.position.y=-1.4; scene.add(sea);
 const deckMat=plastic(0xe0a860);const deck = new T.Mesh(new T.BoxGeometry(14,.2,10),deckMat); deck.position.set(0,-.1,-1); scene.add(deck);
 studs(deckMat,-3.2,3.2,-3.2,2.4,0,.2);
-const box=(w,h,d,m,x,y,z,p=scene)=>{const o=new T.Mesh(RB(w,h,d),m);o.position.set(x,y,z);p.add(o);return o;};
+const BUILD=[];
+const box=(w,h,d,m,x,y,z,p=scene)=>{const o=new T.Mesh(RB(w,h,d),m);BUILD.push(o);o.position.set(x,y,z);p.add(o);return o;};
 // railing
 for(let x=-6.5;x<=6.5;x+=0.9) box(.04,1,.04,M.silver,x,.5,-5.8);
 box(13.2,.05,.05,M.silver,0,1,-5.8); box(13.2,.03,.03,M.silver,0,.6,-5.8);
@@ -132,20 +134,25 @@ for(const s of[-1,1]){for(let z=-5.5;z<=2;z+=0.9) box(.04,1,.04,M.silver,s*6.6,.
 box(4.2,.45,1,M.white,-1.4,.22,-4.6); box(4.2,.5,.25,M.white,-1.4,.6,-5.05);
 box(2.4,.45,1,M.white,3.6,.22,-4.6);
 // open sky: no canopy, keeps the vertical frame clean
-M.white2=plastic(0xffffff);[[-1.6,.25],[1.9,.25]].forEach(([x,y])=>{box(.8,.32,.4,M.white2,x,y+.16,-4.3);});
+[[-1.6,.25],[1.9,.25]].forEach(([x,y])=>{box(.8,.32,.4,M.white2,x,y+.16,-4.3);});
 
 /* ---------- DJ booth ---------- */
-box(2.1,.06,.66,M.black,0,.97,.4);studs(M.black,-1.0,1.0,.12,.12,1.0,.2);studs(M.black,-1.0,1.0,.66,.66,1.0,.2);for(const x of[-1,1])for(const z of[.12,.68])box(.05,.94,.05,M.silver,x,.47,z);box(1.9,.03,.03,M.silver,0,.3,.68);
+box(2.1,.06,.66,M.black,0,.97,.4);BUILD.push(studs(M.black,-1.0,1.0,.12,.12,1.0,.2));
+// printed sign bricks: each channel is one of her agents
+[['BRIEF','#ffc61a',-.75],['RTM','#8f4dff',-.25],['INSTA','#ff2f6d',.25],['LINKEDIN','#1f8fff',.75]].forEach(([t,c,x])=>{
+  const tx=tex(256,64,(g,w,h)=>{g.fillStyle='#ffffff';g.fillRect(0,0,w,h);g.fillStyle=c;g.fillRect(0,0,18,h);g.fillStyle='#18181d';g.font='700 34px Fredoka, Heebo, sans-serif';g.textBaseline='middle';g.fillText(t,32,34);});
+  const sb=box(.4,.1,.08,plastic(0xffffff),x,1.05,.66);const lb=new T.Mesh(new T.PlaneGeometry(.38,.092),plastic(0xffffff,{map:tx}));lb.position.z=.041;sb.add(lb);
+  for(let i=0;i<5;i++){const st=new T.Mesh(STUD,M.white2||plastic(0xffffff));st.scale.set(.5,.6,.5);st.position.set(-.16+i*.08,.057,0);sb.add(st);}});for(const x of[-1,1])for(const z of[.12,.68])box(.05,.94,.05,M.silver,x,.47,z);box(1.9,.03,.03,M.silver,0,.3,.68);
 const mixer = box(.62,.08,.44,M.dark,0,1.04,.36);
 const mixTop = new T.Mesh(new T.PlaneGeometry(.6,.42),lam(0xffffff,{map:mixerTex})); mixTop.rotation.x=-Math.PI/2; mixTop.position.set(0,1.081,.36); scene.add(mixTop);
 const CH = [-.21,-.07,.07,.21].map(x=>x*.95);
 const knobs=[], faders=[];
-CH.forEach(x=>{for(let k=0;k<3;k++){const kn=new T.Mesh(new T.CylinderGeometry(.016,.018,.03,6),M.black);kn.position.set(x,1.1,.19+k*.055);scene.add(kn);
+CH.forEach(x=>{for(let k=0;k<3;k++){const kn=new T.Mesh(new T.CylinderGeometry(.016,.018,.03,6),M.black);kn.position.set(x,1.1,.19+k*.055);scene.add(kn);BUILD.push(kn);
   const tick=box(.004,.032,.012,M.white,0,0,.012,kn);knobs.push(kn);}
   const f=box(.03,.022,.016,M.white,x+.006,1.096,.48);faders.push(f);});
 const decks=[];
 for(const s of[-1,1]){const b=box(.46,.06,.46,M.dark,s*.62,1.03,.38);
-  const p=new T.Mesh(new T.CylinderGeometry(.15,.15,.02,16),[M.silver,new T.MeshLambertMaterial({map:jogTex}),M.silver]);p.position.set(s*.62,1.07,.4);scene.add(p);decks.push(p);
+  const p=new T.Mesh(new T.CylinderGeometry(.15,.15,.02,16),[M.silver,new T.MeshLambertMaterial({map:jogTex}),M.silver]);p.position.set(s*.62,1.07,.4);scene.add(p);decks.push(p);BUILD.push(p);
   for(let i=0;i<3;i++) box(.05,.012,.03,lam(i?0x2a2a30:0xff5a3c),s*.62+s*-.14+i*.06*s*-0,1.065,.2+i*.0,scene).position.x=s*.62-.14+i*.07;}
 
 /* ---------- character: Shelly (from SHOTCALLER CITY makeShelly, DJ-rigged) ---------- */
@@ -162,37 +169,56 @@ M.shoe=plastic(0xffffff);
 const body=new T.Group(); scene.add(body);
 const add=(geo,m,x,y,z,p)=>{const o=new T.Mesh(geo,m);o.position.set(x,y,z);p.add(o);return o;};
 const B=(w,h,d)=>RB(w,h,d);
-const hipY=.95, legs=[];
-for(const s of[1,-1]){const L=new T.Group();L.position.set(.12*s,hipY,0);body.add(L);
-  add(B(.24,.5,.26),holoMat,0,-.25,0,L);add(B(.28,.5,.3),holoMat,0,-.72,0,L);add(B(.2,.13,.34),M.shoe,0,-.99,.05,L);legs.push(L);}
-add(B(.4,.22,.3),holoMat,0,hipY+.05,0,body);
-const chest=new T.Group();chest.position.set(0,1.1,0);body.add(chest);
-add(B(.34,.14,.24),M.skin,0,.08,0,chest);              // midriff
-add(B(.38,.42,.26),M.top,0,.36,0,chest);               // pink top
-for(const s of[-1,1])add(B(.07,.06,.24),M.top,s*.15,.6,0,chest); // straps
-add(B(.14,.06,.2),M.skin,0,.6,0,chest);                // neckline skin
-add(B(.1,.1,.1),M.skin,0,.66,0,chest);                 // neck
-const necklace=new T.Group();chest.add(necklace);
-for(let i=0;i<=10;i++){const t=i/10,a=Math.PI*(.12+.76*t);add(B(.018,.018,.012),M.gold,Math.cos(a)*.085,.6-Math.sin(a)*.07,.135,necklace);}
-add(B(.07,.05,.02),M.gold,0,.5,.14,necklace);
+/* exact brick system: stud pitch U, brick height BH, plate PH; every part snaps to it */
+const U=.08, BH=.096, PH=.032, GAP=.004;
+const STUD2=new T.CylinderGeometry(U*.3,U*.3,.018,24);
+function brick(nx,nz,h,mat,x,y,z,parent,studsOn){
+  const m=new T.Mesh(RB(nx*U-GAP,h-GAP,nz*U-GAP),mat);m.position.set(x,y+h/2,z);parent.add(m);
+  if(studsOn)for(let i=0;i<nx;i++)for(let k=0;k<nz;k++){const st=new T.Mesh(STUD2,mat);st.position.set((i-(nx-1)/2)*U,h/2+.007,(k-(nz-1)/2)*U);m.add(st);}
+  BUILD.push(m);return m;}
+const hipY=1.01, legs=[];
+for(const s of[1,-1]){const L=new T.Group();L.position.set(.09*s,hipY,0);body.add(L);
+  brick(2,4,PH*1.5,M.shoe,0,-hipY,.035,L,false);
+  for(let i=0;i<9;i++)brick(2,3,BH,holoMat,0,-hipY+PH*1.5+i*BH-.004,0,L,false);
+  legs.push(L);}
+brick(5,3,BH,holoMat,0,hipY-.09,0,body,false);
+const chest=new T.Group();chest.position.set(0,hipY,0);body.add(chest);
+brick(4,3,BH,M.skin,0,0,0,chest,false);                           // midriff
+for(let i=0;i<4;i++)brick(5,3,BH,M.top,0,BH+i*BH,0,chest,false);  // pink top, 4 courses
+for(const s of[-1,1])brick(1,2,BH,M.skin,s*.24,BH*4,0,chest,true); // shoulders, studs up
+brick(3,2,PH,M.top,0,BH*5,0,chest,true);                          // collar plate
+const neck=add(new T.CylinderGeometry(.045,.045,BH-GAP,24),M.skin,0,BH*5+PH+BH/2,0,chest);BUILD.push(neck);
+// necklace: gold 1x1 round studs in a V + a printed tile
+const necklace=new T.Group();chest.add(necklace);BUILD.push(necklace);
+for(let i=-3;i<=3;i++){const g=add(new T.CylinderGeometry(.011,.011,.01,16),M.gold,i*.026,BH*4.7-Math.abs(i)*-.008-(3-Math.abs(i))*.018,.123,necklace);g.rotation.x=Math.PI/2;}
+add(RB(.05,.04,.012),M.gold,0,BH*4.05,.126,necklace);
 const shoulders=[];
-for(const s of[-1,1]){add(B(.13,.13,.13),M.skin,s*.25,.53,0,chest);const a=new T.Object3D();a.position.set(s*.26,.53,0);chest.add(a);shoulders.push(a);}
-// head: her blocky head + DJ kit from the reference (shades, cans)
-const head=new T.Group();head.position.set(0,.85,0);chest.add(head);
-add(B(.24,.28,.24),M.skin,0,0,0,head);
+for(const s of[-1,1]){const a=new T.Object3D();a.position.set(s*.25,BH*4.6,0);chest.add(a);shoulders.push(a);}
+// head: 3 courses of 3x3, printed face, hair piece with studs
+const head=new T.Group();head.position.set(0,BH*5+PH+BH,0);chest.add(head);
+for(let i=0;i<3;i++)brick(3,3,BH,M.skin,0,i*BH,0,head,false);
+const faceTex=tex(256,320,(g,w,h)=>{g.clearRect(0,0,w,h);
+  // printed sunglasses
+  g.fillStyle='#101014';const lens=(x)=>{g.beginPath();g.roundRect(x,96,92,56,[10,10,26,26]);g.fill();};lens(30);lens(134);g.fillRect(110,104,36,10);
+  g.fillStyle='rgba(255,255,255,.85)';g.beginPath();g.roundRect(44,104,30,8,4);g.fill();g.beginPath();g.roundRect(148,104,30,8,4);g.fill();
+  // brows
+  g.fillStyle='#3a2414';g.beginPath();g.roundRect(40,78,70,9,5);g.fill();g.beginPath();g.roundRect(146,78,70,9,5);g.fill();
+  // cheeks
+  g.fillStyle='rgba(255,110,140,.35)';g.beginPath();g.ellipse(56,190,22,12,0,0,7);g.fill();g.beginPath();g.ellipse(200,190,22,12,0,0,7);g.fill();
+  // lips + smile
+  g.fillStyle='#c4203f';g.beginPath();g.moveTo(92,214);g.quadraticCurveTo(128,204,164,214);g.quadraticCurveTo(128,252,92,214);g.fill();
+  g.fillStyle='#fff';g.beginPath();g.moveTo(102,216);g.quadraticCurveTo(128,212,154,216);g.quadraticCurveTo(128,230,102,216);g.fill();
+});
+const face=add(new T.PlaneGeometry(3*U-.012,3*BH-.01),new T.MeshPhysicalMaterial({map:faceTex,transparent:true,roughness:.3,clearcoat:.8,envMapIntensity:.3}),0,1.5*BH,1.5*U-.001,head);
+BUILD.push(face);
 const hair=new T.Group();head.add(hair);
-add(B(.27,.14,.27),M.hair,0,.12,0,hair);
-add(B(.26,.62,.1),M.hair,0,-.18,-.15,hair);
-for(const s of[-1,1])add(B(.05,.4,.18),M.hair,s*.14,-.08,-.04,hair);
-add(B(.22,.05,.03),M.hair,0,.115,.12,hair);            // fringe line
-add(B(.035,.06,.05),M.skin,0,.0,.14,head);             // nose
-add(B(.07,.018,.02),M.lips,0,-.06,.125,head);
-add(B(.055,.014,.02),M.lips,0,-.077,.124,head);
-for(const s of[-1,1]){add(B(.1,.055,.02),M.glass,s*.058,.045,.13,head);add(B(.03,.012,.14),M.silver,s*.122,.05,.06,head);}
-add(B(.03,.012,.02),M.silver,0,.06,.13,head);
-const band=add(new T.TorusGeometry(.165,.016,4,10,Math.PI),M.silver,0,.04,0,head);band.scale.set(1,1.1,1);
-for(const s of[-1,1]){const c=add(new T.CylinderGeometry(.06,.06,.05,8),M.silver,s*.16,.02,0,head);c.rotation.z=Math.PI/2;
-  add(new T.CylinderGeometry(.045,.045,.052,8),M.dark,s*.163,.02,0,head).rotation.z=Math.PI/2;}
+brick(4,4,BH,M.hair,0,3*BH,-.02,hair,true);                     // cap with studs on top
+for(let i=0;i<7;i++)brick(4,1,BH,M.hair,0,3*BH-(i+1)*BH,-.18,hair,false); // back fall
+for(const s of[-1,1])for(let i=0;i<5;i++)brick(1,2,BH,M.hair,s*.16,3*BH-(i+1)*BH,-.06,hair,false);
+// headphones (chrome) over the cap
+const band=add(new T.TorusGeometry(.21,.016,10,24,Math.PI),M.silver,0,1.7*BH,-.02,head);BUILD.push(band);
+for(const s of[-1,1]){const c=add(new T.CylinderGeometry(.06,.06,.05,24),M.silver,s*.215,1.7*BH,-.02,head);c.rotation.z=Math.PI/2;BUILD.push(c);
+  add(new T.CylinderGeometry(.045,.045,.052,24),M.top,s*.218,1.7*BH,-.02,head).rotation.z=Math.PI/2;}
 
 // arms: her box limbs, world-space two-bone IK
 const limbGeo=(w)=>{const g=rboxGeo(w,1,w,.02,3);g.translate(0,.5,0);return g;};
@@ -220,6 +246,13 @@ function solve(arm,side,S,Tg,pole){
 }
 
 scene.traverse(o=>{if(o.isMesh&&o!==sky&&o!==sea){o.castShadow=true;o.receiveShadow=true;}});
+/* assembly: every brick drops in and snaps, bottom to top. Arms join last. */
+scene.updateMatrixWorld(true);
+const _w=new T.Vector3();
+const BLD=BUILD.map(o=>{o.getWorldPosition(_w);return {o,y0:o.position.y,wy:_w.y+(o.parent===scene?0:.0001)+Math.abs(_w.x)*.15};}).sort((a,b)=>a.wy-b.wy);
+BLD.forEach((b,i)=>b.d=i*.022+(b.o.parent!==scene?.6:0));
+const BUILD_END=BLD.reduce((m,b)=>Math.max(m,b.d),0)+.4;
+let buildT=0,lastSnap=0;
 
 /* ---------- choreography ---------- */
 const BPM=122, BEAT=60/BPM;
@@ -237,7 +270,7 @@ function seqTarget(seq,t,side){
 }
 
 /* ---------- camera shots ---------- */
-const SHOTS=[{p:V(.1,1.15,3.3),l:V(0,.92,.1)},{p:V(-.3,1.86,1.05),l:V(0,1.78,0)},{p:V(.5,1.5,1.25),l:V(.05,1.12,.3)},{p:V(-1.2,.55,2.6),l:V(0,1.15,0)}];
+const SHOTS=[{p:V(.1,1.15,3.3),l:V(0,.92,.1)},{p:V(-.3,1.8,1.3),l:V(0,1.68,0)},{p:V(.5,1.5,1.25),l:V(.05,1.12,.3)},{p:V(-1.2,.55,2.6),l:V(0,1.15,0)}];
 let shot=0, shotT=0, camP=SHOTS[0].p.clone(), camL=SHOTS[0].l.clone(), drag=null, yawOff=0, pitchOff=0, lastDrag=-99;
 document.getElementById('shot').onclick=()=>{shot=(shot+1)%SHOTS.length;shotT=0;};
 canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,yo:yawOff,po:pitchOff};canvas.setPointerCapture(e.pointerId);});
@@ -270,11 +303,18 @@ addEventListener('resize',resize);resize();
 
 /* ---------- loop ---------- */
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(reduce)buildT=99;
+document.getElementById('rebuild').onclick=()=>{if(!ac)startAudio();ac.resume();buildT=0;};
 const clock=new T.Clock();
 const tmp=V(0,0,0);
 function frame(){
   const dt=Math.min(clock.getDelta(),.05), t=clock.elapsedTime;
   if(playing&&ac)schedule();
+  if(buildT<BUILD_END+.1){buildT+=dt;let snapped=0;
+    for(const b of BLD){const p=Math.min(1,Math.max(0,(buildT-b.d)/.32));b.o.visible=p>0;const e=1-Math.pow(1-p,3);
+      b.o.position.y=b.y0+(1-e)*1.4;if(p>=1&&!b.done){b.done=1;snapped++;}if(p<1)b.done=0;}
+    arms.forEach(a=>{const v=buildT>BUILD_END-.2;a.u.visible=a.f.visible=a.el.visible=a.hand.visible=v;});
+    if(snapped&&ac&&ac.state==='running'&&t-lastSnap>.03){lastSnap=t;const n=ac.currentTime;tone(n,2600+Math.random()*900,.035,'square',.05,5200);tone(n,900,.05,'triangle',.06,2000);}}
   const beatPh=(t%BEAT)/BEAT, groove=playing?1:.45;
   // body groove
   const bob=Math.pow(Math.max(0,Math.cos(beatPh*Math.PI*2)),3)*.018*groove;
