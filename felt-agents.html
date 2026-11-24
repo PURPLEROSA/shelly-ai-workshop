@@ -587,7 +587,7 @@ var puppets=DEFS.map(build);
 puppets.forEach(function(p,i){p.root.position.copy(SLOTS[i]);scene.add(p.root)});
 
 /* ---------- state ---------- */
-var S={sel:0,view:'solo',jaw:1,bounce:1,shade:'fabric',lift:0};
+var S={sel:0,view:'solo',jaw:1,bounce:1,shade:'fabric',lift:0,zoom:1};
 var clk={ab:0,at:performance.now()/1000,bpm:138};
 var music={on:false,ctx:null,g:null,next:0,timer:0,lat:0};
 var nowT=function(){return music.on?music.ctx.currentTime-music.lat:performance.now()/1000};
@@ -622,7 +622,7 @@ function animate(p,i,beat,t,dt){
 }
 function camGoal(){ /* where the camera sits, where the lens focuses (fz) and how wide it is open (ap) */
   var a=cam.aspect,th=Math.tan(cam.fov*Math.PI/360),d;
-  if(S.view==='solo'){d=Math.max(1.42/th,1.0/(th*a));return{tx:0,ty:2.5+S.lift,tz:SPOT.z,d:d,el:.05,f:38,fz:d-.5,ap:1.5}}
+  if(S.view==='solo'){d=Math.max(1.42/th,1.0/(th*a))*S.zoom;return{tx:0,ty:2.5+S.lift,tz:SPOT.z,d:d,el:.05,f:38,fz:d-.5,ap:1.5}}
   d=Math.max(3.05/th,4.35/(th*a));return{tx:0,ty:2.7,tz:-.2,d:d,el:.1,f:32,fz:d-.9,ap:.42};
 }
 function draw(t){
@@ -631,7 +631,7 @@ function draw(t){
   renderer.setRenderTarget(post.rt);renderer.render(scene,cam);renderer.setRenderTarget(null);renderer.render(post.scene,post.cam);
 }
 function update(t,dt,beat,skip){
-  dt=Math.min(dt,.1);
+  dt=clamp(dt,0,.1);
   for(var i=0;i<puppets.length;i++)animate(puppets[i],i,beat,t,dt);
   var g=camGoal();if(!cs)cs=g;var k=1-Math.exp(-dt*4.5);for(var q in g)cs[q]=lerp(cs[q],g[q],k);
   var az=orb.az+Math.sin(t*.3)*.08,el=clamp(cs.el+orb.el,-.04,.7);
@@ -762,7 +762,7 @@ requestAnimationFrame(frame);
 window.feltLab={
   select:select,setView:setView,setShade:setShade,puppets:puppets,set:function(k,v){S[k]=v},
   renderAt:function(sec,skip){manual=true;var dt=lastManual==null?1/30:sec-lastManual;lastManual=sec;update(sec,dt,sec*clk.bpm/60,skip)},
-  snap:function(){cs=camGoal();puppets.forEach(function(p,i){var solo=S.view==='solo'&&i===S.sel,tg=solo?SPOT:SLOTS[i];p.root.position.copy(tg);p.gy=tg.y;p.hop=0})},
+  snap:function(){cs=camGoal();puppets.forEach(function(p,i){var solo=S.view==='solo'&&i===S.sel,tg=solo?SPOT:SLOTS[i];p.root.position.copy(tg);p.gy=tg.y;p.hop=0;p.root.rotation.y=solo?0:-tg.x*.07})},
   wav:function(sec){var O=window.OfflineAudioContext||window.webkitOfflineAudioContext,sr=44100,ctx=new O(2,Math.ceil(sr*sec),sr),g=graph(ctx),sd=60/clk.bpm/4,n=Math.floor(sec/sd);
     g.out.gain.value=.62;
     for(var s=0;s<n;s++)step(ctx,g,s,s*sd+.001,sd);
