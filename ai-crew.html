@@ -78,6 +78,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .did i::after{content:"";position:absolute;left:7px;top:4px;width:6px;height:10px;border:solid var(--on-accent);border-width:0 2.5px 2.5px 0;transform:rotate(42deg)}
 .did b{display:block;font:500 11.5px var(--mono);letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
 .did span{display:block;font-size:15.5px;line-height:1.38;color:var(--ink)}
+.did.sec i{background:var(--raised);border:1px solid var(--line)}
+.did.sec i::before{content:"";position:absolute;left:6px;top:3px;width:8px;height:8px;border:2px solid var(--ink);border-bottom:0;border-radius:4px 4px 0 0}
+.did.sec i::after{left:4px;top:9px;width:12px;height:8px;border:0;border-radius:2px;background:var(--ink);transform:none}
 .hint{margin:auto 0 0;padding-top:18px;font:400 11px var(--mono);color:var(--dim)}
 
 @media (min-width:760px){.tagline{order:0;flex:1 1 auto}}
@@ -87,6 +90,16 @@ button{font:inherit;color:inherit;cursor:pointer}
   .stage{flex:1;aspect-ratio:auto;max-height:none;min-height:400px}
   .name{font-size:clamp(60px,6.4vw,104px)}
 }
+/* film mode, used to render the video: text on the left, stage on the right, no controls */
+.film .tagline,.film .seg,.film .wire,.film .hint,.film #cast{display:none}
+.film .bench{grid-template-columns:45% minmax(0,1fr);grid-template-areas:"who stage"}
+.film .who{padding:26px 30px}
+.film .kick,.film .didh{font-size:12.5px}
+.film .line{min-height:0;margin-top:16px;font-size:20px}
+.film .didh{margin-top:22px;padding-top:18px}
+.film .did{gap:13px;margin-top:13px}
+.film .did span{font-size:17.5px}
+.film .did i{margin-top:2px}
 </style>
 </head>
 <body>
@@ -111,8 +124,7 @@ button{font:inherit;color:inherit;cursor:pointer}
    <h2 class="name"><span id="w-name"></span></h2>
    <p class="role" id="w-role"></p>
    <p class="line" id="w-line"></p>
-   <h3 class="didh" id="w-didh"></h3>
-   <ul class="did" id="w-did"></ul>
+   <div id="w-lists"></div>
    <p class="hint">Drag the stage to look around · Tap an agent to meet it</p>
   </section>
  </main>
@@ -373,7 +385,7 @@ function seq(s){return s.split('').map(function(c){return c==='x'?1:0})}
 function ball(mat,sx,sy,sz){var m=new T.Mesh(sph,mat);m.scale.set(sx,sy==null?sx:sy,sz==null?sx:sz);m.castShadow=true;return m}
 function collar(P,mat){[-1,1].forEach(function(s){put(P.body,patch(poly([[0,.1],[s*.36,.14],[s*.1,-.2]]),mat,{depth:.03}),P.TS(s*.04,1.3),P.bz)})}
 var DEFS=[
- {name:'Mochi',role:'Business Brain',cloth:'Aqua fur',hex:'#2fb8b4',belly:'#a4ebe1',plush:1,act:'spin',mat:M.furAqua,
+ {work:["Drafts replies to new leads in your voice", "Briefs you on the client before every meeting", "Answers questions from your own files in seconds"],sec:["Read-only access to your client files", "Nothing is sent without your approval", "Client data stays inside your workspace"],name:'Mochi',role:'Business Brain',cloth:'Aqua fur',hex:'#2fb8b4',belly:'#a4ebe1',plush:1,act:'spin',mat:M.furAqua,
   pitch:"Knows your clients, your services and your tone, so you stop explaining yourself.",say:"A lead came in overnight. Your reply is drafted, in your voice.",
   did:[["08:00","Drafted a reply to last night's lead, in your voice"],["Before the meeting","Briefed you on the client and what to offer"],["All day","Answered questions about the business, no digging through files"]],
   head:{w:1.2,hu:1,hj:.42,d:1.12,r:.54},eyes:[{x:-.27,y:.5,r:.24,pupil:.64,px:.02},{x:.27,y:.5,r:.22,pupil:.64,px:-.02}],smile:{y:.1,w:.3,c:.07},blush:{x:.45,y:.24},
@@ -384,7 +396,7 @@ var DEFS=[
     var R=rng(5),tuft=new T.Group();for(var i=0;i<11;i++){var b=ball(M.knitPink,.15+R()*.08),sd=i%2?1:-1;b.position.set(sd*(.1+R()*.24),.08+R()*.17,(R()-.5)*.52);tuft.add(b)}
     tuft.position.y=P.hu+P.fz*.4;P.up.add(tuft);P.anim.push(function(A){tuft.scale.y=1+A.hit*.14});
   }},
- {name:'Sushi',role:'Social Media',cloth:'Pink fur',hex:'#ff6fa6',belly:'#ffc0d6',plush:1,act:'shoulder',mat:M.furPink,blushMat:'blushDeep',
+ {work:["Plans a full week of content every Sunday", "Drafts posts that sound like you, not like a robot", "Reports what worked and what to try next"],sec:["Posts go live only after you approve them", "Uses its own limited login, never your password", "Never puts private or client details in a post"],name:'Sushi',role:'Social Media',cloth:'Pink fur',hex:'#ff6fa6',belly:'#ffc0d6',plush:1,act:'shoulder',mat:M.furPink,blushMat:'blushDeep',
   pitch:"Social keeps running, even when you are on holiday.",say:"Your week of content is planned. Just approve it.",
   did:[["Sunday","Planned a full week of content for your approval"],["Every day","Drafted posts that sound like you, not like a robot"],["End of week","Reported what worked and what to try next"]],
   head:{w:1.5,hu:.84,hj:.42,d:1.12,r:.46},eyes:[{x:-.29,y:.46,r:.26,pupil:.64,px:.03},{x:.29,y:.46,r:.26,pupil:.64,px:-.03}],smile:{y:.07,w:.32,c:.08},blush:{x:.56,y:.2},
@@ -394,7 +406,7 @@ var DEFS=[
     var hair=[],R=rng(9);for(var i=0;i<9;i++){var h=new T.Group(),m=new T.Mesh(new T.CapsuleGeometry(.055,.24+R()*.14,3,8),M.knitMag);m.position.y=.17;m.castShadow=true;h.add(m);h.position.set((i-4)*.115+(R()-.5)*.05,P.hu+.02,(R()-.5)*.3);h.userData.b=(i-4)*.13;P.up.add(h);hair.push(h)}
     P.anim.push(function(A){hair.forEach(function(h,i){h.rotation.z=-h.userData.b+Math.sin(A.beat*Math.PI+i)*.12;h.rotation.x=A.hit*.3})});
   }},
- {name:'Newsie',role:'Newsletter',cloth:'Snow fur',hex:'#f4eee4',belly:'#ffd9e6',plush:1,act:'deliver',mat:M.furSnow,thread:M.threadPink,
+ {work:["Drafts Friday's issue from the week that was", "Writes subject lines people want to open", "Turns the same content into a post and a story"],sec:["Sends a test to you first, never straight to the list", "Your subscriber list is never exported or shared", "Every link is checked before it goes out"],name:'Newsie',role:'Newsletter',cloth:'Snow fur',hex:'#f4eee4',belly:'#ffd9e6',plush:1,act:'deliver',mat:M.furSnow,thread:M.threadPink,
   pitch:"The newsletter that writes itself. Almost.",say:"Friday's newsletter is drafted. Add your personal touch.",
   did:[["Friday","Drafted the newsletter from everything that happened this week"],["Every issue","Wrote subject lines people want to open"],["Bonus","Turned the same content into a post and a story"]],
   head:{w:1.55,hu:.8,hj:.42,d:.92,r:.3},eyes:[{x:-.42,y:.24,r:.18,pupil:.64,py:.01},{x:.42,y:.24,r:.18,pupil:.64,py:-.01}],smile:{y:.0,w:.26,c:.06},blush:{x:.62,y:.06},
@@ -405,7 +417,7 @@ var DEFS=[
     put(P.up,patch(rrect(.24,.26,.02),M.feltPink,{thread:M.thread}),P.U(.56,-.2),P.bz,.08);
     collar(P,M.airmail);
   }},
- {name:'Admin',role:'Invoices & Admin',cloth:'Periwinkle fur',hex:'#7684d6',belly:'#c3caff',plush:1,act:'salute',mat:M.furBlue,
+ {work:["Lists who has not paid and drafts polite reminders", "Sums up which emails really need your reply today", "Keeps things from falling between the cracks"],sec:["Can read invoices, can never move money", "No bank passwords or card numbers in any prompt", "Reminders wait for your OK before they are sent"],name:'Admin',role:'Invoices & Admin',cloth:'Periwinkle fur',hex:'#7684d6',belly:'#c3caff',plush:1,act:'salute',mat:M.furBlue,
   pitch:"The part of the business nobody likes, finally off your desk.",say:"Month-end reminders are written. Politely.",
   did:[["Month end","Listed who has not paid and drafted polite reminders"],["Inbox","Summarised what actually needs your reply today"],["Result","Kept things from falling between the cracks"]],
   head:{w:1.2,hu:.95,hj:.42,d:1.1,r:.4},eyes:[{x:-.25,y:.4,r:.19,pupil:.64,lid:.08},{x:.25,y:.4,r:.19,pupil:.64,lid:.08}],smile:{y:.06,w:.24,c:.05},blush:{x:.43,y:.17},
@@ -419,7 +431,7 @@ var DEFS=[
     put(P.body,patch(poly([[-.07,.24],[.07,.24],[.05,.14],[.12,-.2],[0,-.32],[-.12,-.2],[-.05,.14]]),M.feltMag),P.TS(0,1.02),P.bz+.02);
     collar(P,M.feltCream);
   }},
- {name:'Homey',role:'Family Ops',cloth:'Butter fur',hex:'#ffd98f',belly:'#fff0c4',plush:1,act:'wave',mat:M.furButter,
+ {work:["Sends tomorrow's family plan in one short message", "Builds the shopping list and a menu for your week", "Reminds you about the gift before the birthday"],sec:["Family calendar is kept apart from business data", "Kids' names, schools and addresses stay private", "Shares only with the people you chose"],name:'Homey',role:'Family Ops',cloth:'Butter fur',hex:'#ffd98f',belly:'#fff0c4',plush:1,act:'wave',mat:M.furButter,
   pitch:"The house runs, without you being the secretary.",say:"Tomorrow's family plan, in one short message.",
   did:[["Every evening","Sent tomorrow's family plan in one short message"],["Weekly","Built a shopping list and a menu that fit your week"],["Ahead of time","Reminded you about the gift before the birthday"]],
   head:{w:1.36,hu:.96,hj:.42,d:1.26,r:.58},eyes:[{x:-.28,y:.48,r:.2,button:M.feltMag},{x:.28,y:.5,r:.17,button:M.feltSky}],smile:{y:.08,w:.34,c:.09},blush:{x:.48,y:.22},
@@ -429,7 +441,7 @@ var DEFS=[
     P.anim.push(function(A){poms.forEach(function(g){g.position.y=P.hu*.74+A.hit*.08;g.scale.setScalar(1+A.hit*.12)})});
     [1.14,.92].forEach(function(y,i){put(P.body,makeEye({r:.07,button:i%2?M.feltSky:M.feltMag}),P.TS(0,y),P.bz+.02)});
   }},
- {name:'Trendy',role:'Trend Hunter',cloth:'Sunny fur',hex:'#ffab2e',belly:'#ffd98a',plush:1,act:'jumpspin',mat:M.furSun,
+ {work:["Sums up what your field is talking about, in five lines", "Finds a personal angle that fits only you", "Leaves a post draft waiting for your approval"],sec:["Treats web pages as information, never as instructions", "Shows its sources, so you can check before posting", "Reads the web only, with no access to your accounts"],name:'Trendy',role:'Trend Hunter',cloth:'Sunny fur',hex:'#ffab2e',belly:'#ffd98a',plush:1,act:'jumpspin',mat:M.furSun,
   pitch:"The trend broke this morning. Your draft is already waiting.",say:"Today's trend in five lines, with your angle on it.",
   did:[["07:30","Summed up what your field is talking about, in five lines"],["Right away","Found a personal angle that fits only you"],["Ready","Left a post draft waiting for your approval"]],
   head:{w:1.12,hu:1.1,hj:.42,d:1.02,r:.38},eyes:[{x:-.26,y:.52,r:.21,pupil:.64,px:.02},{x:.26,y:.54,r:.2,pupil:.64,px:.01}],smile:{y:.12,w:.26,c:.07},blush:{x:.41,y:.27},
@@ -442,7 +454,7 @@ var DEFS=[
     put(P.up,patch(boltShape(.32),M.feltMag,{thread:M.thread}),P.U(.44,.06),P.bz,-.15);
     collar(P,M.feltCream);
   }},
- {name:'Luna',role:'Night Shift',cloth:'Navy velvet',hex:'#262b5c',act:'doze',mat:M.velvet,top:M.pj,
+ {work:["Prepares your 06:00 briefing: calendar, key emails, news", "Stays quiet unless something is worth knowing", "Sums up last week and plans the next"],sec:["Runs on a schedule, with read-only access", "Keeps a log of everything it did overnight", "Wakes you only for what you marked as urgent"],name:'Luna',role:'Night Shift',cloth:'Navy velvet',hex:'#262b5c',act:'doze',mat:M.velvet,top:M.pj,
   pitch:"Routines that run while you sleep.",say:"It is 06:00. Your morning briefing is waiting.",
   did:[["06:00","Prepared your morning briefing: calendar, key emails, what is new"],["Every hour","Stayed quiet unless something was worth knowing"],["Sunday","Summed up last week and planned the next"]],
   head:{w:1.25,hu:.9,hj:.42,d:1.1,r:.45},teeth:6,eyes:[{x:-.26,y:.44,r:.18,lid:.5,py:-.035},{x:.26,y:.44,r:.18,lid:.5,py:-.035}],
@@ -511,7 +523,7 @@ var puppets=DEFS.map(build);
 puppets.forEach(function(p,i){p.root.position.copy(SLOTS[i]);scene.add(p.root)});
 
 /* ---------- state ---------- */
-var S={sel:0,view:'solo',shade:'fabric',lift:0,zoom:1};
+var S={sel:0,view:'solo',shade:'fabric',lift:0,zoom:1,film:false};
 var orb={az:0,el:0},cs=null,manual=false,lastManual=null,NOW=0;
 var act={i:-1,t0:0};                                   /* who is performing, and since when */
 function perform(i){act.i=i;act.t0=NOW+.6}             /* the move starts once the agent has reached the spot */
@@ -583,33 +595,37 @@ function frame(){
 }
 
 /* ---------- interface ---------- */
-var castEl=$('#cast'),nameEl=$('#w-name'),roleEl=$('#w-role'),lineEl=$('#w-line'),didhEl=$('#w-didh'),didEl=$('#w-did'),kickEl=$('#w-kick'),castBtns=[],rows=[];
+var castEl=$('#cast'),nameEl=$('#w-name'),roleEl=$('#w-role'),lineEl=$('#w-line'),listsEl=$('#w-lists'),kickEl=$('#w-kick'),castBtns=[],groups=[];
 var card={t0:0,text:'',typed:-1},CPS=30;
 function el(t,c,txt){var e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e}
 function press(id,on){$(id).setAttribute('aria-pressed',on?'true':'false')}
 DEFS.forEach(function(d,i){var li=el('li'),b=el('button'),sw=el('i','sw');b.type='button';sw.style.background=d.hex;b.appendChild(sw);b.appendChild(document.createTextNode(d.name));
   b.addEventListener('click',function(){select(i,true)});li.appendChild(b);castEl.appendChild(li);castBtns.push(b)});
-function tell(kick,name,role,line,head,list){ /* the text on the right; ui() then brings it in piece by piece */
-  kickEl.textContent=kick;nameEl.textContent=name;roleEl.textContent=role;didhEl.textContent=head;card.text=line;card.typed=-1;card.t0=NOW;
-  lineEl.setAttribute('aria-label',line);didEl.textContent='';rows=list.map(function(r){var li=el('li'),box=el('div');li.appendChild(el('i'));box.appendChild(el('b','',r[0]));box.appendChild(el('span','',r[1]));li.appendChild(box);didEl.appendChild(li);return li});
+function tell(kick,name,role,line,lists){ /* the text beside the stage; ui() then brings it in piece by piece */
+  kickEl.textContent=kick;nameEl.textContent=name;roleEl.textContent=role;card.text=line;card.typed=-1;card.t0=NOW;lineEl.setAttribute('aria-label',line);listsEl.textContent='';
+  groups=lists.map(function(g){var h=el('h3','didh',g.head),ul=el('ul','did'+(g.cls?' '+g.cls:''));listsEl.appendChild(h);listsEl.appendChild(ul);
+    return{h:h,rows:g.items.map(function(r){var li=el('li'),box=el('div');li.appendChild(el('i'));if(Array.isArray(r)){box.appendChild(el('b','',r[0]));box.appendChild(el('span','',r[1]))}else box.appendChild(el('span','',r));li.appendChild(box);ul.appendChild(li);return li})}});
 }
 function paint(){
   press('#vsolo',S.view==='solo');press('#vteam',S.view==='team');castBtns.forEach(function(b,k){b.setAttribute('aria-pressed',S.view==='solo'&&k===S.sel?'true':'false')});
-  if(S.view==='solo'){var d=DEFS[S.sel];tell(d.cloth+' · agent '+(S.sel+1)+' of '+DEFS.length,d.name,d.role,'“'+d.say+'”','What I did for you',d.did);perform(S.sel)}
-  else{tell('Seven agents','The crew','by Shelly Or Gisser','One for every job you would rather not do.','Who does what',DEFS.map(function(d){return[d.role,d.name]}));act.i=-1}
+  if(S.view==='solo'){var d=DEFS[S.sel],kick=d.cloth+' · agent '+(S.sel+1)+' of '+DEFS.length;
+    if(S.film)tell(kick,d.name,d.role,d.pitch,[{head:'What it does',items:d.work},{head:'Security rules',cls:'sec',items:d.sec}]);
+    else tell(kick,d.name,d.role,'“'+d.say+'”',[{head:'What I did for you',items:d.did}]);perform(S.sel)}
+  else{tell('Seven agents','The crew','by Shelly Or Gisser','One for every job you would rather not do.',[{head:'Who does what',items:DEFS.map(function(d){return[d.role,d.name]})}]);act.i=-1}
   lod();
 }
 function select(i,goSolo){S.sel=i;if(goSolo)S.view='solo';paint()}
 function setView(v){S.view=v;paint()}
+function film(on){S.film=!!on;document.querySelector('.app').classList.toggle('film',S.film);paint()}
 var wireMat=new T.MeshBasicMaterial({color:new T.Color(cssVar('--accent')||'#ff5c9d'),wireframe:true,toneMapped:false,transparent:true,opacity:.42,depthWrite:false});
 function setShade(m){S.shade=m;scene.overrideMaterial=m==='wire'?wireMat:null;press('#wire',m==='wire');lod()}
 function ui(t){ /* the name rises, the line types itself, then the done-list ticks in */
-  var still=reduce&&!manual,u=still?99:t-card.t0,e=1-ease(u/.6),k,n=card.text.length,c=clamp(Math.floor((u-.75)*CPS),0,n);
+  var still=reduce&&!manual,u=still?99:t-card.t0,e=1-ease(u/.6),g,k,n=card.text.length,c=clamp(Math.floor((u-(S.film?.6:.75))*(S.film?45:CPS)),0,n);
   nameEl.style.transform='translateY('+(e*108).toFixed(1)+'%)';
   e=ease((u-.4)/.4);roleEl.style.opacity=e.toFixed(3);roleEl.style.transform='translateY('+((1-e)*8).toFixed(1)+'px)';
   if(c!==card.typed){card.typed=c;lineEl.textContent=card.text.slice(0,c)}
-  e=ease((u-1.5)/.4);didhEl.style.opacity=e.toFixed(3);
-  for(k=0;k<rows.length;k++){e=ease((u-1.7-k*(rows.length>4?.12:.4))/.4);rows[k].style.opacity=e.toFixed(3);rows[k].style.transform='translateY('+((1-e)*10).toFixed(1)+'px)'}
+  for(g=0;g<groups.length;g++){var G=groups[g],g0=(S.film?(S.view==='team'?.9:2):1.5)+g*1.4,step=G.rows.length>4?.12:(S.film?.35:.4);e=ease((u-g0)/.4);G.h.style.opacity=e.toFixed(3);
+    for(k=0;k<G.rows.length;k++){e=ease((u-g0-.2-k*step)/.4);G.rows[k].style.opacity=e.toFixed(3);G.rows[k].style.transform='translateY('+((1-e)*10).toFixed(1)+'px)'}}
 }
 $('#vsolo').addEventListener('click',function(){setView('solo')});$('#vteam').addEventListener('click',function(){setView('team')});
 $('#wire').addEventListener('click',function(){setShade(S.shade==='wire'?'fabric':'wire')});
@@ -635,7 +651,7 @@ requestAnimationFrame(frame);
 
 /* hooks for rendering stills and clips frame by frame */
 window.aiCrew={
-  select:select,setView:setView,setShade:setShade,puppets:puppets,set:function(k,v){S[k]=v},
+  select:select,setView:setView,setShade:setShade,film:film,puppets:puppets,set:function(k,v){S[k]=v},quality:function(pr){renderer.setPixelRatio(pr);size()},
   renderAt:function(sec,skip){manual=true;var dt=lastManual==null?1/30:sec-lastManual;lastManual=sec;update(sec,dt,skip)},
   snap:function(){cs=camGoal();puppets.forEach(function(p,i){var solo=S.view==='solo'&&i===S.sel,tg=solo?SPOT:SLOTS[i];p.root.position.copy(tg);p.gy=tg.y;p.root.rotation.y=solo?0:-tg.x*.07;p.yaw=0})}
 };
