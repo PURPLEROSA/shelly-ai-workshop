@@ -1,12 +1,12 @@
 <title>Shelly on Deck</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&family=VT323&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&family=Press+Start+2P&family=VT323&display=swap">
 <style>
 /* Layout: full-bleed WebGL stage, retro HUD pinned to corners, control drawer bottom */
 :root{
   --ink:#fff6fb; --dim:#f7d3ea; --pink:#ff5fc8; --banana:#fae67a; --glass:rgba(24,10,30,.62); --edge:rgba(255,95,200,.45);
-  --ui:"Heebo",system-ui,sans-serif; --mono:"VT323",ui-monospace,monospace;
+  --ui:"Heebo",system-ui,sans-serif; --px:"Press Start 2P","VT323",monospace; --mono:"VT323",ui-monospace,monospace;
   color-scheme:dark;
 }
 html,body{height:100%}
@@ -17,7 +17,7 @@ body{background:radial-gradient(120% 80% at 50% 30%,#3a2140,#120c18);color:var(-
 .hud{position:absolute;pointer-events:none;font-family:var(--mono);letter-spacing:.06em;text-shadow:2px 2px 0 rgba(0,0,0,.55)}
 .tl{top:14px;left:16px}
 .tr{top:14px;right:16px;text-align:right}
-.brand{font-size:26px;line-height:1;color:var(--banana)}
+.brand{font-family:var(--px);font-size:13px;line-height:1.4;color:var(--banana);letter-spacing:0;text-shadow:2px 2px 0 #24142e}
 .sub{font-size:20px;color:var(--dim)}
 .rec{display:inline-flex;gap:8px;align-items:center;font-size:22px}
 .rec i{width:10px;height:10px;background:#ff3b5c;display:inline-block;animation:blink 1s steps(2) infinite}
@@ -33,12 +33,12 @@ body{background:radial-gradient(120% 80% at 50% 30%,#3a2140,#120c18);color:var(-
   background:linear-gradient(180deg,var(--banana),#ffc94d);box-shadow:3px 3px 0 var(--pink)}
 .btn:focus-visible,.panel input:focus-visible{outline:2px solid var(--banana);outline-offset:2px}
 .btn.alt{background:transparent;color:var(--ink);border:2px solid var(--edge);box-shadow:none;font-weight:700}
-@media (max-width:520px){.panel input[type=range]{width:64px}.brand{font-size:24px}}
+@media (max-width:520px){.panel input[type=range]{width:64px}.brand{font-size:11px}}
 @media (prefers-reduced-motion:reduce){.rec i{animation:none}}
 </style>
 
-<div id="frame"><canvas id="stage" aria-label="שלי בתלת מימד מתקלטת על סיפון יאכטה, פורמט לאורך"></canvas>
-<div class="hud tl"><div class="brand">SHELLY // ON DECK</div><div class="sub">LOW-POLY SESSION · 2026</div></div>
+<div id="frame"><canvas id="stage" aria-label="שלי בפיקסל ארט מתקלטת על סיפון יאכטה, פורמט לאורך"></canvas>
+<div class="hud tl"><div class="brand">SHELLY // ON DECK</div><div class="sub">PIXEL SESSION · 2026</div></div>
 <div class="hud tr"><div class="rec"><i></i>LIVE</div><div class="bpm" id="bpm">122 BPM</div></div>
 </div>
 
@@ -48,7 +48,7 @@ body{background:radial-gradient(120% 80% at 50% 30%,#3a2140,#120c18);color:var(-
   <label for="cSkin">עור <input id="cSkin" type="color" value="#eab08f"></label>
   <label for="cHair">שיער <input id="cHair" type="color" value="#5c3a20"></label>
   <label for="cTop">טופ <input id="cTop" type="color" value="#e3246d"></label>
-  <label for="pix">פיקסלים <input id="pix" type="range" min="1" max="5" step="0.5" value="2.5"></label>
+  <label for="pix">גודל פיקסל <input id="pix" type="range" min="2" max="8" step="1" value="4"></label>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
@@ -60,9 +60,9 @@ const renderer = new T.WebGLRenderer({canvas, antialias:false});
 renderer.setPixelRatio(1);
 renderer.outputColorSpace = T.SRGBColorSpace;
 const scene = new T.Scene();
-scene.fog = new T.Fog(0xcfd9e4, 8, 40);
+scene.fog = new T.Fog(0xc9e4f2, 10, 45);
 const cam = new T.PerspectiveCamera(38, 1, 0.05, 200);
-let pixel = 2.5;
+let pixel = 4;
 
 /* ---------- tiny canvas textures (nearest-filtered, PS2 grit) ---------- */
 function tex(w,h,draw,rep){const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');draw(g,w,h);
@@ -71,7 +71,7 @@ function tex(w,h,draw,rep){const c=document.createElement('canvas');c.width=w;c.
 const noise=(g,w,h,a)=>{for(let i=0;i<w*h/3;i++){g.fillStyle=`rgba(${Math.random()<.5?0:255},${Math.random()<.5?0:255},${Math.random()<.5?0:255},${a*Math.random()})`;g.fillRect(Math.random()*w|0,Math.random()*h|0,1,1);}};
 const fabricTex = tex(32,32,(g,w,h)=>{g.fillStyle='#fff';g.fillRect(0,0,w,h);for(let i=0;i<w*h;i++){const v=200+Math.random()*55|0;g.fillStyle=`rgb(${v},${v},${v})`;g.fillRect(i%w,i/w|0,1,1);}},[2,2]);
 const skinTex = tex(16,16,(g,w,h)=>{for(let i=0;i<w*h;i++){const v=228+Math.random()*27|0;g.fillStyle=`rgb(${v},${v},${v})`;g.fillRect(i%w,i/w|0,1,1);}});
-const deckTex = tex(64,64,(g,w,h)=>{for(let y=0;y<h;y+=8){const v=150+Math.random()*40|0;g.fillStyle=`rgb(${v+40},${v+10},${v-30})`;g.fillRect(0,y,w,8);g.fillStyle='rgba(60,40,20,.7)';g.fillRect(0,y+7,w,1);g.fillRect((Math.random()*w)|0,y,1,7);}noise(g,w,h,.15);},[10,10]);
+const deckTex = tex(64,64,(g,w,h)=>{for(let y=0;y<h;y+=8){const v=150+Math.random()*40|0;g.fillStyle=`rgb(${v+40},${v+10},${v-30})`;g.fillRect(0,y,w,8);g.fillStyle='rgba(60,40,20,.7)';g.fillRect(0,y+7,w,1);g.fillRect((Math.random()*w)|0,y,1,7);}},[10,10]);
 const seaTex = tex(64,64,(g,w,h)=>{g.fillStyle='#4f7fa8';g.fillRect(0,0,w,h);for(let i=0;i<260;i++){g.fillStyle=Math.random()<.5?'#6f9cc2':'#9cc0dc';g.fillRect(Math.random()*w|0,Math.random()*h|0,3+Math.random()*4|0,1);}},[60,60]);
 const mixerTex = tex(128,96,(g,w,h)=>{
   g.fillStyle='#1d1d22';g.fillRect(0,0,w,h);
@@ -89,7 +89,7 @@ const skyTex = tex(4,128,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.a
 /* ---------- materials ---------- */
 const lam = (color,opt={})=>new T.MeshLambertMaterial(Object.assign({color,flatShading:true},opt));
 const M = {
-  skin: lam(0xeab08f,{map:skinTex}), hair: lam(0x5c3a20), top: lam(0xe3246d,{map:fabricTex}),
+  skin: lam(0xeab08f), hair: lam(0x5c3a20), top: lam(0xe3246d),
   silver: new T.MeshPhongMaterial({color:0xd8dbe2,flatShading:true,shininess:90,specular:0xffffff}),
   dark: lam(0x222228), black: lam(0x0e0e12), lips: lam(0x8a2f2c), nail: lam(0xf3f0f2),
   glass: new T.MeshPhongMaterial({color:0x1a1622,flatShading:true,shininess:120,specular:0xb08fff,transparent:true,opacity:.88}),
@@ -100,6 +100,41 @@ const M = {
 scene.add(new T.HemisphereLight(0xdfe9ff,0x8a6a4a,1.15));
 const sun = new T.DirectionalLight(0xffe2bf,2.1); sun.position.set(-3,5,4); scene.add(sun);
 const rim = new T.DirectionalLight(0xff9ad8,.9); rim.position.set(3,2,-3); scene.add(rim);
+
+
+/* ---------- pixel-art pass: low-res buffer -> fixed palette + ordered dither + depth outline ---------- */
+const PAL_HEX=['24142e','3d2a4f','5a3a5e','8a5a7a', 'f4f0ea','c8c4d0','8a8c9c','4a4c5c',
+  'c9e4f2','8cc2e0','5a92c0','2d5a88', 'e8c890','d0a060','a87440','6e4a28',
+  'ffe08a','d9a93a','8a6220', 'ff6fa8','9e1450', '8ff0c8','b89cff','6fd6ff','ff8f6a','2a2a32','121218'];
+const PAL_N=PAL_HEX.length+6;   // +6 live slots: skin, hair, top, each with a shade
+const palU=[];PAL_HEX.forEach(h=>palU.push(new T.Color('#'+h)));for(let i=0;i<6;i++)palU.push(new T.Color());
+// palette is authored in sRGB; THREE.Color('#hex') converts to linear, so read back sRGB components
+const palVec=palU.map(()=>new T.Vector3());
+function syncPal(){PAL_HEX.forEach((h,i)=>{const n=parseInt(h,16);palVec[i].set((n>>16&255)/255,(n>>8&255)/255,(n&255)/255);});
+  ['cSkin','cHair','cTop'].forEach((id,k)=>{const n=parseInt(document.getElementById(id).value.slice(1),16),c=[(n>>16&255)/255,(n>>8&255)/255,(n&255)/255];
+    palVec[PAL_HEX.length+k*2].set(c[0],c[1],c[2]);palVec[PAL_HEX.length+k*2+1].set(c[0]*.68,c[1]*.62,c[2]*.72);});}
+const rt=new T.WebGLRenderTarget(2,2,{minFilter:T.NearestFilter,magFilter:T.NearestFilter});
+rt.depthTexture=new T.DepthTexture(2,2);
+const postMat=new T.ShaderMaterial({
+  uniforms:{tCol:{value:rt.texture},tDep:{value:rt.depthTexture},res:{value:new T.Vector2(2,2)},pal:{value:palVec},near:{value:.05},far:{value:200},outline:{value:new T.Vector3(.141,.078,.18)}},
+  vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`,
+  fragmentShader:`precision highp float;varying vec2 vUv;uniform sampler2D tCol,tDep;uniform vec2 res;uniform vec3 pal[${PAL_N}];uniform float near,far;uniform vec3 outline;
+    float lin(vec2 uv){float z=texture2D(tDep,uv).x*2.-1.;return 2.*near*far/(far+near-z*(far-near));}
+    float bayer(vec2 p){int x=int(mod(p.x,4.)),y=int(mod(p.y,4.));int i=x+y*4;
+      float m[16];m[0]=0.;m[1]=8.;m[2]=2.;m[3]=10.;m[4]=12.;m[5]=4.;m[6]=14.;m[7]=6.;m[8]=3.;m[9]=11.;m[10]=1.;m[11]=9.;m[12]=15.;m[13]=7.;m[14]=13.;m[15]=5.;
+      float v=0.;for(int k=0;k<16;k++){if(k==i)v=m[k];}return v/16.-.47;}
+    void main(){vec2 px=1./res;
+      float d=lin(vUv),e=0.;
+      e=max(e,lin(vUv+vec2(px.x,0.))-d);e=max(e,lin(vUv-vec2(px.x,0.))-d);e=max(e,lin(vUv+vec2(0.,px.y))-d);e=max(e,lin(vUv-vec2(0.,px.y))-d);
+      if(e>d*.12+.02){gl_FragColor=vec4(outline,1.);return;}
+      vec3 c=pow(max(texture2D(tCol,vUv).rgb,0.),vec3(1./2.2));
+      c+=bayer(gl_FragCoord.xy)*.045;
+      vec3 best=pal[0];float bd=1e9;
+      for(int i=0;i<${PAL_N};i++){vec3 q=pal[i];vec3 df=c-q;float dd=dot(df*df,vec3(.3,.59,.11));if(dd<bd){bd=dd;best=q;}}
+      gl_FragColor=vec4(best,1.);}`,
+  depthTest:false,depthWrite:false});
+const postScene=new T.Scene(),postCam=new T.OrthographicCamera(-1,1,1,-1,0,1);
+postScene.add(new T.Mesh(new T.PlaneGeometry(2,2),postMat));
 
 /* ---------- yacht set ---------- */
 const sky = new T.Mesh(new T.SphereGeometry(80,12,8),new T.MeshBasicMaterial({map:skyTex,side:T.BackSide,fog:false})); scene.add(sky);
@@ -137,7 +172,7 @@ const holoMat=new T.ShaderMaterial({uniforms:{time:{value:0},sunDir:{value:V(-0.
   fragmentShader:`varying vec3 vN;varying vec3 vV;varying vec3 vP;uniform float time;uniform vec3 sunDir;
     vec3 hsl2rgb(float h){vec3 p=abs(fract(vec3(h)+vec3(0.,.333,.667))*6.-3.);return clamp(p-1.,0.,1.);}
     void main(){float fr=pow(1.-abs(dot(vN,vV)),1.4);float hue=fract(fr*.9+vP.y*.55+time*.05);
-    vec3 rainbow=mix(vec3(1.),hsl2rgb(hue),.55);vec3 base=mix(vec3(.82,.78,.92),rainbow,.75);
+    vec3 rainbow=mix(vec3(1.),hsl2rgb(hue),.95);vec3 base=mix(vec3(.7,.6,.95),rainbow,.9);
     float li=.55+.45*max(dot(vN,sunDir),0.);gl_FragColor=vec4(base*li*vec3(1.05,.95,1.)+vec3(.3,.18,.25)*fr,1.);}`});
 M.gold=new T.MeshPhongMaterial({color:0xd9a93a,flatShading:true,shininess:80,specular:0xfff0b0});
 M.shoe=lam(0xf4f4f4);
@@ -243,10 +278,10 @@ function schedule(){const s16=BEAT/4;while(nextT<ac.currentTime+.12){const i=ste
 playBtn.onclick=()=>{if(!ac)startAudio();if(playing){ac.suspend();playing=false;playBtn.textContent='הפעילי ביט';}else{ac.resume();playing=true;playBtn.textContent='עצרי ביט';}};
 
 /* ---------- controls ---------- */
-const bind=(id,m)=>document.getElementById(id).addEventListener('input',e=>m.color.set(e.target.value));
+const bind=(id,m)=>document.getElementById(id).addEventListener('input',e=>{m.color.set(e.target.value);syncPal();});syncPal();
 bind('cSkin',M.skin);bind('cHair',M.hair);bind('cTop',M.top);
 document.getElementById('pix').addEventListener('input',e=>{pixel=+e.target.value;resize();});
-function resize(){const r=frameEl.getBoundingClientRect();renderer.setSize(Math.max(1,Math.round(r.width/pixel)),Math.max(1,Math.round(r.height/pixel)),false);cam.aspect=9/16;cam.fov=50;cam.updateProjectionMatrix();}
+function resize(){const r=frameEl.getBoundingClientRect(),w=Math.max(1,Math.round(r.width/pixel)),h=Math.max(1,Math.round(r.height/pixel));renderer.setSize(w,h,false);rt.setSize(w,h);postMat.uniforms.res.value.set(w,h);cam.aspect=9/16;cam.fov=50;cam.updateProjectionMatrix();}
 addEventListener('resize',resize);resize();
 
 /* ---------- loop ---------- */
@@ -281,7 +316,7 @@ function frame(){
   cam.lookAt(camL);
   if(t-lastDrag>6&&!drag){yawOff*=.985;pitchOff*=.985;}
   document.getElementById('bpm').style.opacity=playing?(beatPh<.15?1:.55):.55;
-  renderer.render(scene,cam);requestAnimationFrame(frame);
+  renderer.setRenderTarget(rt);renderer.render(scene,cam);renderer.setRenderTarget(null);renderer.render(postScene,postCam);requestAnimationFrame(frame);
 }
 frame();
 })();
