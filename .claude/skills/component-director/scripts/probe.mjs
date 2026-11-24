@@ -9,6 +9,9 @@
   node probe.mjs piece.html --rtl                 add a pass with <html dir="rtl">
   node probe.mjs piece.html --variant he=?lang=he add a pass with this query string (repeatable)
   node probe.mjs piece.html --target ".knob"      aim the gestures at this element
+  node probe.mjs page.html --root "[data-piece=keys]"   one piece on a page that holds several
+  node probe.mjs page.html --query quiet          add this query string to every pass (a page's switch for its own theatre)
+  node probe.mjs page.html --allow fonts.googleapis.com,fonts.gstatic.com   hosts the page is meant to load from
   node probe.mjs piece.html --size 1200x750 --root "[data-piece]" --cols 4 --thumb 420 --strict
 
   What it looks for on the page
@@ -18,7 +21,8 @@
                         slider or switch inside the piece if there is one, and otherwise to the piece as a whole.
     window.PIECE        optional handle: { scrub(p), set(p) }. scrub(p) draws the settled state for p in 0..1 at once,
                         set(p) goes there the way a person would see it. With scrub the probe photographs the
-                        in-betweens and proves the same p always gives the same picture.
+                        in-betweens and proves the same p always gives the same picture. On a page with several
+                        pieces each registers as window.PIECES[name] and the probe picks the one it is pointed at.
 
   What it reports
     FAIL  script errors, no root, sideways overflow on a phone
@@ -43,7 +47,7 @@ import { pathToFileURL } from 'node:url';
 const require = createRequire(import.meta.url);
 
 function parseArgs(argv) {
-  const o = { _: [], variant: [] };
+  const o = { _: [], variant: [], allow: '' };
   const flags = new Set(['rtl', 'strict', 'ambient', 'help']);
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -64,7 +68,7 @@ async function launch() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const toUrl = (f, query = '') => {
-  const base = /^https?:\/\//.test(f) ? f : pathToFileURL(path.resolve(f)).href;
+  const base = /^(https?|file):\/\//.test(f) ? f : pathToFileURL(path.resolve(f)).href;
   if (!query) return base;
   const q = query.replace(/^\?/, '');
   return base + (base.includes('?') ? '&' : '?') + q;
@@ -109,6 +113,15 @@ async function open(browser, url, a, ctxOpts = {}, init = []) {
   const sel = a.root || '[data-piece]';
   const root = page.locator(sel).first();
   const found = (await root.count()) > 0;
+  // On a page with several pieces: bring this one to the middle of the screen and use its own handle.
+  if (found) {
+    await page.evaluate((s) => {
+      const r = document.querySelector(s), n = r.getAttribute('data-piece');
+      r.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+      if (window.PIECES && window.PIECES[n]) window.PIECE = window.PIECES[n];
+    }, sel);
+    await sleep(300);
+  }
   const box = found ? await root.boundingBox() : null;
   // Where gestures are aimed: --target, else [data-grab], else a slider or switch inside the piece, else the piece.
   const aim = found ? await page.evaluate(([s, t]) => {
@@ -165,7 +178,8 @@ async function main() {
   const pct = (x) => (x * 100).toFixed(x < 0.001 ? 3 : 1) + '%';
 
   // ---------- pass 1: desktop, pointer and keys ----------
-  const url = toUrl(target);
+  const url = toUrl(target, a.query || '');
+  const allowed = new Set(a.allow.split(',').filter(Boolean));
   const d = await open(browser, url, a);
   const { page } = d;
   const snap = async (label, group = 'pointer') => { const buf = await page.screenshot(); shots.push({ label, group, buf }); return buf; };
@@ -262,10 +276,16 @@ async function main() {
 
     // keys
     let focused = false;
-    for (let i = 0; i < 10 && !focused; i++) {
+    await page.evaluate((sel) => {            // start the Tab order just before the piece, so a long page does not get in the way
+      const r = document.querySelector(sel), s = document.createElement('span');
+      s.id = '__probe_before'; s.tabIndex = -1; s.style.cssText = 'position:absolute;inline-size:1px;block-size:1px;overflow:hidden';
+      r.before(s); s.focus({ preventScroll: true });
+    }, d.sel);
+    for (let i = 0; i < 4 && !focused; i++) {
       await page.keyboard.press('Tab');
       focused = await page.evaluate((sel) => { const r = document.querySelector(sel); return !!r && r.contains(document.activeElement) && document.activeElement !== document.body; }, d.sel);
     }
+    await page.evaluate(() => document.getElementById('__probe_before')?.remove());
     if (!focused) {
       if (info.decorative) add('INFO', 'keys', 'marked decorative (aria-hidden or data-decorative): no keyboard path expected');
       else add('WARN', 'keys', 'nothing in the piece takes keyboard focus. A control needs a real button, input or tabindex; a decoration should say aria-hidden="true".');
@@ -301,6 +321,8 @@ async function main() {
     } else add('INFO', 'frames', 'no requestAnimationFrame activity during pointer input (CSS-driven, or it did not react)');
 
     // scrub
+    await page.evaluate((sel) => document.querySelector(sel).scrollIntoView({ block: 'center', behavior: 'instant' }), d.sel);
+    await sleep(200);
     if (info.scrub) {
       const ps = [0, 0.25, 0.5, 0.75, 1], bufs = [];
       for (const p of ps) { await page.evaluate((v) => window.PIECE.scrub(v), p); await sleep(140); bufs.push(await snap(`scrub ${p}`, 'scrub')); }
@@ -331,8 +353,9 @@ async function main() {
 
     if (d.errors.length) add('FAIL', 'errors', `${d.errors.length} script error(s): ${[...new Set(d.errors)].slice(0, 4).join(' | ')}`);
     else add('PASS', 'errors', 'no script errors');
-    if (d.external.size) add('WARN', 'self-contained', `loads from other hosts: ${[...d.external].join(', ')}. A piece that is pasted elsewhere should bring what it needs or degrade without it.`);
-    else add('PASS', 'self-contained', 'no requests to other hosts');
+    const strangers = [...d.external].filter((h) => !allowed.has(h));
+    if (strangers.length) add('WARN', 'self-contained', `loads from other hosts: ${strangers.join(', ')}. A piece that is pasted elsewhere should bring what it needs or degrade without it. Name hosts a page is meant to use with --allow.`);
+    else add('PASS', 'self-contained', d.external.size ? `only the allowed hosts: ${[...d.external].join(', ')}` : 'no requests to other hosts');
 
     // ---------- pass 2: prefers-reduced-motion ----------
     {
@@ -373,7 +396,7 @@ async function main() {
             const n = w.currentNode, el = n.parentElement;
             if (!n.textContent.trim() || !el) continue;
             const cs = getComputedStyle(el), bb = el.getBoundingClientRect();
-            if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity < 0.05 || bb.width < 2 || el.closest('[aria-hidden="true"]')) continue;
+            if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity < 0.05 || bb.width < 2 || bb.height < 2) continue;   // aria-hidden text counts: people still read it
             const f = parseFloat(cs.fontSize) * (new DOMMatrixReadOnly(cs.transform === 'none' ? undefined : cs.transform).a || 1);
             if (f < minFont) { minFont = f; minText = n.textContent.trim().slice(0, 24); }
           }
@@ -409,7 +432,7 @@ async function main() {
     // ---------- optional passes: rtl, variants ----------
     const extra = [];
     if (a.rtl) extra.push({ label: 'rtl', url, init: [FORCE_RTL] });
-    for (const v of a.variant) { const i = v.indexOf('='); extra.push({ label: v.slice(0, i), url: toUrl(target, v.slice(i + 1)), init: [] }); }
+    for (const v of a.variant) { const i = v.indexOf('='); extra.push({ label: v.slice(0, i), url: toUrl(url, v.slice(i + 1)), init: [] }); }
     for (const x of extra) {
       const v = await open(browser, x.url, a, {}, x.init);
       if (!v.found) { add('FAIL', x.label, `no ${v.sel} in this variant`); await v.context.close(); continue; }

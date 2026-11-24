@@ -12,7 +12,7 @@ A piece is remembered for one thing. The work here is to find that thing before 
 - **What happens**: the physical result, which is also the job getting done.
 - **What else changes**: one consequence outside the control. The room goes dark. The page floods. The wording changes.
 
-The three examples in this skill, as sentences:
+Three of this skill's examples, as sentences:
 
 - *A model-temperature slider that is a thermometer: push the mercury up and the sentence above it loses its composure, letter by letter, while its wording drifts from fact to rumour.*
 - *A loader whose context window is a window: tokens print in, the tape climbs and the oldest lines leave over the sill, while three counters keep the honest numbers.*

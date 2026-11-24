@@ -1,0 +1,1386 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>סוכן AI מבפנים</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="מדריך אינטראקטיבי בשש תחנות: מה קורה לבקשה אחת בדרך מהמשפט שכתבתם ועד שהסוכן ביצע אותה.">
+<!--
+  An explainer page: one request followed through six stations, each station one live piece.
+  This file is a shell. The pieces live in their own files and are set in by
+      node scripts/compose.mjs examples/explainer/agent.shell.html --out <page>.html
+  Edit copy, order, colours and page behaviour here. Edit a piece in its own file, then compose again.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap">
+<style>
+  /* Layout: a stack of coloured paper sheets, one per station. On each sheet the words sit at the reading
+     edge and the live piece takes the wide side; the two swap sides from sheet to sheet. */
+  @font-face { font-family: Bamberger; src: url('assets/bamberger-black.otf') format('opentype'); font-weight: 900; font-display: swap; }
+  :root {
+    --ink: #303039; --night: #27262e; --paper: #fffdfb; --cream: #f7f2ed; --sky: #ddf4ff; --pink: #f4b8ca; --lilac: #e8e0f2;
+    --mag: #b93372; --plum: #60445d; --rose: #f29bb6; --blue: #8fd0f2; --violet: #cbb8f0;
+    --grad: linear-gradient(120deg, #c2337a 0%, #8e3fb8 55%, #5b4bd6 100%);
+    --font-display: Bamberger, Heebo, "Arial Hebrew", Arial, sans-serif;
+    --font-text: Heebo, "Arial Hebrew", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --lap: 44px;                                   /* how far each sheet laps over the one before */
+  }
+  :root { color-scheme: light; }                    /* one committed look: the sheets are the palette, in any host theme */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--cream); color: var(--ink); font: 400 18px/1.7 var(--font-text); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  h1, h2, p, ol { margin: 0; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent, var(--mag)); outline-offset: 3px; border-radius: 4px; }
+
+  .progress { position: fixed; inset: 0 0 auto; z-index: 30; padding-top: env(safe-area-inset-top, 0px); pointer-events: none; }
+  .progress i { display: block; block-size: 4px; background: var(--grad); transform: scaleX(var(--read, 0)); transform-origin: right center; }
+
+  .stops { position: fixed; z-index: 20; left: max(18px, env(safe-area-inset-left, 0px)); top: 50%; translate: 0 -50%; display: grid; gap: 4px; mix-blend-mode: difference; color: #fff; }
+  .stops a { display: flex; flex-direction: row-reverse; align-items: center; gap: 10px; min-block-size: 30px; padding: 2px 4px; text-decoration: none; font: 500 12px/1 var(--font-mono); opacity: .45; transition: opacity .25s; }
+  .stops a span { font: 700 13px/1 var(--font-text); opacity: 0; translate: -6px 0; transition: opacity .25s, translate .25s; white-space: nowrap; }
+  .stops a::after { content: ""; inline-size: 14px; block-size: 2px; background: currentColor; transition: inline-size .3s cubic-bezier(.2, .8, .2, 1); }
+  .stops a:hover, .stops a:focus-visible, .stops a[aria-current] { opacity: 1; }
+  .stops a:hover span, .stops a:focus-visible span, .stops a[aria-current] span { opacity: 1; translate: 0 0; }
+  .stops a[aria-current]::after { inline-size: 34px; }
+  @media (max-width: 1240px) { .stops { display: none; } }
+
+  /* A sheet is a full-width band of colour with a rounded top edge that laps over the sheet before it. */
+  .sheet { position: relative; background: var(--ground); color: var(--fg, var(--ink)); border-radius: var(--lap) var(--lap) 0 0; margin-top: calc(-1 * var(--lap)); padding-bottom: var(--lap);
+    box-shadow: 0 -22px 44px -34px rgb(30 20 40 / .5); }
+  .sheet.hero { margin-top: calc(-1 * env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); border-radius: 0; box-shadow: none; }   /* the ground runs up under a phone's status bar */
+  .wrap { max-inline-size: 1180px; margin-inline: auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .kicker { font: 500 13px/1.4 var(--font-mono); letter-spacing: .04em; opacity: .62; }
+  .hl { background: linear-gradient(transparent 56%, var(--mark, var(--pink)) 56% 94%, transparent 94%) no-repeat right center / 100% 100%; padding: 0 .12em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+
+  /* Hero */
+  .hero { --ground: var(--cream); }
+  .hero .wrap { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: center; gap: clamp(28px, 5vw, 72px); padding-block: clamp(56px, 9vh, 104px) clamp(56px, 8vh, 88px); }
+  .hero h1 { margin-block: 18px 22px; font: 900 clamp(54px, 10.4vw, 142px)/.92 var(--font-display); letter-spacing: -.01em; }
+  .hero h1 .l { display: block; }
+  .hero .lede { max-inline-size: 30ch; font-size: clamp(19px, 2vw, 23px); line-height: 1.55; }
+  .hero .cue { display: inline-flex; align-items: center; gap: 10px; margin-top: 30px; font: 700 15px/1 var(--font-text); color: var(--mag); text-decoration: none; }
+  .hero .cue svg { inline-size: 18px; block-size: 18px; }
+  .requestbox { justify-self: center; display: grid; gap: 16px; justify-items: center; }
+  .request { inline-size: min(340px, 78vw); padding: 20px 22px 26px; border-radius: 6px; background: var(--paper); cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; rotate: -3deg;
+    box-shadow: 0 1px 0 #0001, 0 26px 44px -24px rgb(60 40 70 / .5); }
+  .request:active { cursor: grabbing; }
+  .request time { display: block; margin-bottom: 12px; font: 500 13px/1 var(--font-mono); opacity: .55; }
+  .request q { quotes: none; font: 800 clamp(22px, 2.5vw, 29px)/1.25 var(--font-text); letter-spacing: -.01em; }
+  .requestbox p { font-size: 14px; opacity: .6; }
+
+  /* Station */
+  .station .wrap { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: center; gap: clamp(28px, 5vw, 76px); padding-block: clamp(76px, 12vh, 132px) clamp(56px, 9vh, 104px); }
+  .station.flip .copy { order: 2; }
+  .copy { display: grid; gap: 16px; justify-items: start; }
+  .copy .num { font: 900 clamp(60px, 8vw, 104px)/.8 var(--font-text); color: transparent; -webkit-text-stroke: 1.5px color-mix(in srgb, var(--fg, var(--ink)) 42%, transparent); letter-spacing: -.02em; }
+  .copy h2 { font: 900 clamp(36px, 4.5vw, 60px)/1.03 var(--font-display); text-wrap: balance; }
+  .copy p { max-inline-size: 34ch; }
+  .copy .try { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--accent, var(--mag)); }
+  .copy .try svg { flex: none; inline-size: 22px; block-size: 22px; }
+  .copy .take { margin-top: 6px; font: 800 clamp(19px, 1.9vw, 22px)/1.4 var(--font-text); }
+  .copy .take .hl { background-size: 0% 100%; transition: background-size .9s cubic-bezier(.2, .8, .2, 1) .25s; }
+  .station.in .copy .take .hl { background-size: 100% 100%; }
+  .bench { container-type: inline-size; display: grid; justify-items: center; min-inline-size: 0; }
+
+  #tokens      { --ground: var(--paper); }
+  #temperature { --ground: var(--sky); }
+  #memory      { --ground: var(--night); --fg: var(--cream); --accent: var(--pink); --mark: #b9337299; }
+  #tools       { --ground: var(--lilac); --mark: #fff; }
+  #loop        { --ground: var(--cream); }
+  #result      { --ground: var(--pink); --mark: #fff; --accent: #8f1f55; }
+
+  /* The pieces, in this page's colours and type. Each piece lists what it accepts above its own styles. */
+  .tok   { --accent: var(--mag); --display-weight: 800; --tint-1: #cdeafb; --tint-2: #f8cfdc; --tint-3: #e2d7f4; --tint-4: #f4e6c3; }
+  .fever { --cold: #6d7fb3; --hot: var(--mag); --say-hot: #8f1f55; --ink: #303039; --display: var(--font-display); --display-weight: 900; }
+  .spill { --fg: var(--cream); --focus: var(--pink); --tone-2: #9fd6f4; --tone-3: #c9b6f0; }
+  .keys  { --accent: var(--mag); --mark: var(--pink); --display-weight: 800; --cap-1: var(--pink); --cap-2: #bfe6fb; --cap-3: #fffdfb; }
+  .lp    { --accent: var(--mag); --think: var(--violet); --act: var(--rose); --check: var(--blue); --paper: var(--cream); --display: var(--font-display); --display-weight: 900; }
+  .spike { --focus: var(--mag); --ink: #303039; }
+
+  /* Recap */
+  .recap { --ground: var(--night); --fg: var(--cream); --accent: var(--pink); }
+  .recap .wrap { padding-block: clamp(76px, 12vh, 132px) clamp(48px, 8vh, 80px); display: grid; gap: clamp(28px, 5vh, 52px); }
+  .recap h2 { font: 900 clamp(44px, 7vw, 96px)/1 var(--font-display); }
+  .recap ol { list-style: none; padding: 0; display: grid; gap: 2px; counter-reset: s; max-inline-size: 760px; }
+  .recap li a { counter-increment: s; display: grid; grid-template-columns: 3.2em 1fr; align-items: baseline; gap: 12px; padding: 16px 0; text-decoration: none; border-top: 1px solid #ffffff26; font-size: clamp(19px, 2.2vw, 26px); font-weight: 500; line-height: 1.4; transition: padding .3s cubic-bezier(.2, .8, .2, 1); }
+  .recap li a::before { content: "0" counter(s); font: 500 14px/1 var(--font-mono); opacity: .55; }
+  .recap li a:hover { padding-inline-start: 14px; }
+  .recap .sum { font: 900 clamp(30px, 5vw, 64px)/1.1 var(--font-display); }
+  .recap .sum b { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 900; }
+  .recap .sign { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; padding-top: 22px; border-top: 1px solid #ffffff26; font: 500 13px/1.4 var(--font-mono); letter-spacing: .08em; opacity: .7; }
+  .recap .sign span { direction: ltr; }
+
+  @media (max-width: 900px) {
+    body { font-size: 17px; }
+    .hero .wrap, .station .wrap { grid-template-columns: minmax(0, 1fr); }
+    .station.flip .copy { order: 0; }
+    .requestbox { justify-self: start; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .copy .take .hl { background-size: 100% 100%; transition: none; }
+    .stops a, .stops a span, .stops a::after, .recap li a { transition: none; }
+  }
+</style>
+<style>
+/* pieces: tokens, fever, spill, keys, loop, spike (set in by compose.mjs; edit the piece files, not this block) */
+/* ---- tokens ---- */
+/* Theme it from the page: --ink, --accent, --tint-1 to --tint-4 (the slips), --display (the sentence's typeface). */
+  .tok { --p: 0; --cut: 0; --tile: 0; --num: 0; --ink: #1d1b1a; color: var(--ink); inline-size: min(680px, 100%); padding: 20px 0; }
+  .tok .eyebrow { margin: 0 0 20px; font: 500 12px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .14em; text-transform: uppercase; opacity: .55; }
+  .tok .type { display: flex; align-items: baseline; gap: 12px; margin: 0 0 30px; font-size: 14px; }
+  .tok .type span { opacity: .6; white-space: nowrap; }
+  .tok input { flex: 1; min-inline-size: 0; min-block-size: 44px; box-sizing: border-box; padding: 8px 2px; border: 0; border-radius: 0; background: none; color: inherit; font: inherit; font-size: 16px;
+    border-block-end: 1.5px solid color-mix(in srgb, var(--ink) 28%, transparent); }
+  .tok input:focus-visible { outline: none; border-block-end-color: var(--accent, #b93372); box-shadow: 0 1.5px 0 var(--accent, #b93372); }
+
+  /* The strip. Each line is its own row, fixed when the sentence is laid out, so nothing re-wraps as the gaps open. */
+  .tok .strip { display: grid; gap: 14px; min-block-size: 4.4em; align-content: start; margin: 0 0 30px; user-select: none; -webkit-user-select: none;
+    font: var(--display-weight, 500) clamp(22px, 5.4cqi, 38px)/1.15 var(--display, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Heebo, Arial, sans-serif); }
+  .tok .line { display: flex; flex-wrap: nowrap; gap: calc(.3em + var(--cut) * .34em); }
+  .tok .word { display: inline-flex; gap: calc(var(--cut) * .2em); }
+  .tok .chunk { display: inline-grid; justify-items: center; padding: .12em calc(var(--cut) * .26em) .1em; border-radius: .26em;
+    background: color-mix(in srgb, var(--tint) calc(var(--tile) * 100%), transparent); box-shadow: 0 .05em .22em rgb(50 35 60 / calc(var(--tile) * .2)); }
+  .tok .chunk b { font-weight: inherit; white-space: nowrap; opacity: calc(1 - var(--num) * .6); }
+  .tok .chunk i { font: 500 max(11px, .4em)/1.7 ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-style: normal; letter-spacing: .02em; opacity: var(--num); }
+
+  .tok .track { position: relative; block-size: 48px; cursor: ew-resize; touch-action: pan-y; outline: none; -webkit-tap-highlight-color: transparent; }
+  .tok .track::before { content: ""; position: absolute; inset-inline: 0; inset-block-start: 23px; block-size: 2px; border-radius: 2px; background: color-mix(in srgb, var(--ink) 22%, transparent); }
+  .tok .track::after { content: ""; position: absolute; inset-inline-start: 0; inset-block-start: 23px; block-size: 2px; inline-size: calc(15px + var(--p) * (100% - 30px)); border-radius: 2px; background: var(--ink); }
+  .tok .knob { position: absolute; z-index: 1; inset-block-start: 9px; inset-inline-start: calc(var(--p) * (100% - 30px)); inline-size: 30px; block-size: 30px; box-sizing: border-box; border-radius: 50%;
+    background: var(--paper, #fffdfb); border: 2px solid var(--ink); box-shadow: 0 2px 6px #0003; }
+  .tok .track:focus-visible .knob { outline: 2px solid var(--accent, #b93372); outline-offset: 3px; }
+  .tok .ends { display: flex; justify-content: space-between; gap: 12px; margin: 6px 0 0; font-size: 13px; opacity: .62; }
+  .tok .count { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin: 24px 0 0; font-size: 14px; }
+  .tok output { font: 500 32px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; opacity: calc(.25 + var(--num) * .75); }
+  .tok .unit { opacity: calc(.25 + var(--num) * .6); }
+  .tok .note { opacity: .55; font-size: 13px; }
+  .tok .live { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---- fever ---- */
+/* Theme it from the page: --cold and --hot (mercury), --ink (text), --say-hot (the sentence at full heat), --display (the sentence's typeface). */
+  .fever { --p: .2; --tone: var(--cold, #49627a); --ink: #1d1b1a; color: var(--ink); inline-size: min(720px, 100%); padding: 24px 0; }
+  .fever .eyebrow { margin: 0 0 26px; font: 500 12px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .14em; text-transform: uppercase; opacity: .55; }
+
+  /* The sentence. Four wordings are stacked in one grid cell. Exactly one shows at rest; a short blur carries the swap. */
+  .fever .say { display: grid; min-block-size: 2.4em; align-items: end; margin: 0 0 40px; user-select: none; -webkit-user-select: none;
+    font: var(--display-weight, 400) clamp(26px, 7.4cqi, 54px)/1.14 var(--display, "Iowan Old Style", "Palatino Linotype", Palatino, "Frank Ruhl Libre", "David Libre", Georgia, serif); letter-spacing: -.012em; }
+  .fever .say > span { grid-area: 1 / 1; opacity: 0; will-change: opacity, filter; }
+  .fever .say span span span { will-change: transform; }
+
+  /* The thermometer is the slider. */
+  .fever .tube { position: relative; block-size: 48px; cursor: ew-resize; touch-action: pan-y; outline: none; border-radius: 24px; -webkit-tap-highlight-color: transparent; }
+  .fever .tube:focus-visible { outline: 2px solid var(--tone); outline-offset: 6px; }
+  .fever .bulb { position: absolute; inset-inline-start: 0; inset-block-start: 0; inline-size: 48px; block-size: 48px; border-radius: 50%;
+    background: radial-gradient(circle at 34% 30%, #fff9 0 12%, #fff0 34%), var(--tone);
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--ink) 25%, transparent), 0 0 calc(var(--p) * 44px) calc(var(--p) * 7px) color-mix(in srgb, var(--tone) 55%, transparent); }
+  .fever .glass { position: absolute; inset-inline: 40px 0; inset-block-start: 13px; block-size: 22px; border-radius: 11px; overflow: hidden;
+    background: linear-gradient(#fff8, #fff2 45%, #0000000d); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 25%, transparent); }
+  .fever .mercury { position: absolute; inset-block: 4px; inset-inline-start: 0; inline-size: calc(6px + var(--p) * (100% - 11px)); border-radius: 0 7px 7px 0;
+    background: linear-gradient(#ffffff59, #fff0 42%), var(--tone); }
+  [dir="rtl"] .fever .mercury { border-radius: 7px 0 0 7px; }
+  .fever .ticks { display: flex; justify-content: space-between; margin: 12px 0 0; padding-inline-start: 44px;
+    font: 500 12px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; opacity: .5; direction: inherit; }
+  .fever .ticks i { font-style: normal; inline-size: 0; display: grid; justify-content: center; white-space: nowrap; }
+  .fever .ticks i:first-child { justify-content: start; }
+  .fever .ticks i:last-child { justify-content: end; }
+
+  .fever .read { display: flex; align-items: baseline; gap: 12px; margin: 26px 0 0; }
+  .fever output { font: 500 36px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; color: var(--tone); direction: ltr; }
+  .fever .mood { font-size: 15px; opacity: .6; }
+  @media (max-width: 560px) { .fever .say { min-block-size: 3.6em; } }
+  .fever .live { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---- spill ---- */
+/* Made for a dark ground. Theme it from the page: --fg (text), --tone-1 to --tone-5 (one per file), --focus. */
+  .spill { --lh: 30px; --rows: 6; --p: 0; --fg: #ecebf1; color: var(--fg); inline-size: min(640px, 100%); padding: 20px 0; }
+  .spill header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 0 0 calc(var(--lh) * 2.5); }
+  .spill .eyebrow { margin: 0; font: 500 12px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .14em; text-transform: uppercase; opacity: .5; white-space: nowrap; }
+  .spill .cap { margin: 0; font-size: 15px; opacity: .86; text-align: end; }
+  .spill .cap bdi { font-weight: 650; }
+  :lang(en) .spill .cap bdi { font: 500 13.5px ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+
+  /* The window. The canvas reaches above it: that band is where forgotten lines thin out. */
+  .spill .win { position: relative; block-size: calc(var(--lh) * var(--rows) + 16px); border-radius: 14px; cursor: ew-resize; touch-action: pan-y;
+    background: linear-gradient(#ffffff0f, #ffffff05 30%, #ffffff03); box-shadow: inset 0 0 0 1px #ffffff24, inset 0 1px 0 0 #ffffff59, 0 24px 60px -30px #000; user-select: none; -webkit-user-select: none; }
+  .spill canvas { position: absolute; inset-inline: 0; inset-block-start: calc(var(--lh) * -2.5); inline-size: 100%; block-size: calc(100% + var(--lh) * 2.5); display: block; }
+
+  .spill .meter { block-size: 2px; margin: 18px 0 0; background: #ffffff1c; border-radius: 2px; overflow: hidden; }
+  .spill .meter i { display: block; block-size: 100%; inline-size: calc(var(--p) * 100%); background: var(--fg); }
+
+  .spill .foot { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 18px 0 0; }
+  .spill dl { display: flex; gap: 28px; margin: 0; }
+  .spill dt { font: 500 12px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .1em; text-transform: uppercase; opacity: .5; margin: 0 0 8px; }
+  .spill dd { margin: 0; font: 500 24px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .spill dd.gone { opacity: .5; }
+  .spill button { font: inherit; font-size: 14px; color: inherit; background: none; border: 0; border-radius: 999px; padding: 12px 18px; min-block-size: 44px; cursor: pointer;
+    box-shadow: inset 0 0 0 1px #ffffff40; transition: background .2s, box-shadow .2s; }
+  .spill button:hover { background: #ffffff14; }
+  .spill button:focus-visible { outline: 2px solid var(--focus, #f4b8ca); outline-offset: 3px; }
+  @media (max-width: 520px) { .spill { --lh: 24px; } .spill dl { gap: 18px; } .spill dd { font-size: 19px; } .spill header { flex-direction: column; gap: 10px; } .spill .cap { text-align: start; } }
+
+/* ---- keys ---- */
+/* Everything is sized in em and the em follows the container. Theme it from the page: --ink, --accent, --cap-1 to --cap-3, --display. */
+  .keys { --ink: #2b2630; color: var(--ink); font-size: clamp(11.6px, (100cqi - 8px) / 30.5, 19px); inline-size: 30em; padding: 1em 0; }
+  .keys p { margin: 0; }
+  .keys .who { display: block; margin: 0 0 .5em; font: 500 max(12px, .72em)/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .14em; text-transform: uppercase; opacity: .55; }
+  .keys .ask q, .keys .says .line { font: var(--display-weight, 500) 1.5em/1.22 var(--display, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Heebo, Arial, sans-serif); letter-spacing: -.01em; }
+  .keys .ask q { quotes: none; }
+
+  .keys .rack { position: relative; block-size: 12.6em; margin: 1.6em 0 1.2em; }
+  .keys .rail { position: absolute; inset-block-start: 1.9em; inline-size: 12em; block-size: .22em; border-radius: .2em; background: var(--ink); opacity: .85; }
+  .keys .rail.yours { inset-inline-start: 0; } .keys .rail.theirs { inset-inline-end: 0; }
+  .keys .rail span { position: absolute; inset-block-end: .7em; inset-inline-start: 0; font-size: max(12px, .78em); white-space: nowrap; opacity: .65; }
+  .keys .rail i { position: absolute; inset-block-start: 0; inline-size: .22em; block-size: .7em; border-radius: 0 0 .2em .2em; background: var(--ink); }
+
+  /* A key hangs from the hole in its head and turns about it. */
+  .keys .key { position: absolute; inset-block-start: 1.6em; inline-size: 4em; block-size: 10.4em; margin-inline-start: -2em; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer;
+    transform-origin: 50% .94em; will-change: transform; -webkit-tap-highlight-color: transparent; }
+  .keys .key svg { display: block; inline-size: 3.26em; block-size: 7.75em; margin: 0 auto; overflow: visible; filter: drop-shadow(0 .16em .22em rgb(50 35 20 / .32)); }
+  .keys .key .name { display: block; margin-top: .5em; font-size: max(11px, .86em); font-weight: 600; text-align: center; white-space: nowrap; }
+  .keys .key:focus-visible { outline: none; }
+  .keys .key:focus-visible .name { outline: 2px solid var(--accent, #b93372); outline-offset: .25em; border-radius: .2em; }
+
+  .keys .says { min-block-size: 5.6em; }
+  .keys .says .lines { display: grid; }
+  .keys .says .line { grid-area: 1 / 1; opacity: 0; }
+  .keys .says mark { background: linear-gradient(transparent 58%, var(--mark, #f4b8ca) 58% 94%, transparent 94%); color: inherit; padding: 0 .12em; }
+
+/* ---- loop ---- */
+/* Sized in em from the container. Theme it from the page: --ink, --accent, --think, --act, --check, --display. */
+  .lp { --ink: #2b2630; --think: #cdbcf0; --act: #f29bb6; --check: #8fd0f2; color: var(--ink); font-size: clamp(11.8px, (100cqi - 8px) / 29.5, 18px); inline-size: 29em; padding: 1em 0; }
+  .lp .top { display: grid; grid-template-columns: 15em 1fr; align-items: center; gap: 2em; }
+  .lp .dial { position: relative; inline-size: 15em; block-size: 15em; border-radius: 50%; cursor: grab; touch-action: none; outline: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+  .lp .dial:active { cursor: grabbing; }
+  .lp .dial svg { display: block; inline-size: 100%; block-size: 100%; overflow: visible; }
+  .lp .dial:focus-visible { outline: 2px solid var(--accent, #b93372); outline-offset: .5em; }
+  .lp .hub { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: .35em; pointer-events: none; }
+  .lp .phase { display: grid; }
+  .lp .phase span { grid-area: 1 / 1; text-align: center; font: var(--display-weight, 700) 2.3em/1 var(--display, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Heebo, Arial, sans-serif); opacity: 0; }
+  .lp .lap { font-size: max(12px, .82em); opacity: .65; font-variant-numeric: tabular-nums; }
+
+  .lp .side p { margin: 0 0 1em; font-size: max(13px, .95em); line-height: 1.45; opacity: .78; }
+  .lp button { font: inherit; font-size: max(14px, .95em); font-weight: 650; color: var(--paper, #fff); background: var(--ink); border: 0; border-radius: 999px; padding: .8em 1.4em; min-block-size: 44px; cursor: pointer; transition: transform .2s cubic-bezier(.2, .8, .2, 1); }
+  .lp button:hover { transform: translateY(-2px); }
+  .lp button:focus-visible { outline: 2px solid var(--accent, #b93372); outline-offset: 3px; }
+
+  /* The log: one row per lap, one cell per phase. Unwritten cells are faint, so the shape of the job shows from the start. */
+  .lp .log { list-style: none; margin: 1.8em 0 0; padding: 0; display: grid; gap: .5em; }
+  .lp .log li { display: grid; grid-template-columns: 1.4em repeat(3, 1fr); gap: .5em; align-items: stretch; }
+  .lp .log .n { align-self: center; font: 500 max(12px, .8em)/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; opacity: .5; }
+  .lp .log .cell { --w: 0; padding: .6em .7em; border-radius: .6em; font-size: max(11.5px, .86em); line-height: 1.3; min-block-size: 2.6em;
+    background: color-mix(in srgb, var(--c) calc(18% + var(--w) * 62%), transparent); opacity: calc(.38 + var(--w) * .62); }
+  .lp .log .cell b { display: block; margin-bottom: .2em; font: 500 max(11px, .78em)/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .08em; opacity: .7; }
+  .lp .log .cell span { opacity: var(--w); }
+  .lp .live { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  @container (max-width: 560px) { .lp .top { grid-template-columns: 1fr; justify-items: center; gap: 1.2em; } .lp .side { text-align: center; } }
+
+/* ---- spike ---- */
+/* Everything inside is sized in em, and the em follows the container, so the piece keeps its proportions.
+     Theme it from the page: --ink (text), --focus (focus ring), --tint-1 to --tint-5 (paper). */
+  .spike { --ink: #2b2622; color: var(--ink); font-size: clamp(12.5px, (100cqi - 32px) / 28.6, 19px); inline-size: 28em; padding: 1em 0; }
+  .spike .eyebrow { margin: 0 0 .6em; font: 500 max(12px, .75em)/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .14em; text-transform: uppercase; opacity: .55; }
+  .spike .desk { position: relative; block-size: 27em; }
+  .spike ul { list-style: none; margin: 0; padding: 0; }
+
+  /* A slip. Its hole sits on the pin, and it turns about that point. */
+  .spike .slip { --l: 0; position: absolute; inset-inline-start: 1.3em; inset-block-start: 10.5em; inline-size: 21.5em; block-size: 6em; padding: 0; border: 0; background: none;
+    font: inherit; color: inherit; text-align: start; cursor: pointer; transform-origin: 1.9em 50%; will-change: transform; -webkit-tap-highlight-color: transparent;
+    filter: drop-shadow(0 calc(.12em + var(--l) * .9em) calc(.28em + var(--l) * 1.1em) rgb(60 42 28 / calc(.26 + var(--l) * .1))); }
+  [dir="rtl"] .spike .slip { transform-origin: calc(100% - 1.9em) 50%; }
+  .spike .paper { position: absolute; inset: 0; border-radius: .28em; background: var(--tint, #fbf8f1);
+    -webkit-mask: radial-gradient(circle .34em at 1.9em 50%, #0000 96%, #000); mask: radial-gradient(circle .34em at 1.9em 50%, #0000 96%, #000); }
+  [dir="rtl"] .spike .paper { -webkit-mask: radial-gradient(circle .34em at calc(100% - 1.9em) 50%, #0000 96%, #000); mask: radial-gradient(circle .34em at calc(100% - 1.9em) 50%, #0000 96%, #000); }
+  .spike .slip:focus-visible { outline: none; }
+  .spike .slip:focus-visible .paper { box-shadow: inset 0 0 0 .14em var(--focus, #b93372); }
+  .spike .title, .spike .detail, .spike time { position: absolute; font-size: .9em; }
+  .spike .title { inset-inline-start: 8.8em; inset-block-start: .5em; font-weight: 650; letter-spacing: -.005em; white-space: nowrap; }
+  .spike time { inset-inline-end: .9em; inset-block-start: .56em; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; opacity: .55; }
+  .spike .detail { inset-inline: 8.8em .9em; inset-block-start: 2.25em; line-height: 1.32; opacity: calc(var(--d, 1) * .72); }
+  .spike .rule { position: absolute; inset-inline: 3.6em .9em; inset-block-end: .7em; block-size: 1px; background: currentColor; opacity: .09; }
+  .spike .pin { position: absolute; inset-inline-start: 2.5em; inset-block-start: 12.8em; inline-size: 1.4em; block-size: 1.4em; border-radius: 50%; z-index: 20; pointer-events: none;
+    background: radial-gradient(circle at 36% 30%, #fff6d8 0 10%, #d9b25c 34%, #8a6a2a 78%, #5f4718); box-shadow: .18em .3em .5em -.1em #3b2a1a99, 0 0 0 .05em #5f471880; }
+  .spike .hint { margin: .2em 0 0; font-size: max(13px, .88em); opacity: .6; }
+</style>
+</head>
+<body>
+<div class="progress" aria-hidden="true"><i></i></div>
+
+<nav class="stops" aria-label="תחנות">
+  <a href="#tokens"><i>01</i><span>טוקנים</span></a>
+  <a href="#temperature"><i>02</i><span>טמפרטורה</span></a>
+  <a href="#memory"><i>03</i><span>חלון ההקשר</span></a>
+  <a href="#tools"><i>04</i><span>כלים</span></a>
+  <a href="#loop"><i>05</i><span>הלולאה</span></a>
+  <a href="#result"><i>06</i><span>התוצאה</span></a>
+</nav>
+
+<header class="sheet hero" id="top">
+  <div class="wrap">
+    <div>
+      <p class="kicker">מדריך אינטראקטיבי · שש תחנות · חמש דקות</p>
+      <h1><span class="l"><span data-split>סוכן AI,</span></span><span class="l"><span class="hl" data-split>מבפנים.</span></span></h1>
+      <p class="lede">בלי קוד ובלי קסמים. נעקוב אחרי בקשה אחת, מהרגע שנכתבה ועד שהיא מחכה לכם מבוצעת.</p>
+      <a class="cue" href="#tokens">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15M5.5 12.5 12 19l6.5-6.5"/></svg>
+        גוללים, ונוגעים בכל דבר
+      </a>
+    </div>
+    <div class="requestbox">
+      <div class="request"><time>אתמול, 23:14</time><q>תקבע לי פגישה עם דנה ביום חמישי.</q></div>
+      <p>זאת הבקשה. אפשר לגרור אותה.</p>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="sheet station" id="tokens" aria-labelledby="tokens-h">
+  <div class="wrap">
+    <div class="copy">
+      <p class="num" aria-hidden="true">01</p>
+      <h2 id="tokens-h">הוא לא קורא מילים.</h2>
+      <p>לפני שמודל שפה עושה משהו עם הבקשה, הוא חותך אותה לחתיכות קטנות שנקראות טוקנים, ונותן לכל חתיכה מספר. מכאן והלאה הוא רואה רק מספרים.</p>
+      <p class="try"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a5 5 0 0 1-4-2l-3-4a1.5 1.5 0 0 1 2.4-1.8L9 15"/></svg>הזיזו את הכפתור שמאלה, או כתבו משפט משלכם.</p>
+      <p class="take"><span class="hl">מילים נכנסות, מספרים נשארים.</span></p>
+    </div>
+    <div class="bench"><section class="tok" data-piece="tokens">
+  <p class="eyebrow"></p>
+  <label class="type"><span></span><input type="text" id="tokens-text" maxlength="44" autocomplete="off" spellcheck="false"></label>
+  <div class="strip" aria-hidden="true"></div>
+  <div class="track" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="100" data-grab><span class="knob"></span></div>
+  <div class="ends" aria-hidden="true"><span></span><span></span></div>
+  <p class="count"><output>0</output><span class="unit"></span><span class="note"></span></p>
+  <p class="live" aria-live="polite"></p>
+</section></div>
+  </div>
+</section>
+
+<section class="sheet station flip" id="temperature" aria-labelledby="temperature-h">
+  <div class="wrap">
+    <div class="copy">
+      <p class="num" aria-hidden="true">02</p>
+      <h2 id="temperature-h">הוא מנחש. ואפשר לכוון כמה יעז.</h2>
+      <p>את התשובה המודל בונה חתיכה אחרי חתיכה, ובכל פעם בוחר מה הכי מתאים שיבוא עכשיו. הטמפרטורה קובעת אם ילך על הבחירה הבטוחה, או ירשה לעצמו להפתיע.</p>
+      <p class="try"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a5 5 0 0 1-4-2l-3-4a1.5 1.5 0 0 1 2.4-1.8L9 15"/></svg>גררו את הכספית.</p>
+      <p class="take"><span class="hl">נמוך לחשבוניות. גבוה לסיעור מוחות.</span></p>
+    </div>
+    <div class="bench"><section class="fever" data-piece="fever">
+  <p class="eyebrow" data-t="eyebrow">Model temperature</p>
+  <p class="say" aria-hidden="true"></p>
+  <p class="live" aria-live="polite"></p>
+  <div class="tube" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="2">
+    <span class="bulb"></span>
+    <span class="glass"><span class="mercury"></span></span>
+  </div>
+  <div class="ticks" aria-hidden="true"><i>0</i><i>0.5</i><i>1.0</i><i>1.5</i><i>2.0</i></div>
+  <p class="read"><output>0.4</output><span class="mood"></span></p>
+</section></div>
+  </div>
+</section>
+
+<section class="sheet station" id="memory" aria-labelledby="memory-h">
+  <div class="wrap">
+    <div class="copy">
+      <p class="num" aria-hidden="true">03</p>
+      <h2 id="memory-h">השולחן שלו לא גדול.</h2>
+      <p>כל מה שהסוכן יודע ברגע נתון חייב להיכנס לחלון ההקשר: הבקשה, השיחה, הקבצים שקרא. כשהחלון מתמלא, מה שנכנס ראשון יוצא ראשון.</p>
+      <p class="try"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a5 5 0 0 1-4-2l-3-4a1.5 1.5 0 0 1 2.4-1.8L9 15"/></svg>גררו את החלון לצדדים, או לחצו ״לקרוא שוב״.</p>
+      <p class="take"><span class="hl">מה שיצא מהחלון, מבחינתו לא קרה.</span></p>
+    </div>
+    <div class="bench"><section class="spill" data-piece="spill">
+  <header>
+    <p class="eyebrow"></p>
+    <p class="cap" aria-live="polite"></p>
+  </header>
+  <div class="win" data-grab role="progressbar" aria-valuemin="0" aria-valuemax="100"><canvas aria-hidden="true"></canvas></div>
+  <div class="meter" aria-hidden="true"><i></i></div>
+  <div class="foot">
+    <dl>
+      <div><dt data-t="read"></dt><dd data-n="read">0</dd></div>
+      <div><dt data-t="hold"></dt><dd data-n="hold">0</dd></div>
+      <div><dt data-t="gone"></dt><dd data-n="gone" class="gone">0</dd></div>
+    </dl>
+    <button type="button"></button>
+  </div>
+</section></div>
+  </div>
+</section>
+
+<section class="sheet station flip" id="tools" aria-labelledby="tools-h">
+  <div class="wrap">
+    <div class="copy">
+      <p class="num" aria-hidden="true">04</p>
+      <h2 id="tools-h">לבד, הוא רק מדבר.</h2>
+      <p>מודל שפה יודע לנסח. כדי לעשות משהו בעולם הוא צריך כלים: גישה ליומן, למייל, לאנשי הקשר. כל כלי הוא מפתח, ואתם מחליטים איזה מפתחות לתת.</p>
+      <p class="try"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a5 5 0 0 1-4-2l-3-4a1.5 1.5 0 0 1 2.4-1.8L9 15"/></svg>תנו לו מפתח. ואז עוד אחד.</p>
+      <p class="take"><span class="hl">אותה בקשה, תוצאה אחרת. ההבדל במפתחות.</span></p>
+    </div>
+    <div class="bench"><section class="keys" data-piece="keys">
+  <p class="ask"><span class="who"></span><q></q></p>
+  <div class="rack">
+    <div class="rail yours"><span></span><i style="inset-inline-start:1.9em"></i><i style="inset-inline-start:5.9em"></i><i style="inset-inline-start:9.9em"></i></div>
+    <div class="rail theirs"><span></span><i style="inset-inline-start:1.9em"></i><i style="inset-inline-start:5.9em"></i><i style="inset-inline-start:9.9em"></i></div>
+  </div>
+  <p class="says"><span class="who"></span><span class="lines" aria-live="polite"><span class="line"></span><span class="line"></span></span></p>
+</section></div>
+  </div>
+</section>
+
+<section class="sheet station" id="loop" aria-labelledby="loop-h">
+  <div class="wrap">
+    <div class="copy">
+      <p class="num" aria-hidden="true">05</p>
+      <h2 id="loop-h">חושב. פועל. בודק. ושוב.</h2>
+      <p>זה מה שהופך צ׳אט לסוכן. הוא לא עונה פעם אחת ונעצר: הוא מחליט מה הצעד הבא, עושה אותו, בודק מה יצא, וחוזר על זה עד שהמשימה גמורה.</p>
+      <p class="try"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a5 5 0 0 1-4-2l-3-4a1.5 1.5 0 0 1 2.4-1.8L9 15"/></svg>סובבו את הגלגל.</p>
+      <p class="take"><span class="hl">סוכן הוא מודל, עם כלים, בלולאה.</span></p>
+    </div>
+    <div class="bench"><section class="lp" data-piece="loop">
+  <div class="top">
+    <div class="dial" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="3" data-grab>
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <g fill="none" stroke-width="24" stroke-linecap="butt">
+          <path class="arc" data-i="0" stroke="var(--think)"/><path class="arc" data-i="1" stroke="var(--act)"/><path class="arc" data-i="2" stroke="var(--check)"/>
+        </g>
+        <path class="done" fill="none" stroke="var(--ink)" stroke-width="5" stroke-linecap="round"/>
+        <g class="bead"><circle r="15" fill="var(--paper, #fff)" stroke="var(--ink)" stroke-width="5"/><circle r="4.5" fill="var(--ink)"/></g>
+      </svg>
+      <div class="hub"><div class="phase"><span></span><span></span><span></span><span></span></div><div class="lap"></div></div>
+    </div>
+    <div class="side"><p></p><button type="button"></button></div>
+  </div>
+  <ol class="log"></ol>
+  <p class="live" aria-live="polite"></p>
+</section></div>
+  </div>
+</section>
+
+<section class="sheet station flip" id="result" aria-labelledby="result-h">
+  <div class="wrap">
+    <div class="copy">
+      <p class="num" aria-hidden="true">06</p>
+      <h2 id="result-h">ובבוקר: ערימת פתקים.</h2>
+      <p>כשהכול מחובר, הסוכן עובד גם כשאתם לא שם. הבקשה מאתמול בלילה כבר על השולחן, בין שאר הדברים שהספיק.</p>
+      <p class="try"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a5 5 0 0 1-4-2l-3-4a1.5 1.5 0 0 1 2.4-1.8L9 15"/></svg>פתחו את הערימה ומצאו את הפגישה עם דנה.</p>
+      <p class="take"><span class="hl">אתם מבקשים פעם אחת. הוא מסיים.</span></p>
+    </div>
+    <div class="bench"><section class="spike" data-piece="spike">
+  <p class="eyebrow"></p>
+  <div class="desk" data-grab>
+    <ul></ul>
+    <span class="pin" aria-hidden="true"></span>
+  </div>
+  <p class="hint"></p>
+</section></div>
+  </div>
+</section>
+</main>
+
+<footer class="sheet recap" id="recap">
+  <div class="wrap">
+    <p class="kicker">בשורה התחתונה</p>
+    <h2>זה כל הסוד.</h2>
+    <ol>
+      <li><a href="#tokens">קורא טוקנים, לא מילים.</a></li>
+      <li><a href="#temperature">מנחש את החתיכה הבאה, בטמפרטורה שקבעתם.</a></li>
+      <li><a href="#memory">יודע רק מה שנכנס בחלון.</a></li>
+      <li><a href="#tools">עושה רק מה שהמפתחות מאפשרים.</a></li>
+      <li><a href="#loop">חוזר על הלולאה עד שגמר.</a></li>
+    </ol>
+    <p class="sum">מודל + כלים + לולאה = <b>סוכן.</b></p>
+    <p class="sign"><span>SHELLY OR GISSER / AGENT WORKSHOP</span><a href="#top">חזרה להתחלה</a></p>
+  </div>
+</footer>
+
+<script>
+/* kit:start — helpers a self-contained piece inlines. No dependencies. Source: component-director/scripts/kit.js */
+const K = (() => {
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  // Remap x from a..b to c..d, clamped. map(p, .2, .6) is "the part of p between 20% and 60%, as 0..1".
+  const map = (x, a, b, c = 0, d = 1) => c + (d - c) * clamp((x - a) / (b - a || 1e-9));
+  const smooth = (t) => { t = clamp(t); return t * t * (3 - 2 * t); };
+  const gauss = (d, sigma) => Math.exp(-(d * d) / (2 * sigma * sigma));
+  // Seeded random: the same piece looks the same on every load and in every screenshot.
+  const rand = (seed = 1) => () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+
+  // A damped spring stepped at a fixed 1/120 s, so it feels the same at 60, 120 or 30 fps.
+  // z is the damping ratio: 1 arrives without overshoot, 0.7 overshoots a hair, below 0.4 rings.
+  function spring(x = 0, { k = 180, z = 1, eps = 5e-4 } = {}) {
+    const s = {
+      x, v: 0, to: x, k, z,
+      step(dt) {
+        const c = 2 * s.z * Math.sqrt(s.k);
+        for (let t = Math.min(dt, 0.1); t > 1e-6; t -= 1 / 120) {
+          const h = Math.min(t, 1 / 120);
+          s.v += (-s.k * (s.x - s.to) - c * s.v) * h;
+          s.x += s.v * h;
+        }
+        if (Math.abs(s.x - s.to) < eps && Math.abs(s.v) < eps * 20) { s.x = s.to; s.v = 0; return false; }
+        return true;
+      },
+      snap(v = s.to) { s.x = s.to = v; s.v = 0; },
+    };
+    return s;
+  }
+
+  // One requestAnimationFrame loop per piece. tick(dt, t) returns false when nothing is moving and the
+  // loop goes to sleep; call wake() from any input. It also sleeps while the piece is off screen or the
+  // tab is hidden, and picks up where it left off.
+  function loop(root, tick) {
+    let raf = 0, last = 0, want = false, seen = true;
+    const frame = (now) => {
+      raf = 0;
+      const dt = last ? Math.min((now - last) / 1000, 0.05) : 1 / 60;
+      last = now;
+      want = tick(dt, now / 1000) !== false;
+      if (want && seen && !document.hidden) raf = requestAnimationFrame(frame); else last = 0;
+    };
+    const wake = () => { want = true; if (!raf && seen && !document.hidden) raf = requestAnimationFrame(frame); };
+    const io = new IntersectionObserver(([e]) => { seen = e.isIntersecting; if (seen && want) wake(); }, { rootMargin: '64px' });
+    io.observe(root);
+    const vis = () => { if (!document.hidden && want) wake(); };
+    document.addEventListener('visibilitychange', vis);
+    return { wake, stop() { cancelAnimationFrame(raf); raf = 0; want = false; io.disconnect(); document.removeEventListener('visibilitychange', vis); } };
+  }
+
+  // Mouse, touch and pen through one path, with pointer capture and a release velocity in px/s measured
+  // over the last 90 ms. Coordinates are local to el. Set touch-action in CSS on el (pan-y for a
+  // horizontal drag) or the browser will scroll instead. Returns an unsubscribe function.
+  function drag(el, on) {
+    let id = null, hist = [], x0 = 0, y0 = 0;
+    const pt = (e) => { const r = el.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height }; };
+    const down = (e) => {
+      if (id !== null || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      id = e.pointerId; el.setPointerCapture(id);
+      const p = pt(e); x0 = p.x; y0 = p.y; hist = [{ ...p, t: e.timeStamp }];
+      on.start?.({ ...p, e });
+    };
+    const move = (e) => {
+      if (e.pointerId !== id) return;
+      const p = pt(e); hist.push({ ...p, t: e.timeStamp });
+      while (hist.length > 2 && e.timeStamp - hist[0].t > 90) hist.shift();
+      on.move?.({ ...p, dx: p.x - x0, dy: p.y - y0, e });
+    };
+    const up = (e) => {
+      if (e.pointerId !== id) return;
+      id = null;
+      const p = pt(e), a = hist[0], b = hist[hist.length - 1], dt = (b.t - a.t) / 1000;
+      const stale = e.timeStamp - b.t > 60;                  // held still before letting go: no throw
+      const vx = dt > 0.005 && !stale ? (b.x - a.x) / dt : 0, vy = dt > 0.005 && !stale ? (b.y - a.y) / dt : 0;
+      on.end?.({ ...p, dx: p.x - x0, dy: p.y - y0, vx, vy, e });
+    };
+    el.addEventListener('pointerdown', down); el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    return () => { el.removeEventListener('pointerdown', down); el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); };
+  }
+
+  // Keep a canvas sharp: size its backing store to its CSS box times the device pixel ratio (capped at 2).
+  function fit(canvas, onSize) {
+    const ro = new ResizeObserver(() => {
+      const r = canvas.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.max(1, Math.round(r.width * d)); canvas.height = Math.max(1, Math.round(r.height * d));
+      onSize?.(r.width, r.height, d);
+    });
+    ro.observe(canvas);
+    return () => ro.disconnect();
+  }
+
+  // Read a colour from a custom property as [r, g, b], so the page a piece sits in can theme it:
+  // .host .piece { --hot: #b93372 }. Any CSS colour works; fallback is used when the property is not set.
+  function rgb(el, name, fallback) {
+    const t = document.createElement('i');
+    t.style.color = fallback;
+    t.style.color = getComputedStyle(el).getPropertyValue(name).trim() || fallback;
+    el.append(t);
+    const out = getComputedStyle(t).color.match(/[\d.]+/g).slice(0, 3).map(Number);
+    t.remove();
+    return out;
+  }
+  const hex = (c) => '#' + c.map((x) => Math.round(clamp(x, 0, 255)).toString(16).padStart(2, '0')).join('');
+  const mix = (a, b, t) => a.map((x, i) => lerp(x, b[i], t));
+
+  const rm = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reduced = () => rm.matches;
+
+  // Split text so each letter (or each word) can move alone, without breaking right-to-left text, line
+  // wrapping or screen readers. A word and its punctuation stay on one line; every word keeps its own
+  // direction, so a Latin word or "16:30" inside a Hebrew sentence is not reversed. The readable text
+  // stays in the page for assistive tech. Never split Arabic or other joined scripts by letter: pass 'word'.
+  function split(el, by = 'grapheme') {
+    const text = el.textContent, lang = el.closest('[lang]')?.lang || undefined, S = 'Segmenter' in Intl;
+    const letters = (s) => (S ? [...new Intl.Segmenter(lang, { granularity: 'grapheme' }).segment(s)].map((x) => x.segment) : [...s]);
+    const words = (s) => (S ? [...new Intl.Segmenter(lang, { granularity: 'word' }).segment(s)].map((x) => ({ s: x.segment, word: !!x.isWordLike })) : [{ s, word: true }]);
+    const rtl = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+    const mk = (css, txt) => { const n = document.createElement('span'); if (css) n.style.cssText = css; if (txt) n.textContent = txt; return n; };
+    const sr = mk('position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap', text);
+    const box = mk();
+    box.setAttribute('aria-hidden', 'true');
+    const out = [];
+    for (const chunk of text.split(/(\s+)/)) {
+      if (!chunk) continue;
+      if (/^\s+$/.test(chunk)) { box.append(document.createTextNode(chunk)); continue; }
+      if (by === 'word') { const w = mk('display:inline-block;white-space:nowrap', chunk); out.push(w); box.append(w); continue; }
+      // group: no line break inside. core: first word to last word, in its own direction. Punctuation before
+      // and after the core follows the sentence, so the full stop after a Latin word lands on the correct side.
+      const group = mk('white-space:nowrap'), parts = words(chunk);
+      const first = parts.findIndex((x) => x.word), last = parts.length - 1 - [...parts].reverse().findIndex((x) => x.word);
+      let core = null;
+      parts.forEach(({ s, word }, k) => {
+        const inCore = first >= 0 && k >= first && k <= last;
+        if (inCore && !core) { core = mk(); core.dir = rtl.test(parts.slice(first, last + 1).map((x) => x.s).join('')) ? 'rtl' : 'ltr'; group.append(core); }
+        let into = inCore ? core : group;
+        if (word) { const w = mk('display:inline-block;white-space:nowrap'); w.dir = rtl.test(s) ? 'rtl' : 'ltr'; into.append(w); into = w; }
+        for (const g of letters(s)) { const n = mk('display:inline-block', g); into.append(n); out.push(n); }
+      });
+      box.append(group);
+    }
+    el.textContent = '';
+    el.append(sr, box);
+    return out;
+  }
+
+  return { clamp, lerp, map, smooth, gauss, rand, rgb, hex, mix, spring, loop, drag, fit, reduced, onReduced: (f) => rm.addEventListener('change', f), split };
+})();
+/* kit:end */
+</script>
+<script>
+/* ---- tokens ---- */
+(() => {
+  const COPY = {
+    en: { eyebrow: 'What the model reads', yours: 'Your sentence', text: 'Book me a meeting with Dana on Thursday.', label: 'How closely to look',
+      from: 'As you see it', to: 'As the model sees it', unit: 'tokens', note: 'An illustration. Every model cuts a little differently.', said: (n) => `${n} tokens` },
+    he: { eyebrow: 'מה המודל קורא', yours: 'המשפט שלכם', text: 'תקבע לי פגישה עם דנה ביום חמישי.', label: 'כמה קרוב מסתכלים',
+      from: 'כמו שאתם רואים', to: 'כמו שהמודל רואה', unit: 'טוקנים', note: 'המחשה. כל מודל חותך קצת אחרת.', said: (n) => `${n} טוקנים` },
+  };
+  const lang = document.documentElement.lang.startsWith('he') ? 'he' : 'en';
+  const T = COPY[lang];
+
+  const root = document.querySelector('[data-piece="tokens"]');
+  const $ = (s) => root.querySelector(s);
+  const strip = $('.strip'), track = $('.track'), input = $('input'), out = $('output'), live = $('.live');
+  $('.eyebrow').textContent = T.eyebrow; $('.type span').textContent = T.yours; $('.unit').textContent = T.unit; $('.note').textContent = T.note;
+  const [from, to] = root.querySelectorAll('.ends span'); from.textContent = T.from; to.textContent = T.to;
+  track.setAttribute('aria-label', T.label);
+  input.value = T.text;
+  const rtl = getComputedStyle(root).direction === 'rtl';
+
+  // The cut. Not a real tokenizer: each word is split into pieces of two to four letters by a generator seeded
+  // from the word itself, so the same word is always cut the same way, and each piece gets a stable number.
+  const S = 'Segmenter' in Intl;
+  const letters = (s) => (S ? [...new Intl.Segmenter(lang, { granularity: 'grapheme' }).segment(s)].map((x) => x.segment) : [...s]);
+  const parts = (s) => (S ? [...new Intl.Segmenter(lang, { granularity: 'word' }).segment(s)].map((x) => ({ s: x.segment, word: !!x.isWordLike })) : [{ s, word: true }]);
+  const hash = (s) => { let h = 2166136261; for (const c of s) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+  function cut(word) {
+    const g = letters(word);
+    if (g.length <= 3) return [word];
+    const r = K.rand(hash(word)), pieces = [];
+    for (let i = 0; i < g.length;) {
+      let n = 2 + Math.floor(r() * 2.4);
+      if (g.length - i - n === 1) n += 1;                       // never leave one letter alone at the end
+      pieces.push(g.slice(i, i + n).join('')); i += n;
+    }
+    return pieces;
+  }
+
+  let count = 0;
+  function build() {
+    const text = input.value.trim() || T.text;
+    strip.textContent = '';
+    const words = [];
+    count = 0;
+    for (const chunk of text.split(/\s+/)) {
+      const word = document.createElement('span');
+      word.className = 'word';
+      for (const part of parts(chunk)) for (const piece of (part.word ? cut(part.s) : [part.s])) {
+        const el = document.createElement('span'), b = document.createElement('b'), i = document.createElement('i');
+        el.className = 'chunk'; el.style.setProperty('--tint', `var(--tint-${(count % 4) + 1}, ${['#d6eefb', '#f7cfdb', '#e3d9f3', '#f6e7c4'][count % 4]})`);
+        b.textContent = piece; i.textContent = String(1000 + (hash(piece) % 49000));
+        el.append(b, i); word.append(el); count++;
+      }
+      words.push(word);
+    }
+    // Break lines once, at the fully cut size, then keep those lines whatever p is.
+    root.style.setProperty('--cut', '1');
+    const probe = document.createElement('div');
+    probe.className = 'line'; probe.style.flexWrap = 'wrap';
+    probe.append(...words); strip.append(probe);
+    const rows = new Map();
+    for (const w of words) { const y = Math.round(w.offsetTop); if (!rows.has(y)) rows.set(y, []); rows.get(y).push(w); }
+    strip.textContent = '';
+    for (const row of rows.values()) { const line = document.createElement('div'); line.className = 'line'; line.append(...row); strip.append(line); }
+    out.textContent = String(count);
+    render(value.x);
+  }
+
+  const value = K.spring(0, { k: 200, z: 1 });
+  function render(p) {
+    root.style.setProperty('--p', K.clamp(p).toFixed(4));
+    root.style.setProperty('--cut', K.smooth(K.map(p, 0, 0.5)).toFixed(4));       // the gaps open first
+    root.style.setProperty('--tile', K.smooth(K.map(p, 0.25, 0.7)).toFixed(4));   // then each piece becomes a slip
+    root.style.setProperty('--num', K.smooth(K.map(p, 0.58, 1)).toFixed(4));      // then the numbers take over
+  }
+  const loop = K.loop(root, (dt) => { const moving = value.step(dt); render(value.x); return moving; });
+
+  function go(p, { instant = false, slow = false } = {}) {
+    value.to = K.clamp(p);
+    value.k = slow ? 14 : 200;
+    if (instant || K.reduced()) { value.snap(); render(value.x); } else loop.wake();
+    track.setAttribute('aria-valuenow', Math.round(value.to * 100));
+    track.setAttribute('aria-valuetext', value.to > 0.6 ? T.to : T.from);
+    const say = value.to > 0.95 ? T.said(count) : '';
+    if (live.textContent !== say) live.textContent = say;
+  }
+
+  const fromX = (e) => { const r = track.getBoundingClientRect(), f = (e.clientX - r.left - 15) / (r.width - 30); return rtl ? 1 - f : f; };
+  K.drag(track, { start: ({ e }) => go(fromX(e)), move: ({ e }) => go(fromX(e)) });
+  track.addEventListener('keydown', (e) => {
+    const fwd = rtl ? 'ArrowLeft' : 'ArrowRight', back = rtl ? 'ArrowRight' : 'ArrowLeft';
+    const step = { [fwd]: 0.05, ArrowUp: 0.05, [back]: -0.05, ArrowDown: -0.05, PageUp: 0.25, PageDown: -0.25 }[e.key];
+    if (step !== undefined) go(value.to + step); else if (e.key === 'Home') go(0); else if (e.key === 'End') go(1); else return;
+    e.preventDefault();
+  });
+  input.addEventListener('input', build);
+  let width = 0;
+  new ResizeObserver(() => { const w = strip.clientWidth; if (Math.abs(w - width) > 1) { width = w; build(); } }).observe(strip);
+
+  (window.PIECES ||= {}).tokens = window.PIECE = {
+    name: 'tokens',
+    get value() { return value.to; },
+    set: (p) => go(p),
+    scrub: (p) => go(p, { instant: true }),
+    hello: () => go(1, { slow: true }),                       // a slow first cut, for a page that wants to show it once
+  };
+  build();
+  go(0, { instant: true });
+})();
+</script>
+<script>
+/* ---- fever ---- */
+(() => {
+  const COPY = {
+    en: { eyebrow: 'Model temperature', label: 'Temperature',
+      say: ['Two plus two is four.', 'Two plus two is four, usually.', 'Two plus two is a small crowd.', 'Two is a feeling. Four is a rumour.'],
+      mood: ['steady', 'loose', 'inventive', 'unhinged'] },
+    he: { eyebrow: 'טמפרטורת המודל', label: 'טמפרטורה',
+      say: ['שתיים ועוד שתיים הן ארבע.', 'שתיים ועוד שתיים הן ארבע, בדרך כלל.', 'שתיים ועוד שתיים הן התקהלות קטנה.', 'שתיים זו תחושה. ארבע זו vibe.'],
+      mood: ['יציב', 'משוחרר', 'יצירתי', 'פרוע'] },
+  };
+  const lang = document.documentElement.lang.startsWith('he') ? 'he' : 'en';
+  const T = COPY[lang];
+
+  const root = document.querySelector('[data-piece="fever"]');
+  const $ = (s) => root.querySelector(s);
+  const tube = $('.tube'), say = $('.say'), out = $('output'), mood = $('.mood'), live = $('.live');
+  $('.eyebrow').textContent = T.eyebrow;
+  tube.setAttribute('aria-label', T.label);
+  const rtl = getComputedStyle(root).direction === 'rtl';
+
+  // Build the four wordings once. Every letter gets its own seeded lean, drop, size and wobble rate.
+  const rnd = K.rand(7);
+  const layers = T.say.map((text) => {
+    const el = document.createElement('span');
+    el.textContent = text;
+    say.append(el);
+    const glyphs = K.split(el).map((g) => ({ g, lean: rnd() * 2 - 1, drop: rnd() * 2 - 1, size: rnd() * 2 - 1, rate: 1.4 + rnd() * 2.2, phase: rnd() * 6.283 }));
+    return { el, glyphs, show: K.spring(0, { k: 150, z: 1 }), drawn: -1 };
+  });
+  const cuts = [1 / 6, 1 / 2, 5 / 6];                    // where one wording gives way to the next
+  const wording = (p) => cuts.filter((c) => p >= c).length;
+
+  const value = K.spring(0.2, { k: 260, z: 0.72 });      // what is drawn: follows the target with a little slosh
+  const attend = K.spring(0, { k: 70, z: 1 });           // 1 while hovered, dragged or keyboard-focused: the shimmer is earned by attention
+  let frozen = false, hover = false, dragging = false;
+  const COLD = K.rgb(root, '--cold', '#49627a'), HOT = K.rgb(root, '--hot', '#e2452b'), INK = K.rgb(root, '--ink', '#1d1b1a'), SAY = K.rgb(root, '--say-hot', '#b0301c');
+
+  // Draw the whole piece for progress p. Time only enters through the shimmer, and only while attended.
+  function render(p, t) {
+    const h = K.smooth(K.clamp(p)), hot = K.map(p, 0.55, 1) * attend.x * (frozen ? 0 : 1);
+    root.style.setProperty('--p', K.clamp(p, 0, 1.04).toFixed(4));
+    root.style.setProperty('--tone', K.hex(K.mix(COLD, HOT, K.clamp(p))));
+    layers.forEach((L) => {
+      const w = K.clamp(L.show.x);
+      if (w < 0.004) { if (L.drawn !== 0) { L.el.style.opacity = 0; L.el.style.visibility = 'hidden'; L.drawn = 0; } return; }
+      L.drawn = w;
+      L.el.style.visibility = 'visible';
+      L.el.style.opacity = w.toFixed(3);
+      L.el.style.filter = w < 0.995 ? `blur(${((1 - w) * 5).toFixed(2)}px)` : 'none';
+      L.el.style.letterSpacing = (h * 0.05).toFixed(4) + 'em';
+      for (const c of L.glyphs) {
+        const wob = hot ? Math.sin(t * c.rate + c.phase) * hot : 0, bob = hot ? Math.cos(t * c.rate * 0.8 + c.phase) * hot : 0;
+        const rot = c.lean * 15 * h + wob * 5, dy = c.drop * 0.24 * h + bob * 0.045, sc = 1 + c.size * 0.16 * h;
+        c.g.style.transform = h < 0.002 ? 'none' : `translateY(${dy.toFixed(3)}em) rotate(${rot.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
+      }
+    });
+    say.style.color = K.hex(K.mix(INK, SAY, h * 0.85));
+  }
+
+  function announce() {
+    const temp = K.clamp(value.to) * 2, i = wording(value.to);
+    out.textContent = temp.toFixed(1);
+    mood.textContent = T.mood[i];
+    tube.setAttribute('aria-valuenow', temp.toFixed(1));
+    tube.setAttribute('aria-valuetext', `${temp.toFixed(1)}, ${T.mood[i]}`);
+    if (live.textContent !== T.say[i]) live.textContent = T.say[i];
+  }
+
+  const loop = K.loop(root, (dt, t) => {
+    let moving = value.step(dt);
+    moving = attend.step(dt) || moving;
+    for (const L of layers) moving = L.show.step(dt) || moving;
+    render(value.x, t);
+    return moving || (attend.to > 0 && value.x > 0.55 && !frozen);   // keep running only while it shimmers
+  });
+
+  function go(p, { instant = false } = {}) {
+    value.to = K.clamp(p);
+    const still = instant || K.reduced(), i = wording(value.to);
+    layers.forEach((L, k) => { L.show.to = k === i ? 1 : 0; if (still) L.show.snap(); });
+    if (still) value.snap();
+    announce();
+    loop.wake();
+  }
+  const attention = () => { attend.to = (hover || dragging || tube.matches(':focus-visible')) && !K.reduced() ? 1 : 0; frozen = false; loop.wake(); };
+
+  // Pointer: the glass is the track. Mirrored when the page reads right to left.
+  const fromX = (e) => { const r = $('.glass').getBoundingClientRect(); const f = (e.clientX - r.left) / r.width; return rtl ? 1 - f : f; };
+  K.drag(tube, {
+    start: ({ e }) => { dragging = true; attention(); go(fromX(e)); },
+    move: ({ e }) => go(fromX(e)),
+    end: () => { dragging = false; attention(); },
+  });
+  tube.addEventListener('pointerenter', () => { hover = true; attention(); });
+  tube.addEventListener('pointerleave', () => { hover = false; attention(); });
+  tube.addEventListener('focus', attention);
+  tube.addEventListener('blur', attention);
+  tube.addEventListener('keydown', (e) => {
+    const fwd = rtl ? 'ArrowLeft' : 'ArrowRight', back = rtl ? 'ArrowRight' : 'ArrowLeft';
+    const step = { [fwd]: 0.05, ArrowUp: 0.05, [back]: -0.05, ArrowDown: -0.05, PageUp: 0.25, PageDown: -0.25 }[e.key];
+    if (step !== undefined) go(value.to + step);
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(1);
+    else return;
+    e.preventDefault();
+  });
+  K.onReduced(attention);
+
+  // The handle: scrub(p) draws the settled state for p at once, set(p) travels there.
+  (window.PIECES ||= {}).fever = window.PIECE = {
+    name: 'fever',
+    get value() { return value.to; },
+    set: (p) => go(p),
+    scrub: (p) => { frozen = true; attend.snap(0); go(p, { instant: true }); render(value.x, 0); },
+  };
+
+  go(0.2, { instant: true });
+  render(value.x, 0);
+})();
+</script>
+<script>
+/* ---- spill ---- */
+(() => {
+  const COPY = {
+    en: { files: ['brief.md', 'calls.txt', 'notes.pdf', 'invoices.csv', 'site.html'], eyebrow: 'Context window', read: 'read', hold: 'holding', gone: 'let go', again: 'Read it again', label: 'Reading progress',
+      ready: 'Ready.', reading: (f) => `Reading <bdi>${f}</bdi>`, full: (f) => `Reading <bdi>${f}</bdi>, letting the oldest go`, done: (n) => `Done. Holding the last ${n} tokens.` },
+    he: { files: ['השיחה מאתמול', 'המיילים', 'קובץ הלקוחות', 'היומן', 'השיחה מהיום'], eyebrow: 'חלון ההקשר', read: 'נקרא', hold: 'בזיכרון', gone: 'שוחרר', again: 'לקרוא שוב', label: 'התקדמות הקריאה',
+      ready: 'מוכן.', reading: (f) => `קורא את <bdi>${f}</bdi>`, full: (f) => `קורא את <bdi>${f}</bdi>, ומשחרר את הישן`, done: (n) => `סיימתי. בזיכרון: ${n} הטוקנים האחרונים.` },
+  };
+  const lang = document.documentElement.lang.startsWith('he') ? 'he' : 'en';
+  const T = COPY[lang], fmt = new Intl.NumberFormat(lang === 'he' ? 'he-IL' : 'en-US');
+
+  const root = document.querySelector('[data-piece="spill"]');
+  const $ = (s) => root.querySelector(s);
+  const win = $('.win'), canvas = $('canvas'), ctx = canvas.getContext('2d'), cap = $('.cap'), again = $('button');
+  $('.eyebrow').textContent = T.eyebrow;
+  again.textContent = T.again;
+  win.setAttribute('aria-label', T.label);
+  for (const k of ['read', 'hold', 'gone']) $(`[data-t="${k}"]`).textContent = T[k];
+  const rtl = getComputedStyle(root).direction === 'rtl';
+
+  // The tape: five files laid out as lines of token runs, the same on every load.
+  const FILES = [{ name: 'brief.md', lines: 4, tone: [244, 184, 202] }, { name: 'calls.txt', lines: 5, tone: [150, 208, 240] }, { name: 'notes.pdf', lines: 3, tone: [196, 178, 240] },
+    { name: 'invoices.csv', lines: 5, tone: [170, 226, 196] }, { name: 'site.html', lines: 4, tone: [247, 205, 160] }];
+  const COLS = 26, ROWS = 6, GHOST = 2.5;
+  const rnd = K.rand(11), tokens = [];
+  let line = 0;
+  FILES.forEach((f, file) => {
+    for (let l = 0; l < f.lines; l++, line++) {
+      const stop = l === f.lines - 1 ? COLS * (0.35 + rnd() * 0.4) : COLS - rnd() * 3;      // a file's last line ends short
+      for (let col = 0; ;) {
+        const w = 1 + Math.floor(rnd() * rnd() * 5.4);
+        if (col + w > stop) break;
+        tokens.push({ file, line, col, w, weight: w * 3 + 1 });
+        col += w + 0.42;
+      }
+    }
+  });
+  FILES.forEach((f, i) => { f.name = T.files[i]; f.tone = K.rgb(root, `--tone-${i + 1}`, K.hex(f.tone)); });
+  const N = tokens.length, LINES = line;
+  let run = 0;
+  for (const t of tokens) { t.before = run; run += t.weight; }
+
+  let p = 0.52, goal = 0.52;                                // progress, and where it is heading
+  const scroll = K.spring(0, { k: 110, z: 1 });             // the one thing that is not a pure function of p
+  const dim = FILES.map(() => K.spring(1, { k: 160, z: 1 })); // 1 = lit; hovering a file dims the others
+  let W = 0, H = 0, unit = 30, hoverFile = -1, dragging = false;   // unit: one line of tape in px, read from --lh on resize
+
+  const headLine = (q) => tokens[Math.min(N - 1, Math.floor(q * N))].line;
+  const scrollFor = (q) => Math.max(0, headLine(q) - (ROWS - 1));
+
+  // Draw the settled picture for progress q with the tape at scroll position s.
+  function draw(q, s) {
+    const pad = 16, cw = (W - pad * 2) / COLS, th = Math.round(unit * 0.56), top = unit * GHOST + 8, n = q * N;
+    ctx.clearRect(0, 0, W, H);
+    for (let i = 0; i < Math.min(N, Math.ceil(n)); i++) {
+      const t = tokens[i], row = t.line - s;
+      if (row < -GHOST - 0.5 || row > ROWS) continue;
+      const grow = K.smooth(n - i), kept = K.clamp(row + 1), fade = K.clamp(1 + row / (GHOST - 0.3)), head = K.clamp(1 - (n - i) / 6);
+      const w = t.w * cw * (0.4 + 0.6 * grow), h = th, x0 = pad + t.col * cw, x = rtl ? W - x0 - w : x0;
+      const y = top + row * unit + (unit - h) / 2 - (1 - fade) * 10;
+      const [r, g, b] = FILES[t.file].tone, lit = dim[t.file].x;
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, Math.min(6, h / 2));
+      if (kept > 0.01) {
+        const mix = head * 0.75;
+        ctx.fillStyle = `rgba(${Math.round(K.lerp(r, 255, mix))},${Math.round(K.lerp(g, 255, mix))},${Math.round(K.lerp(b, 255, mix))},${((0.8 + 0.2 * head) * kept * grow * (0.25 + 0.75 * lit)).toFixed(3)})`;
+        ctx.fill();
+      }
+      if (kept < 0.99) {
+        ctx.strokeStyle = `rgba(${r},${g},${b},${((1 - kept) * fade * 0.7 * (0.25 + 0.75 * lit)).toFixed(3)})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+  }
+
+  let shownCap = '';
+  function readout(q) {
+    const i = Math.min(N - 1, Math.floor(q * N)), t = tokens[i], first = scrollFor(q);
+    const read = q >= 1 ? run : Math.round(t.before + t.weight * (q * N - i));
+    const gone = tokens.find((x) => x.line >= first).before, hold = read - Math.min(read, gone);
+    $('[data-n="read"]').textContent = fmt.format(read);
+    $('[data-n="hold"]').textContent = fmt.format(hold);
+    $('[data-n="gone"]').textContent = fmt.format(read - hold);
+    root.style.setProperty('--p', K.clamp(q).toFixed(4));
+    win.setAttribute('aria-valuenow', Math.round(q * 100));
+    const f = FILES[t.file].name;
+    const text = q <= 0 ? T.ready : q >= 1 ? T.done(fmt.format(hold)) : first > 0 ? T.full(f) : T.reading(f);
+    if (text !== shownCap) { cap.innerHTML = shownCap = text; win.setAttribute('aria-valuetext', cap.textContent); }
+  }
+
+  const pace = (q) => (q > 0.2 && q < 0.27 ? 0.4 : 1);       // it hesitates as the window fills for the first time
+  const loop = K.loop(root, (dt) => {
+    let moving = false;
+    if (p < goal) { p = Math.min(goal, p + (dt / 9) * pace(p)); moving = true; }
+    else if (p > goal) { p = Math.max(goal, p - dt * 0.9); moving = true; }
+    scroll.to = scrollFor(p);
+    moving = scroll.step(dt) || moving;
+    dim.forEach((d, i) => { d.to = hoverFile < 0 || hoverFile === i ? 1 : 0.22; moving = d.step(dt) || moving; });
+    draw(p, scroll.x);
+    readout(p);
+    return moving;
+  });
+
+  function settle(q) { p = goal = K.clamp(q); scroll.snap(scrollFor(p)); dim.forEach((d) => d.snap(1)); draw(p, scroll.x); readout(p); }
+  function go(q) { goal = K.clamp(q); if (K.reduced()) settle(q); else loop.wake(); }
+  again.addEventListener('click', () => { if (K.reduced()) return settle(1); p = 0; scroll.snap(0); go(1); });
+
+  // Drag across the window to wind the tape back and forth; hover a line to pick out its file.
+  let p0 = 0;
+  K.drag(win, {
+    start: () => { dragging = true; p0 = p; },
+    move: ({ dx, w }) => { const q = K.clamp(p0 + ((rtl ? -dx : dx) / w) * 0.6); if (K.reduced()) settle(q); else { p = goal = q; loop.wake(); } },
+    end: () => { dragging = false; },
+  });
+  win.addEventListener('pointermove', (e) => {
+    if (dragging || e.pointerType === 'touch') return;
+    const r = canvas.getBoundingClientRect();
+    const row = Math.floor((e.clientY - r.top - unit * GHOST - 8) / unit + scroll.x), t = tokens.find((x) => x.line === row);
+    const f = t && t.before < p * run ? t.file : -1;
+    if (f !== hoverFile) { hoverFile = f; loop.wake(); }
+  });
+  win.addEventListener('pointerleave', () => { hoverFile = -1; loop.wake(); });
+
+  K.fit(canvas, (w, h, d) => { W = w; H = h; unit = parseFloat(getComputedStyle(root).getPropertyValue('--lh')) || 30; ctx.setTransform(d, 0, 0, d, 0, 0); draw(p, scroll.x); });
+
+  (window.PIECES ||= {}).spill = window.PIECE = { name: 'spill', get value() { return goal; }, set: go, scrub: (q) => { hoverFile = -1; settle(q); } };
+  settle(0.52);
+})();
+</script>
+<script>
+/* ---- keys ---- */
+(() => {
+  // Answers are indexed by which keys the agent holds: calendar = 1, mail = 2, contacts = 4.
+  const COPY = {
+    en: { you: 'You', agent: 'The agent', ask: 'Book me a meeting with Dana on Thursday.', yours: 'With you', theirs: 'With the agent', keys: ['Calendar', 'Mail', 'Contacts'],
+      give: (k) => `${k}: give the agent this key`, take: (k) => `${k}: take this key back`,
+      says: ['I can write you a lovely invitation. Booking it is beyond me.', 'Thursday at 10:00 is free. But who is Dana?', 'I can send an email. I am missing to whom, and when you are free.',
+        'Thursday at 10:00 is free and I can send mail. I am missing Dana\'s address.', 'Found Dana Levi. I cannot see the calendar.', 'Booked in the calendar: Dana Levi, Thursday 10:00. No invite went out, I have no mail.',
+        'I emailed Dana to ask what suits her. I cannot see the calendar.', '<mark>Done.</mark> Thursday 10:00, Dana has the invite, and it is in the calendar.'] },
+    he: { you: 'אתם', agent: 'הסוכן', ask: 'תקבע לי פגישה עם דנה ביום חמישי.', yours: 'אצלכם', theirs: 'אצל הסוכן', keys: ['יומן', 'מייל', 'אנשי קשר'],
+      give: (k) => `${k}: לתת לסוכן את המפתח`, take: (k) => `${k}: לקחת את המפתח בחזרה`,
+      says: ['אפשר לנסח הזמנה יפה. לקבוע אותה, אני לא יכול.', 'יש פנוי בחמישי ב-10:00. אבל מי זאת דנה?', 'מייל אפשר לשלוח. חסר לי למי, ומתי פנוי ביומן.',
+        'יש פנוי בחמישי ב-10:00, ומייל אפשר לשלוח. חסרה לי הכתובת של דנה.', 'מצאתי את דנה לוי. את היומן אני לא רואה.', 'קבעתי ביומן: דנה לוי, חמישי 10:00. זימון לא נשלח, אין לי מייל.',
+        'שלחתי לדנה מייל לשאול מתי נוח לה. את היומן אני לא רואה.', '<mark>קבעתי.</mark> חמישי 10:00, דנה קיבלה זימון, וזה כבר ביומן.'] },
+  };
+  const lang = document.documentElement.lang.startsWith('he') ? 'he' : 'en';
+  const T = COPY[lang];
+
+  const root = document.querySelector('[data-piece="keys"]');
+  const rack = root.querySelector('.rack'), lines = [...root.querySelectorAll('.line')];
+  root.querySelector('.ask .who').textContent = T.you; root.querySelector('.ask q').textContent = T.ask; root.querySelector('.says .who').textContent = T.agent;
+  root.querySelector('.rail.yours span').textContent = T.yours; root.querySelector('.rail.theirs span').textContent = T.theirs;
+  const side = getComputedStyle(root).direction === 'rtl' ? -1 : 1;     // the agent's rail is toward the end of the line
+
+  // Three keys with different bits, each with a coloured cap. Drawn once, hanging down from the hole in the head.
+  const BITS = ['M17 44h7v3h-4v3h5v3h-8z', 'M17 42h5v4h3v3h-5v4h-3z', 'M17 43h8v3h-5v2h3v3h-3v2h-3z'];
+  const CAPS = ['#f4b8ca', '#bfe6fb', '#d9c9f1'];
+  const keySvg = (i) => `<svg viewBox="0 0 34 62" aria-hidden="true">
+    <defs><linearGradient id="keys-brass-${i}" x1="0" x2="1"><stop offset="0" stop-color="#f6dc92"/><stop offset=".45" stop-color="#d2a84e"/><stop offset="1" stop-color="#94702a"/></linearGradient></defs>
+    <rect x="13.4" y="18" width="5.2" height="38" rx="2" fill="url(#keys-brass-${i})"/><path d="${BITS[i]}" fill="url(#keys-brass-${i})"/>
+    <circle cx="16" cy="11" r="10.5" fill="var(--cap-${i + 1}, ${CAPS[i]})"/><circle cx="16" cy="11" r="10.5" fill="none" stroke="#0002"/>
+    <circle cx="16" cy="7.5" r="3.1" fill="var(--hole, #0003)"/><path d="M9 8a8 8 0 0 1 5-5" fill="none" stroke="#fff9" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+
+  const HOME = [2, 6, 10], AWAY = [20, 24, 28];             // em from the start edge: hook positions on the two rails
+  const keys = T.keys.map((name, i) => {
+    const el = document.createElement('button');
+    el.type = 'button'; el.className = 'key'; el.setAttribute('role', 'switch'); el.setAttribute('aria-checked', 'false');
+    el.innerHTML = keySvg(i) + '<span class="name"></span>';
+    el.querySelector('.name').textContent = name;
+    rack.append(el);
+    return { el, i, name, given: false, travel: K.spring(0, { k: 70 + i * 9, z: 0.92 }), swing: K.spring(0, { k: 46, z: 0.3 }), was: 0 };
+  });
+  const show = lines.map(() => K.spring(0, { k: 150, z: 1 }));
+  let shown = 0, mask = -1;
+
+  function render() {
+    for (const k of keys) {
+      const t = K.clamp(k.travel.x), x = K.lerp(HOME[k.i], AWAY[k.i], K.smooth(t)), hop = Math.sin(Math.PI * t) * 2.1;
+      k.el.style.insetInlineStart = x.toFixed(3) + 'em';
+      k.el.style.transform = `translateY(${(-hop).toFixed(3)}em) rotate(${(side * K.clamp(k.swing.x, -40, 40)).toFixed(2)}deg)`;
+      k.el.style.zIndex = t > 0.02 && t < 0.98 ? 5 : 1;
+    }
+    lines.forEach((el, i) => { const w = K.clamp(show[i].x); el.style.opacity = w.toFixed(3); el.style.filter = w < 0.995 && w > 0.005 ? `blur(${((1 - w) * 5).toFixed(2)}px)` : 'none'; el.style.visibility = w < 0.005 ? 'hidden' : 'visible'; });
+  }
+  const loop = K.loop(root, (dt) => {
+    let moving = false;
+    for (const k of keys) {
+      moving = k.travel.step(dt) || moving;
+      k.swing.v += (k.travel.v - k.was) * 25;                         // the travel's acceleration leaves the hanging end behind
+      k.was = k.travel.v;
+      moving = k.swing.step(dt) || moving;
+    }
+    for (const s of show) moving = s.step(dt) || moving;
+    render();
+    return moving;
+  });
+
+  function say(next, still) {
+    if (next === mask) return;
+    mask = next;
+    shown = 1 - shown;
+    lines[shown].innerHTML = T.says[mask];
+    show[shown].to = 1; show[1 - shown].to = 0;
+    if (still) show.forEach((s) => s.snap());
+  }
+  function update({ instant = false } = {}) {
+    const still = instant || K.reduced();
+    for (const k of keys) {
+      k.travel.to = k.given ? 1 : 0;
+      if (still) { k.travel.snap(); k.swing.snap(0); k.was = 0; }
+      k.el.setAttribute('aria-checked', String(k.given));
+      k.el.setAttribute('aria-label', (k.given ? T.take : T.give)(k.name));
+    }
+    say(keys.reduce((m, k) => m | (k.given ? 1 << k.i : 0), 0), still);
+    if (still) render(); else loop.wake();
+  }
+  keys.forEach((k) => {
+    k.el.addEventListener('click', () => { k.given = !k.given; update(); });
+    k.el.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'mouse' || K.reduced()) return; k.swing.v += 42; loop.wake(); });   // a nudge: it hangs, so it can swing
+  });
+  K.onReduced(() => update());
+
+  (window.PIECES ||= {}).keys = window.PIECE = {
+    name: 'keys',
+    get value() { return keys.filter((k) => k.given).length / 3; },
+    set: (p) => { const n = Math.round(K.clamp(p) * 3); keys.forEach((k) => { k.given = k.i < n; }); update(); },
+    // scrub hands over p × 3 keys. A fraction leaves one key part of the way across, so every p is its own picture.
+    scrub: (p) => {
+      const q = K.clamp(p) * 3;
+      keys.forEach((k) => { const t = K.clamp(q - k.i); k.given = t >= 0.5; k.travel.snap(t); k.swing.snap(0); k.was = 0; });
+      say(keys.reduce((m, k) => m | (k.given ? 1 << k.i : 0), 0), true);
+      keys.forEach((k) => k.el.setAttribute('aria-checked', String(k.given)));
+      render();
+    },
+  };
+  update({ instant: true });
+})();
+</script>
+<script>
+/* ---- loop ---- */
+(() => {
+  const COPY = {
+    en: { phases: ['Thinks', 'Acts', 'Checks'], done: 'Done', label: 'Turns of the loop', lap: (n) => `Lap ${n} of 3`, laps: 'Three laps', hint: 'Turn the wheel, or let it take a lap. Turn it back and the log un-writes itself.',
+      next: 'One more lap', again: 'From the top',
+      log: [['When is Thursday free?', 'Opens the calendar', '10:00 is free'], ['Who is Dana?', 'Searches the contacts', 'Dana Levi, with an address'], ['An invite is left to send', 'Emails Dana', 'Sent. The job is done']] },
+    he: { phases: ['חושב', 'פועל', 'בודק'], done: 'גמור', label: 'סיבובי הלולאה', lap: (n) => `סיבוב ${n} מתוך 3`, laps: 'שלושה סיבובים', hint: 'סובבו את הגלגל, או תנו לו לעשות סיבוב. סובבו אחורה והיומן נמחק בחזרה.',
+      next: 'עוד סיבוב', again: 'מהתחלה',
+      log: [['מתי יש פנוי בחמישי?', 'פותח את היומן', '10:00 פנוי'], ['מי זאת דנה?', 'מחפש באנשי הקשר', 'דנה לוי, יש כתובת'], ['נשאר לשלוח זימון', 'שולח מייל לדנה', 'נשלח. המשימה גמורה']] },
+  };
+  const lang = document.documentElement.lang.startsWith('he') ? 'he' : 'en';
+  const T = COPY[lang];
+
+  const root = document.querySelector('[data-piece="loop"]');
+  const $ = (s) => root.querySelector(s);
+  const dial = $('.dial'), bead = $('.bead'), done = $('.done'), lapEl = $('.lap'), button = $('button'), log = $('.log'), live = $('.live');
+  const words = [...root.querySelectorAll('.phase span')];
+  [...T.phases, T.done].forEach((w, i) => { words[i].textContent = w; });
+  $('.side p').textContent = T.hint;
+  dial.setAttribute('aria-label', T.label);
+  const rtl = getComputedStyle(root).direction === 'rtl';
+
+  // Geometry: three arcs of a ring, clockwise from the top, with a small gap between them. A wheel does not mirror.
+  const R = 78, GAP = 7, pt = (deg, r = R) => { const a = (deg - 90) * Math.PI / 180; return [100 + r * Math.cos(a), 100 + r * Math.sin(a)]; };
+  const arc = (a0, a1, r = R) => { const [x0, y0] = pt(a0, r), [x1, y1] = pt(a1, r); return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`; };
+  root.querySelectorAll('.arc').forEach((el, i) => el.setAttribute('d', arc(i * 120 + GAP / 2, (i + 1) * 120 - GAP / 2)));
+
+  const TONES = ['var(--think)', 'var(--act)', 'var(--check)'];
+  const cells = [];
+  T.log.forEach((row, r) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="n">${r + 1}</span>`;
+    row.forEach((text, c) => {
+      const cell = document.createElement('div'), b = document.createElement('b'), s = document.createElement('span');
+      cell.className = 'cell'; cell.style.setProperty('--c', TONES[c]);
+      b.textContent = T.phases[c]; s.textContent = text;
+      cell.append(b, s); li.append(cell); cells.push(cell);
+    });
+    log.append(li);
+  });
+
+  const value = K.spring(0, { k: 300, z: 1 });               // laps turned, 0..3
+  const show = words.map(() => K.spring(0, { k: 160, z: 1 }));
+  let phase = -1, said = '';
+
+  function render(p) {
+    const turn = p >= 3 ? 360 : (p % 1) * 360, [x, y] = pt(turn);
+    bead.setAttribute('transform', `translate(${x.toFixed(2)} ${y.toFixed(2)})`);
+    done.setAttribute('d', turn > 0.5 ? (turn >= 359.5 ? arc(0, 359.9, 60) : arc(0, turn, 60)) : '');
+    cells.forEach((cell, i) => cell.style.setProperty('--w', K.smooth(K.map(p * 3, i, i + 0.6)).toFixed(3)));   // each cell is written as its phase begins
+    words.forEach((el, i) => { const w = K.clamp(show[i].x); el.style.opacity = w.toFixed(3); el.style.filter = w > 0.005 && w < 0.995 ? `blur(${((1 - w) * 4).toFixed(2)}px)` : 'none'; });
+  }
+  // The hub and the readout follow what is drawn, not where it is heading, so a slow lap reads true all the way round.
+  function announce(still, p = value.to) {
+    const now = p >= 3 ? 3 : Math.floor((p % 1) * 3 + 1e-6), lap = Math.min(3, Math.floor(p + 1e-6) + 1);
+    if (now !== phase) { phase = now; show.forEach((s, i) => { s.to = i === phase ? 1 : 0; if (still) s.snap(); }); }
+    lapEl.textContent = p >= 3 ? T.laps : T.lap(lap);
+    button.textContent = p >= 3 ? T.again : T.next;
+    dial.setAttribute('aria-valuenow', p.toFixed(2));
+    const i = Math.min(8, Math.floor(p * 3 + 1e-6)), text = p >= 3 ? T.done : `${T.lap(lap)}. ${T.phases[phase]}: ${T.log[Math.floor(i / 3)][i % 3]}`;
+    dial.setAttribute('aria-valuetext', text);
+    if (text !== said) { said = text; live.textContent = text; }
+  }
+  const loop = K.loop(root, (dt) => { let moving = value.step(dt); announce(false, value.x); for (const s of show) moving = s.step(dt) || moving; render(value.x); return moving; });
+
+  function go(p, { instant = false, slow = false } = {}) {
+    value.to = K.clamp(p, 0, 3);
+    value.k = slow ? 9 : 300;
+    const still = instant || K.reduced();
+    if (still) value.snap();
+    if (still) { announce(true); render(value.x); } else loop.wake();
+  }
+
+  // Turn it: the drag follows the angle round the hub, and can go either way.
+  let last = 0;
+  const angle = (e) => { const r = dial.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)); };
+  K.drag(dial, {
+    start: ({ e }) => { last = angle(e); },
+    move: ({ e }) => { const a = angle(e); let d = a - last; if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; last = a; go(value.to + d / (2 * Math.PI)); },
+  });
+  dial.addEventListener('keydown', (e) => {
+    const fwd = rtl ? 'ArrowLeft' : 'ArrowRight', back = rtl ? 'ArrowRight' : 'ArrowLeft';
+    const step = { [fwd]: 1 / 12, ArrowUp: 1 / 12, [back]: -1 / 12, ArrowDown: -1 / 12, PageUp: 1, PageDown: -1 }[e.key];
+    if (step !== undefined) go(value.to + step); else if (e.key === 'Home') go(0); else if (e.key === 'End') go(3);
+    else if (e.key === 'Enter' || e.key === ' ') button.click(); else return;
+    e.preventDefault();
+  });
+  button.addEventListener('click', () => { if (value.to >= 3) go(0); else go(Math.floor(value.to + 1e-6) + 1, { slow: true }); });
+
+  (window.PIECES ||= {}).loop = window.PIECE = {
+    name: 'loop',
+    get value() { return value.to / 3; },
+    set: (p) => go(K.clamp(p) * 3, { slow: true }),
+    scrub: (p) => go(K.clamp(p) * 3, { instant: true }),
+    hello: () => go(1, { slow: true }),                       // one unhurried lap, for a page that wants to show it once
+  };
+  go(0, { instant: true });
+})();
+</script>
+<script>
+/* ---- spike ---- */
+(() => {
+  const COPY = {
+    en: { eyebrow: 'While you slept', hint: 'Five jobs done. Open the pile, pick a slip.',
+      slips: [['07:58', 'Answered three leads', 'In your voice. Waiting for your yes.'], ['08:02', 'Drafted three posts', 'On what is trending in your field today.'],
+        ['08:05', 'Booked Dana, Thursday', 'At 10:00. The invite has gone out.'], ['08:11', 'Filed two invoices', 'Matched to payments. One is late.'],
+        ['08:20', 'Newsletter is ready', 'Draft four, the short one. Send at 10?']] },
+    he: { eyebrow: 'בזמן שישנתם', hint: 'חמש משימות בוצעו. פתחו את הערימה ובחרו פתק.',
+      slips: [['07:58', 'נענו שלושה לידים', 'בקול שלכם. מחכה לאישור.'], ['08:02', 'שלוש טיוטות לפוסטים', 'לפי מה שחם היום בתחום.'],
+        ['08:05', 'נקבעה פגישה עם דנה', 'חמישי, 10:00. הזימון נשלח.'], ['08:11', 'תויקו שתי חשבוניות', 'הותאמו לתשלומים. אחת באיחור.'],
+        ['08:20', 'הניוזלטר מוכן', 'טיוטה רביעית, הקצרה. לשלוח ב-10?']] },
+  };
+  const lang = document.documentElement.lang.startsWith('he') ? 'he' : 'en';
+  const T = COPY[lang];
+
+  const root = document.querySelector('[data-piece="spike"]');
+  const desk = root.querySelector('.desk'), list = root.querySelector('ul');
+  root.querySelector('.eyebrow').textContent = T.eyebrow;
+  root.querySelector('.hint').textContent = T.hint;
+  const side = getComputedStyle(root).direction === 'rtl' ? -1 : 1;     // slips reach away from the pin, whichever way the page reads
+
+  const TINTS = ['#fbf8f1', '#eef6fb', '#fbeef2', '#f3eefa', '#fdf9ee'], SPREAD = 34, rnd = K.rand(23);
+  const slips = T.slips.map(([time, title, detail], i) => {
+    const li = document.createElement('li'), el = document.createElement('button');
+    el.type = 'button'; el.className = 'slip'; el.setAttribute('aria-expanded', 'false');
+    el.innerHTML = '<span class="paper"></span><span class="title"></span><time></time><span class="detail"></span><span class="rule"></span>';
+    el.querySelector('.paper').style.setProperty('--tint', `var(--tint-${(i % TINTS.length) + 1}, ${TINTS[i % TINTS.length]})`);
+    el.querySelector('.title').textContent = title; el.querySelector('time').textContent = time; el.querySelector('.detail').textContent = detail;
+    li.append(el); list.append(li);
+    const mess = (rnd() * 2 - 1) * 8 + (i - 2) * 1.2;                  // how it lies in the pile
+    return { el, i, mess, fanned: K.lerp(-SPREAD, SPREAD, i / (T.slips.length - 1)),
+      open: K.spring(0, { k: 105 + i * 24, z: 0.8 }),                 // each slip follows the fan at its own pace
+      out: K.spring(0, { k: 240, z: 0.75 }), lift: K.spring(0, { k: 150, z: 0.76 }) };
+  });
+
+  let inside = false, focused = false, touched = false, hover = -1, picked = -1;
+
+  // Draw every slip from its three numbers: how far the fan is open, how far it is nudged out, how far lifted.
+  function render() {
+    for (const s of slips) {
+      const angle = K.lerp(K.lerp(s.mess, s.fanned, s.open.x), 0, K.clamp(s.lift.x));
+      const along = s.out.x * 0.9 + s.lift.x * 2.3, scale = 1 + s.lift.x * 0.06;
+      s.el.style.transform = `rotate(${(side * angle).toFixed(3)}deg) translateX(${(side * along).toFixed(3)}em) scale(${scale.toFixed(4)})`;
+      s.el.style.setProperty('--l', K.clamp(s.lift.x).toFixed(3));
+      s.el.style.setProperty('--d', (s.i === slips.length - 1 ? 1 : K.clamp(s.lift.x)).toFixed(3));   // only the top slip and a lifted one show their second line
+      s.el.style.zIndex = s.lift.x > 0.02 ? 10 : s.i;
+    }
+  }
+  const loop = K.loop(root, (dt) => {
+    let moving = false;
+    for (const s of slips) { moving = s.open.step(dt) || moving; moving = s.out.step(dt) || moving; moving = s.lift.step(dt) || moving; }
+    render();
+    return moving;
+  });
+
+  function update({ instant = false } = {}) {
+    const open = (inside || focused || touched) && picked < 0 ? 1 : 0, still = instant || K.reduced();
+    for (const s of slips) {
+      s.open.to = open; s.out.to = open && s.i === hover ? 1 : 0; s.lift.to = s.i === picked ? 1 : 0;
+      if (still) { s.open.snap(); s.out.snap(); s.lift.snap(); }
+      s.el.setAttribute('aria-expanded', String(s.i === picked));
+    }
+    if (still) render(); else loop.wake();
+  }
+
+  slips.forEach((s) => {
+    s.el.addEventListener('pointerenter', (e) => { if (e.pointerType === 'touch') return; inside = true; hover = s.i; update(); });
+    s.el.addEventListener('pointerleave', () => { if (hover === s.i) { hover = -1; update(); } });
+    s.el.addEventListener('click', (e) => {
+      const byTouch = e.pointerType === 'touch', wasOpen = s.open.to > 0.5 || picked >= 0;
+      if (byTouch && !wasOpen) { touched = true; update(); return; }       // on touch the first tap opens the pile
+      picked = picked === s.i ? -1 : s.i;
+      if (byTouch) touched = picked < 0;
+      update();
+    });
+    s.el.addEventListener('focus', () => { focused = s.el.matches(':focus-visible'); update(); });
+    s.el.addEventListener('keydown', (e) => {
+      const step = { ArrowDown: 1, ArrowUp: -1, ArrowRight: side, ArrowLeft: -side }[e.key];
+      if (step) { slips[(s.i + step + slips.length) % slips.length].el.focus(); e.preventDefault(); }
+      else if (e.key === 'Escape') { picked = -1; update(); }
+    });
+  });
+  desk.addEventListener('pointerleave', () => { inside = false; hover = -1; update(); });
+  root.addEventListener('focusout', (e) => { if (!root.contains(e.relatedTarget)) { focused = false; update(); } });
+  document.addEventListener('pointerdown', (e) => { if (!desk.contains(e.target) || e.target === desk) { picked = -1; touched = false; update(); } });
+  K.onReduced(() => update());
+
+  (window.PIECES ||= {}).spike = window.PIECE = {
+    name: 'spike',
+    get value() { return slips[0].open.to; },
+    set: (p) => { picked = -1; hover = -1; touched = p > 0.5; inside = focused = false; update(); },
+    scrub: (p) => { picked = -1; hover = -1; inside = focused = touched = false; for (const s of slips) { s.open.snap(K.clamp(p)); s.out.snap(0); s.lift.snap(0); } render(); },
+    pick: (i) => { picked = i; update(); },
+  };
+  update({ instant: true });
+})();
+</script>
+<script>
+/* The page: reading progress, the rail, a first showing of each piece, the hero. Uses the kit the pieces share. */
+(() => {
+  // ?quiet turns off the page's own theatre (first showings, the hero's settling) so a piece can be probed in place.
+  const quiet = new URLSearchParams(location.search).has('quiet');
+  const still = () => quiet || K.reduced();
+  const stations = [...document.querySelectorAll('.station')], links = [...document.querySelectorAll('.stops a')];
+
+  // Reading progress, read once per frame.
+  const bar = document.querySelector('.progress i');
+  let queued = false;
+  const read = () => { queued = false; const max = document.documentElement.scrollHeight - innerHeight; bar.style.setProperty('--read', max > 0 ? K.clamp(scrollY / max).toFixed(4) : '0'); };
+  addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(read); } }, { passive: true });
+  addEventListener('resize', read);
+  read();
+
+  // The rail marks the station under the middle of the screen; a sheet's highlight draws when it arrives.
+  const here = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) links.forEach((a) => { if (a.hash === '#' + e.target.id) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+  }, { rootMargin: '-45% 0px -45% 0px' });
+  document.querySelectorAll('.sheet').forEach((s) => here.observe(s));     // the hero and the recap clear the mark
+  const arrive = new IntersectionObserver((entries) => { for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); arrive.unobserve(e.target); } }, { threshold: 0.3 });
+  stations.forEach((s) => arrive.observe(s));
+
+  // Each piece shows what it does once, the first time most of it is on screen. After that it is the reader's.
+  const HELLO = {
+    tokens: (p) => p.hello(),
+    fever: (p) => p.set(0.62),
+    spill: (p) => { p.scrub(0.08); p.set(1); },
+    loop: (p) => p.hello(),
+    spike: (p) => p.set(1),
+  };
+  const greet = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      greet.unobserve(e.target);
+      const name = e.target.getAttribute('data-piece'), piece = window.PIECES && window.PIECES[name];
+      if (piece && HELLO[name] && !still()) setTimeout(() => HELLO[name](piece), 380);
+    }
+  }, { threshold: 0.6 });
+  document.querySelectorAll('.bench [data-piece]').forEach((el) => greet.observe(el));
+
+  // Hero: the letters start a little loose and find their composure; the slip can be picked up and springs home.
+  const rnd = K.rand(5), glyphs = [...document.querySelectorAll('.hero [data-split]')].flatMap((el) => K.split(el)).map((el) => ({ el, lean: rnd() * 2 - 1, drop: rnd() * 2 - 1 }));
+  const loose = K.spring(still() ? 0 : 1, { k: 16, z: 1 });
+  const slip = document.querySelector('.request');
+  const sx = K.spring(0, { k: 150, z: 0.5 }), sy = K.spring(0, { k: 150, z: 0.5 }), tilt = K.spring(0, { k: 70, z: 0.3 });
+  const hero = K.loop(document.querySelector('.hero'), (dt) => {
+    let moving = loose.step(dt);
+    for (const g of glyphs) g.el.style.transform = loose.x < 0.002 ? 'none' : `translateY(${(g.drop * 0.16 * loose.x).toFixed(3)}em) rotate(${(g.lean * 11 * loose.x).toFixed(2)}deg)`;
+    moving = sx.step(dt) || moving; moving = sy.step(dt) || moving; moving = tilt.step(dt) || moving;
+    slip.style.translate = `${sx.x.toFixed(1)}px ${sy.x.toFixed(1)}px`;
+    slip.style.rotate = `${(-3 + tilt.x).toFixed(2)}deg`;
+    return moving;
+  });
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => { loose.to = 0; hero.wake(); });
+  let lastX = 0;
+  K.drag(slip, {
+    start: () => { lastX = 0; },
+    move: ({ dx, dy }) => { if (still()) return; tilt.v += (dx - lastX) * 1.6; lastX = dx; sx.snap(dx); sy.snap(dy); hero.wake(); },
+    end: () => { sx.to = 0; sy.to = 0; hero.wake(); },
+  });
+})();
+</script>
+</body>
+</html>

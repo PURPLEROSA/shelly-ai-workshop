@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tokens · how a model reads a sentence</title>
+<!--
+  Tokens. A "how closely are you looking" slider over a sentence printed on a paper strip: slide it and the
+  sentence is cut into slips, each slip gets a number, the words fade and the numbers stay, while the count
+  of tokens adds up. Type your own sentence and it is cut the same way.
+
+  job: slider · material: paper · gesture: drag, arrow keys, type · family: world (the value is the scene)
+  The trick: lines are broken once, at the fully cut size, so closing the gaps never re-wraps the sentence.
+  The cut is an illustration with a fixed seed per word, not a real tokenizer, and the piece says so.
+  Add ?lang=he for Hebrew. window.PIECE.scrub(p) draws any state at once.
+-->
+<style>
+  /* stage: only for looking at this file by itself. compose.mjs leaves this block out. */
+  html, body { height: 100%; margin: 0; }
+  body { display: grid; place-items: center; background: #fbf7f0; color: #1d1b1a; overflow-x: hidden; padding-inline: 24px; box-sizing: border-box; container-type: inline-size;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Heebo, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+</style>
+<style data-for="tokens">
+  /* Theme it from the page: --ink, --accent, --tint-1 to --tint-4 (the slips), --display (the sentence's typeface). */
+  .tok { --p: 0; --cut: 0; --tile: 0; --num: 0; --ink: #1d1b1a; color: var(--ink); inline-size: min(680px, 100%); padding: 20px 0; }
+  .tok .eyebrow { margin: 0 0 20px; font: 500 12px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .14em; text-transform: uppercase; opacity: .55; }
+  .tok .type { display: flex; align-items: baseline; gap: 12px; margin: 0 0 30px; font-size: 14px; }
+  .tok .type span { opacity: .6; white-space: nowrap; }
+  .tok input { flex: 1; min-inline-size: 0; min-block-size: 44px; box-sizing: border-box; padding: 8px 2px; border: 0; border-radius: 0; background: none; color: inherit; font: inherit; font-size: 16px;
+    border-block-end: 1.5px solid color-mix(in srgb, var(--ink) 28%, transparent); }
+  .tok input:focus-visible { outline: none; border-block-end-color: var(--accent, #b93372); box-shadow: 0 1.5px 0 var(--accent, #b93372); }
+
+  /* The strip. Each line is its own row, fixed when the sentence is laid out, so nothing re-wraps as the gaps open. */
+  .tok .strip { display: grid; gap: 14px; min-block-size: 4.4em; align-content: start; margin: 0 0 30px; user-select: none; -webkit-user-select: none;
+    font: var(--display-weight, 500) clamp(22px, 5.4cqi, 38px)/1.15 var(--display, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Heebo, Arial, sans-serif); }
+  .tok .line { display: flex; flex-wrap: nowrap; gap: calc(.3em + var(--cut) * .34em); }
+  .tok .word { display: inline-flex; gap: calc(var(--cut) * .2em); }
+  .tok .chunk { display: inline-grid; justify-items: center; padding: .12em calc(var(--cut) * .26em) .1em; border-radius: .26em;
+    background: color-mix(in srgb, var(--tint) calc(var(--tile) * 100%), transparent); box-shadow: 0 .05em .22em rgb(50 35 60 / calc(var(--tile) * .2)); }
+  .tok .chunk b { font-weight: inherit; white-space: nowrap; opacity: calc(1 - var(--num) * .6); }
+  .tok .chunk i { font: 500 max(11px, .4em)/1.7 ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-style: normal; letter-spacing: .02em; opacity: var(--num); }
+
+  .tok .track { position: relative; block-size: 48px; cursor: ew-resize; touch-action: pan-y; outline: none; -webkit-tap-highlight-color: transparent; }
+  .tok .track::before { content: ""; position: absolute; inset-inline: 0; inset-block-start: 23px; block-size: 2px; border-radius: 2px; background: color-mix(in srgb, var(--ink) 22%, transparent); }
+  .tok .track::after { content: ""; position: absolute; inset-inline-start: 0; inset-block-start: 23px; block-size: 2px; inline-size: calc(15px + var(--p) * (100% - 30px)); border-radius: 2px; background: var(--ink); }
+  .tok .knob { position: absolute; z-index: 1; inset-block-start: 9px; inset-inline-start: calc(var(--p) * (100% - 30px)); inline-size: 30px; block-size: 30px; box-sizing: border-box; border-radius: 50%;
+    background: var(--paper, #fffdfb); border: 2px solid var(--ink); box-shadow: 0 2px 6px #0003; }
+  .tok .track:focus-visible .knob { outline: 2px solid var(--accent, #b93372); outline-offset: 3px; }
+  .tok .ends { display: flex; justify-content: space-between; gap: 12px; margin: 6px 0 0; font-size: 13px; opacity: .62; }
+  .tok .count { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin: 24px 0 0; font-size: 14px; }
+  .tok output { font: 500 32px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; opacity: calc(.25 + var(--num) * .75); }
+  .tok .unit { opacity: calc(.25 + var(--num) * .6); }
+  .tok .note { opacity: .55; font-size: 13px; }
+  .tok .live { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+</style>
+</head>
+<body>
+<!-- piece:start -->
+<section class="tok" data-piece="tokens">
+  <p class="eyebrow"></p>
+  <label class="type"><span></span><input type="text" id="tokens-text" maxlength="44" autocomplete="off" spellcheck="false"></label>
+  <div class="strip" aria-hidden="true"></div>
+  <div class="track" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="100" data-grab><span class="knob"></span></div>
+  <div class="ends" aria-hidden="true"><span></span><span></span></div>
+  <p class="count"><output>0</output><span class="unit"></span><span class="note"></span></p>
+  <p class="live" aria-live="polite"></p>
+</section>
+<!-- piece:end -->
+
+<script>
+/* kit:start — helpers a self-contained piece inlines. No dependencies. Source: component-director/scripts/kit.js */
+const K = (() => {
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  // Remap x from a..b to c..d, clamped. map(p, .2, .6) is "the part of p between 20% and 60%, as 0..1".
+  const map = (x, a, b, c = 0, d = 1) => c + (d - c) * clamp((x - a) / (b - a || 1e-9));
+  const smooth = (t) => { t = clamp(t); return t * t * (3 - 2 * t); };
+  const gauss = (d, sigma) => Math.exp(-(d * d) / (2 * sigma * sigma));
+  // Seeded random: the same piece looks the same on every load and in every screenshot.
+  const rand = (seed = 1) => () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+
+  // A damped spring stepped at a fixed 1/120 s, so it feels the same at 60, 120 or 30 fps.
+  // z is the damping ratio: 1 arrives without overshoot, 0.7 overshoots a hair, below 0.4 rings.
+  function spring(x = 0, { k = 180, z = 1, eps = 5e-4 } = {}) {
+    const s = {
+      x, v: 0, to: x, k, z,
+      step(dt) {
+        const c = 2 * s.z * Math.sqrt(s.k);
+        for (let t = Math.min(dt, 0.1); t > 1e-6; t -= 1 / 120) {
+          const h = Math.min(t, 1 / 120);
+          s.v += (-s.k * (s.x - s.to) - c * s.v) * h;
+          s.x += s.v * h;
+        }
+        if (Math.abs(s.x - s.to) < eps && Math.abs(s.v) < eps * 20) { s.x = s.to; s.v = 0; return false; }
+        return true;
+      },
+      snap(v = s.to) { s.x = s.to = v; s.v = 0; },
+    };
+    return s;
+  }
+
+  // One requestAnimationFrame loop per piece. tick(dt, t) returns false when nothing is moving and the
+  // loop goes to sleep; call wake() from any input. It also sleeps while the piece is off screen or the
+  // tab is hidden, and picks up where it left off.
+  function loop(root, tick) {
+    let raf = 0, last = 0, want = false, seen = true;
+    const frame = (now) => {
+      raf = 0;
+      const dt = last ? Math.min((now - last) / 1000, 0.05) : 1 / 60;
+      last = now;
+      want = tick(dt, now / 1000) !== false;
+      if (want && seen && !document.hidden) raf = requestAnimationFrame(frame); else last = 0;
+    };
+    const wake = () => { want = true; if (!raf && seen && !document.hidden) raf = requestAnimationFrame(frame); };
+    const io = new IntersectionObserver(([e]) => { seen = e.isIntersecting; if (seen && want) wake(); }, { rootMargin: '64px' });
+    io.observe(root);
+    const vis = () => { if (!document.hidden && want) wake(); };
+    document.addEventListener('visibilitychange', vis);
+    return { wake, stop() { cancelAnimationFrame(raf); raf = 0; want = false; io.disconnect(); document.removeEventListener('visibilitychange', vis); } };
+  }
+
+  // Mouse, touch and pen through one path, with pointer capture and a release velocity in px/s measured
+  // over the last 90 ms. Coordinates are local to el. Set touch-action in CSS on el (pan-y for a
+  // horizontal drag) or the browser will scroll instead. Returns an unsubscribe function.
+  function drag(el, on) {
+    let id = null, hist = [], x0 = 0, y0 = 0;
+    const pt = (e) => { const r = el.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height }; };
+    const down = (e) => {
+      if (id !== null || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      id = e.pointerId; el.setPointerCapture(id);
+      const p = pt(e); x0 = p.x; y0 = p.y; hist = [{ ...p, t: e.timeStamp }];
+      on.start?.({ ...p, e });
+    };
+    const move = (e) => {
+      if (e.pointerId !== id) return;
+      const p = pt(e); hist.push({ ...p, t: e.timeStamp });
+      while (hist.length > 2 && e.timeStamp - hist[0].t > 90) hist.shift();
+      on.move?.({ ...p, dx: p.x - x0, dy: p.y - y0, e });
+    };
+    const up = (e) => {
+      if (e.pointerId !== id) return;
+      id = null;
+      const p = pt(e), a = hist[0], b = hist[hist.length - 1], dt = (b.t - a.t) / 1000;
+      const stale = e.timeStamp - b.t > 60;                  // held still before letting go: no throw
+      const vx = dt > 0.005 && !stale ? (b.x - a.x) / dt : 0, vy = dt > 0.005 && !stale ? (b.y - a.y) / dt : 0;
+      on.end?.({ ...p, dx: p.x - x0, dy: p.y - y0, vx, vy, e });
+    };
+    el.addEventListener('pointerdown', down); el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    return () => { el.removeEventListener('pointerdown', down); el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); };
+  }
+
+  // Keep a canvas sharp: size its backing store to its CSS box times the device pixel ratio (capped at 2).
+  function fit(canvas, onSize) {
+    const ro = new ResizeObserver(() => {
+      const r = canvas.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.max(1, Math.round(r.width * d)); canvas.height = Math.max(1, Math.round(r.height * d));
+      onSize?.(r.width, r.height, d);
+    });
+    ro.observe(canvas);
+    return () => ro.disconnect();
+  }
+
+  // Read a colour from a custom property as [r, g, b], so the page a piece sits in can theme it:
+  // .host .piece { --hot: #b93372 }. Any CSS colour works; fallback is used when the property is not set.
+  function rgb(el, name, fallback) {
+    const t = document.createElement('i');
+    t.style.color = fallback;
+    t.style.color = getComputedStyle(el).getPropertyValue(name).trim() || fallback;
+    el.append(t);
+    const out = getComputedStyle(t).color.match(/[\d.]+/g).slice(0, 3).map(Number);
+    t.remove();
+    return out;
+  }
+  const hex = (c) => '#' + c.map((x) => Math.round(clamp(x, 0, 255)).toString(16).padStart(2, '0')).join('');
+  const mix = (a, b, t) => a.map((x, i) => lerp(x, b[i], t));
+
+  const rm = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reduced = () => rm.matches;
+
+  // Split text so each letter (or each word) can move alone, without breaking right-to-left text, line
+  // wrapping or screen readers. A word and its punctuation stay on one line; every word keeps its own
+  // direction, so a Latin word or "16:30" inside a Hebrew sentence is not reversed. The readable text
+  // stays in the page for assistive tech. Never split Arabic or other joined scripts by letter: pass 'word'.
+  function split(el, by = 'grapheme') {
+    const text = el.textContent, lang = el.closest('[lang]')?.lang || undefined, S = 'Segmenter' in Intl;
+    const letters = (s) => (S ? [...new Intl.Segmenter(lang, { granularity: 'grapheme' }).segment(s)].map((x) => x.segment) : [...s]);
+    const words = (s) => (S ? [...new Intl.Segmenter(lang, { granularity: 'word' }).segment(s)].map((x) => ({ s: x.segment, word: !!x.isWordLike })) : [{ s, word: true }]);
+    const rtl = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+    const mk = (css, txt) => { const n = document.createElement('span'); if (css) n.style.cssText = css; if (txt) n.textContent = txt; return n; };
+    const sr = mk('position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap', text);
+    const box = mk();
+    box.setAttribute('aria-hidden', 'true');
+    const out = [];
+    for (const chunk of text.split(/(\s+)/)) {
+      if (!chunk) continue;
+      if (/^\s+$/.test(chunk)) { box.append(document.createTextNode(chunk)); continue; }
+      if (by === 'word') { const w = mk('display:inline-block;white-space:nowrap', chunk); out.push(w); box.append(w); continue; }
+      // group: no line break inside. core: first word to last word, in its own direction. Punctuation before
+      // and after the core follows the sentence, so the full stop after a Latin word lands on the correct side.
+      const group = mk('white-space:nowrap'), parts = words(chunk);
+      const first = parts.findIndex((x) => x.word), last = parts.length - 1 - [...parts].reverse().findIndex((x) => x.word);
+      let core = null;
+      parts.forEach(({ s, word }, k) => {
+        const inCore = first >= 0 && k >= first && k <= last;
+        if (inCore && !core) { core = mk(); core.dir = rtl.test(parts.slice(first, last + 1).map((x) => x.s).join('')) ? 'rtl' : 'ltr'; group.append(core); }
+        let into = inCore ? core : group;
+        if (word) { const w = mk('display:inline-block;white-space:nowrap'); w.dir = rtl.test(s) ? 'rtl' : 'ltr'; into.append(w); into = w; }
+        for (const g of letters(s)) { const n = mk('display:inline-block', g); into.append(n); out.push(n); }
+      });
+      box.append(group);
+    }
+    el.textContent = '';
+    el.append(sr, box);
+    return out;
+  }
+
+  return { clamp, lerp, map, smooth, gauss, rand, rgb, hex, mix, spring, loop, drag, fit, reduced, onReduced: (f) => rm.addEventListener('change', f), split };
+})();
+/* kit:end */
+</script>
+<script>
+/* stage: ?lang=he shows this demo in Hebrew, right to left. compose.mjs leaves this block out. */
+if (new URLSearchParams(location.search).get('lang') === 'he') { document.documentElement.lang = 'he'; document.documentElement.dir = 'rtl'; }
+</script>
+<script data-for="tokens">
+(() => {
+  const COPY = {
+    en: { eyebrow: 'What the model reads', yours: 'Your sentence', text: 'Book me a meeting with Dana on Thursday.', label: 'How closely to look',
+      from: 'As you see it', to: 'As the model sees it', unit: 'tokens', note: 'An illustration. Every model cuts a little differently.', said: (n) => `${n} tokens` },
+    he: { eyebrow: 'מה המודל קורא', yours: 'המשפט שלכם', text: 'תקבע לי פגישה עם דנה ביום חמישי.', label: 'כמה קרוב מסתכלים',
+      from: 'כמו שאתם רואים', to: 'כמו שהמודל רואה', unit: 'טוקנים', note: 'המחשה. כל מודל חותך קצת אחרת.', said: (n) => `${n} טוקנים` },
+  };
+  const lang = document.documentElement.lang.startsWith('he') ? 'he' : 'en';
+  const T = COPY[lang];
+
+  const root = document.querySelector('[data-piece="tokens"]');
+  const $ = (s) => root.querySelector(s);
+  const strip = $('.strip'), track = $('.track'), input = $('input'), out = $('output'), live = $('.live');
+  $('.eyebrow').textContent = T.eyebrow; $('.type span').textContent = T.yours; $('.unit').textContent = T.unit; $('.note').textContent = T.note;
+  const [from, to] = root.querySelectorAll('.ends span'); from.textContent = T.from; to.textContent = T.to;
+  track.setAttribute('aria-label', T.label);
+  input.value = T.text;
+  const rtl = getComputedStyle(root).direction === 'rtl';
+
+  // The cut. Not a real tokenizer: each word is split into pieces of two to four letters by a generator seeded
+  // from the word itself, so the same word is always cut the same way, and each piece gets a stable number.
+  const S = 'Segmenter' in Intl;
+  const letters = (s) => (S ? [...new Intl.Segmenter(lang, { granularity: 'grapheme' }).segment(s)].map((x) => x.segment) : [...s]);
+  const parts = (s) => (S ? [...new Intl.Segmenter(lang, { granularity: 'word' }).segment(s)].map((x) => ({ s: x.segment, word: !!x.isWordLike })) : [{ s, word: true }]);
+  const hash = (s) => { let h = 2166136261; for (const c of s) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+  function cut(word) {
+    const g = letters(word);
+    if (g.length <= 3) return [word];
+    const r = K.rand(hash(word)), pieces = [];
+    for (let i = 0; i < g.length;) {
+      let n = 2 + Math.floor(r() * 2.4);
+      if (g.length - i - n === 1) n += 1;                       // never leave one letter alone at the end
+      pieces.push(g.slice(i, i + n).join('')); i += n;
+    }
+    return pieces;
+  }
+
+  let count = 0;
+  function build() {
+    const text = input.value.trim() || T.text;
+    strip.textContent = '';
+    const words = [];
+    count = 0;
+    for (const chunk of text.split(/\s+/)) {
+      const word = document.createElement('span');
+      word.className = 'word';
+      for (const part of parts(chunk)) for (const piece of (part.word ? cut(part.s) : [part.s])) {
+        const el = document.createElement('span'), b = document.createElement('b'), i = document.createElement('i');
+        el.className = 'chunk'; el.style.setProperty('--tint', `var(--tint-${(count % 4) + 1}, ${['#d6eefb', '#f7cfdb', '#e3d9f3', '#f6e7c4'][count % 4]})`);
+        b.textContent = piece; i.textContent = String(1000 + (hash(piece) % 49000));
+        el.append(b, i); word.append(el); count++;
+      }
+      words.push(word);
+    }
+    // Break lines once, at the fully cut size, then keep those lines whatever p is.
+    root.style.setProperty('--cut', '1');
+    const probe = document.createElement('div');
+    probe.className = 'line'; probe.style.flexWrap = 'wrap';
+    probe.append(...words); strip.append(probe);
+    const rows = new Map();
+    for (const w of words) { const y = Math.round(w.offsetTop); if (!rows.has(y)) rows.set(y, []); rows.get(y).push(w); }
+    strip.textContent = '';
+    for (const row of rows.values()) { const line = document.createElement('div'); line.className = 'line'; line.append(...row); strip.append(line); }
+    out.textContent = String(count);
+    render(value.x);
+  }
+
+  const value = K.spring(0, { k: 200, z: 1 });
+  function render(p) {
+    root.style.setProperty('--p', K.clamp(p).toFixed(4));
+    root.style.setProperty('--cut', K.smooth(K.map(p, 0, 0.5)).toFixed(4));       // the gaps open first
+    root.style.setProperty('--tile', K.smooth(K.map(p, 0.25, 0.7)).toFixed(4));   // then each piece becomes a slip
+    root.style.setProperty('--num', K.smooth(K.map(p, 0.58, 1)).toFixed(4));      // then the numbers take over
+  }
+  const loop = K.loop(root, (dt) => { const moving = value.step(dt); render(value.x); return moving; });
+
+  function go(p, { instant = false, slow = false } = {}) {
+    value.to = K.clamp(p);
+    value.k = slow ? 14 : 200;
+    if (instant || K.reduced()) { value.snap(); render(value.x); } else loop.wake();
+    track.setAttribute('aria-valuenow', Math.round(value.to * 100));
+    track.setAttribute('aria-valuetext', value.to > 0.6 ? T.to : T.from);
+    const say = value.to > 0.95 ? T.said(count) : '';
+    if (live.textContent !== say) live.textContent = say;
+  }
+
+  const fromX = (e) => { const r = track.getBoundingClientRect(), f = (e.clientX - r.left - 15) / (r.width - 30); return rtl ? 1 - f : f; };
+  K.drag(track, { start: ({ e }) => go(fromX(e)), move: ({ e }) => go(fromX(e)) });
+  track.addEventListener('keydown', (e) => {
+    const fwd = rtl ? 'ArrowLeft' : 'ArrowRight', back = rtl ? 'ArrowRight' : 'ArrowLeft';
+    const step = { [fwd]: 0.05, ArrowUp: 0.05, [back]: -0.05, ArrowDown: -0.05, PageUp: 0.25, PageDown: -0.25 }[e.key];
+    if (step !== undefined) go(value.to + step); else if (e.key === 'Home') go(0); else if (e.key === 'End') go(1); else return;
+    e.preventDefault();
+  });
+  input.addEventListener('input', build);
+  let width = 0;
+  new ResizeObserver(() => { const w = strip.clientWidth; if (Math.abs(w - width) > 1) { width = w; build(); } }).observe(strip);
+
+  (window.PIECES ||= {}).tokens = window.PIECE = {
+    name: 'tokens',
+    get value() { return value.to; },
+    set: (p) => go(p),
+    scrub: (p) => go(p, { instant: true }),
+    hello: () => go(1, { slow: true }),                       // a slow first cut, for a page that wants to show it once
+  };
+  build();
+  go(0, { instant: true });
+})();
+</script>
+</body>
+</html>

@@ -10,11 +10,15 @@ node scripts/probe.mjs http://localhost:5173/pieces/fever  # a component on a de
 node scripts/probe.mjs piece.html --variant he=?lang=he    # plus a pass in another language
 node scripts/probe.mjs piece.html --rtl                    # plus a pass with dir="rtl" forced
 node scripts/probe.mjs piece.html --steps steps.json       # your own gestures
+node scripts/probe.mjs page.html --root "[data-piece=keys]" --query quiet --allow fonts.googleapis.com,fonts.gstatic.com
+                                                           # one piece in place on a page that holds several
 ```
 
 It writes `sheet.png` (every still, labelled, with the findings at the top) and `report.json`, prints the findings, and exits 1 on any FAIL. A run takes under half a minute.
 
 What it does, in order: rest; hover; a sweep across the control; press; hold; release; a drag that is then let go; the pointer leaving; Tab into the piece, three arrow keys, Enter, Space; `scrub` at 0, 0.25, 0.5, 0.75 and 1; the piece pushed off screen; a reload under reduced motion; a reload at 390 px with touch (tap, touch drag); then any RTL or variant passes.
+
+On a page with several pieces the probe scrolls its piece to the middle of the screen, uses `window.PIECES[name]`, and starts the Tab order just before the piece. `--query` adds a query string to every pass (a page's own switch for turning its theatre off); `--allow` names hosts the page is meant to load from.
 
 Gestures are aimed at `[data-grab]`, or at a slider or switch inside the piece, or at the piece as a whole. If the stills show the pointer missing the control, add `data-grab` or pass `--target`.
 

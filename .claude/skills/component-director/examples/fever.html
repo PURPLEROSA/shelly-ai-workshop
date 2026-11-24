@@ -13,16 +13,19 @@
   Add ?lang=he for Hebrew, right to left. window.PIECE.scrub(p) draws any state at once.
 -->
 <style>
+  /* stage: only for looking at this file by itself. compose.mjs leaves this block out. */
   html, body { height: 100%; margin: 0; }
-  body { display: grid; place-items: center; background: #efeae1; color: #1d1b1a; overflow-x: hidden;
+  body { display: grid; place-items: center; background: #efeae1; color: #1d1b1a; overflow-x: hidden; padding-inline: 24px; box-sizing: border-box;
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Heebo, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-
-  .fever { --p: .2; --tone: #49627a; --ink: #1d1b1a; inline-size: min(720px, 100vw - 48px); padding: 24px 0; }
+</style>
+<style data-for="fever">
+  /* Theme it from the page: --cold and --hot (mercury), --ink (text), --say-hot (the sentence at full heat), --display (the sentence's typeface). */
+  .fever { --p: .2; --tone: var(--cold, #49627a); --ink: #1d1b1a; color: var(--ink); inline-size: min(720px, 100%); padding: 24px 0; }
   .fever .eyebrow { margin: 0 0 26px; font: 500 12px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .14em; text-transform: uppercase; opacity: .55; }
 
   /* The sentence. Four wordings are stacked in one grid cell. Exactly one shows at rest; a short blur carries the swap. */
   .fever .say { display: grid; min-block-size: 2.4em; align-items: end; margin: 0 0 40px; user-select: none; -webkit-user-select: none;
-    font: 400 clamp(26px, 5.2vw, 54px)/1.14 "Iowan Old Style", "Palatino Linotype", Palatino, "Frank Ruhl Libre", "David Libre", Georgia, serif; letter-spacing: -.012em; }
+    font: var(--display-weight, 400) clamp(26px, 7.4cqi, 54px)/1.14 var(--display, "Iowan Old Style", "Palatino Linotype", Palatino, "Frank Ruhl Libre", "David Libre", Georgia, serif); letter-spacing: -.012em; }
   .fever .say > span { grid-area: 1 / 1; opacity: 0; will-change: opacity, filter; }
   .fever .say span span span { will-change: transform; }
 
@@ -31,9 +34,9 @@
   .fever .tube:focus-visible { outline: 2px solid var(--tone); outline-offset: 6px; }
   .fever .bulb { position: absolute; inset-inline-start: 0; inset-block-start: 0; inline-size: 48px; block-size: 48px; border-radius: 50%;
     background: radial-gradient(circle at 34% 30%, #fff9 0 12%, #fff0 34%), var(--tone);
-    box-shadow: 0 0 0 1.5px #1d1b1a40, 0 0 calc(var(--p) * 44px) calc(var(--p) * 7px) color-mix(in srgb, var(--tone) 55%, transparent); }
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--ink) 25%, transparent), 0 0 calc(var(--p) * 44px) calc(var(--p) * 7px) color-mix(in srgb, var(--tone) 55%, transparent); }
   .fever .glass { position: absolute; inset-inline: 40px 0; inset-block-start: 13px; block-size: 22px; border-radius: 11px; overflow: hidden;
-    background: linear-gradient(#fff8, #fff2 45%, #0000000d); box-shadow: inset 0 0 0 1.5px #1d1b1a40; }
+    background: linear-gradient(#fff8, #fff2 45%, #0000000d); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 25%, transparent); }
   .fever .mercury { position: absolute; inset-block: 4px; inset-inline-start: 0; inline-size: calc(6px + var(--p) * (100% - 11px)); border-radius: 0 7px 7px 0;
     background: linear-gradient(#ffffff59, #fff0 42%), var(--tone); }
   [dir="rtl"] .fever .mercury { border-radius: 7px 0 0 7px; }
@@ -51,6 +54,7 @@
 </style>
 </head>
 <body>
+<!-- piece:start -->
 <section class="fever" data-piece="fever">
   <p class="eyebrow" data-t="eyebrow">Model temperature</p>
   <p class="say" aria-hidden="true"></p>
@@ -62,6 +66,7 @@
   <div class="ticks" aria-hidden="true"><i>0</i><i>0.5</i><i>1.0</i><i>1.5</i><i>2.0</i></div>
   <p class="read"><output>0.4</output><span class="mood"></span></p>
 </section>
+<!-- piece:end -->
 
 <script>
 /* kit:start — helpers a self-contained piece inlines. No dependencies. Source: component-director/scripts/kit.js */
@@ -157,6 +162,20 @@ const K = (() => {
     return () => ro.disconnect();
   }
 
+  // Read a colour from a custom property as [r, g, b], so the page a piece sits in can theme it:
+  // .host .piece { --hot: #b93372 }. Any CSS colour works; fallback is used when the property is not set.
+  function rgb(el, name, fallback) {
+    const t = document.createElement('i');
+    t.style.color = fallback;
+    t.style.color = getComputedStyle(el).getPropertyValue(name).trim() || fallback;
+    el.append(t);
+    const out = getComputedStyle(t).color.match(/[\d.]+/g).slice(0, 3).map(Number);
+    t.remove();
+    return out;
+  }
+  const hex = (c) => '#' + c.map((x) => Math.round(clamp(x, 0, 255)).toString(16).padStart(2, '0')).join('');
+  const mix = (a, b, t) => a.map((x, i) => lerp(x, b[i], t));
+
   const rm = window.matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => rm.matches;
 
@@ -197,10 +216,15 @@ const K = (() => {
     return out;
   }
 
-  return { clamp, lerp, map, smooth, gauss, rand, spring, loop, drag, fit, reduced, onReduced: (f) => rm.addEventListener('change', f), split };
+  return { clamp, lerp, map, smooth, gauss, rand, rgb, hex, mix, spring, loop, drag, fit, reduced, onReduced: (f) => rm.addEventListener('change', f), split };
 })();
 /* kit:end */
-
+</script>
+<script>
+/* stage: ?lang=he shows this demo in Hebrew, right to left. compose.mjs leaves this block out. */
+if (new URLSearchParams(location.search).get('lang') === 'he') { document.documentElement.lang = 'he'; document.documentElement.dir = 'rtl'; }
+</script>
+<script data-for="fever">
 (() => {
   const COPY = {
     en: { eyebrow: 'Model temperature', label: 'Temperature',
@@ -210,8 +234,7 @@ const K = (() => {
       say: ['שתיים ועוד שתיים הן ארבע.', 'שתיים ועוד שתיים הן ארבע, בדרך כלל.', 'שתיים ועוד שתיים הן התקהלות קטנה.', 'שתיים זו תחושה. ארבע זו vibe.'],
       mood: ['יציב', 'משוחרר', 'יצירתי', 'פרוע'] },
   };
-  const lang = new URLSearchParams(location.search).get('lang') === 'he' ? 'he' : 'en';
-  if (lang === 'he') { document.documentElement.lang = 'he'; document.documentElement.dir = 'rtl'; }
+  const lang = document.documentElement.lang.startsWith('he') ? 'he' : 'en';
   const T = COPY[lang];
 
   const root = document.querySelector('[data-piece="fever"]');
@@ -236,13 +259,13 @@ const K = (() => {
   const value = K.spring(0.2, { k: 260, z: 0.72 });      // what is drawn: follows the target with a little slosh
   const attend = K.spring(0, { k: 70, z: 1 });           // 1 while hovered, dragged or keyboard-focused: the shimmer is earned by attention
   let frozen = false, hover = false, dragging = false;
-  const mix = (a, b, t) => '#' + a.map((x, i) => Math.round(K.lerp(x, b[i], t)).toString(16).padStart(2, '0')).join('');
+  const COLD = K.rgb(root, '--cold', '#49627a'), HOT = K.rgb(root, '--hot', '#e2452b'), INK = K.rgb(root, '--ink', '#1d1b1a'), SAY = K.rgb(root, '--say-hot', '#b0301c');
 
   // Draw the whole piece for progress p. Time only enters through the shimmer, and only while attended.
   function render(p, t) {
     const h = K.smooth(K.clamp(p)), hot = K.map(p, 0.55, 1) * attend.x * (frozen ? 0 : 1);
     root.style.setProperty('--p', K.clamp(p, 0, 1.04).toFixed(4));
-    root.style.setProperty('--tone', mix([73, 98, 122], [226, 69, 43], K.clamp(p)));
+    root.style.setProperty('--tone', K.hex(K.mix(COLD, HOT, K.clamp(p))));
     layers.forEach((L) => {
       const w = K.clamp(L.show.x);
       if (w < 0.004) { if (L.drawn !== 0) { L.el.style.opacity = 0; L.el.style.visibility = 'hidden'; L.drawn = 0; } return; }
@@ -257,7 +280,7 @@ const K = (() => {
         c.g.style.transform = h < 0.002 ? 'none' : `translateY(${dy.toFixed(3)}em) rotate(${rot.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
       }
     });
-    say.style.color = mix([29, 27, 26], [176, 48, 28], h * 0.85);
+    say.style.color = K.hex(K.mix(INK, SAY, h * 0.85));
   }
 
   function announce() {
@@ -310,7 +333,7 @@ const K = (() => {
   K.onReduced(attention);
 
   // The handle: scrub(p) draws the settled state for p at once, set(p) travels there.
-  window.PIECE = {
+  (window.PIECES ||= {}).fever = window.PIECE = {
     name: 'fever',
     get value() { return value.to; },
     set: (p) => go(p),

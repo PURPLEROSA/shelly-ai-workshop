@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Loop · think, act, check, again</title>
+<!--
+  Loop. An agent's work as a wheel you turn by hand: each lap it thinks, acts and checks, the bead rides
+  round the three arcs, and the log beside it fills one line per lap until the job is done.
+
+  job: slider (a dial of three laps) · material: none, a drawn wheel · gesture: turn it, button, arrow keys · family: ring, story
+  The trick: one number, laps turned. The bead's angle, the word in the hub and every cell of the log are
+  read from it, so the wheel can be turned back and the log un-writes itself.
+  Add ?lang=he for Hebrew. window.PIECE.scrub(p) draws any moment at once.
+-->
+<style>
+  /* stage: only for looking at this file by itself. compose.mjs leaves this block out. */
+  html, body { height: 100%; margin: 0; }
+  body { display: grid; place-items: center; background: #fbe9ee; color: #2b2630; overflow-x: hidden; padding-inline: 16px; box-sizing: border-box; container-type: inline-size;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Heebo, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+</style>
+<style data-for="loop">
+  /* Sized in em from the container. Theme it from the page: --ink, --accent, --think, --act, --check, --display. */
+  .lp { --ink: #2b2630; --think: #cdbcf0; --act: #f29bb6; --check: #8fd0f2; color: var(--ink); font-size: clamp(11.8px, (100cqi - 8px) / 29.5, 18px); inline-size: 29em; padding: 1em 0; }
+  .lp .top { display: grid; grid-template-columns: 15em 1fr; align-items: center; gap: 2em; }
+  .lp .dial { position: relative; inline-size: 15em; block-size: 15em; border-radius: 50%; cursor: grab; touch-action: none; outline: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+  .lp .dial:active { cursor: grabbing; }
+  .lp .dial svg { display: block; inline-size: 100%; block-size: 100%; overflow: visible; }
+  .lp .dial:focus-visible { outline: 2px solid var(--accent, #b93372); outline-offset: .5em; }
+  .lp .hub { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: .35em; pointer-events: none; }
+  .lp .phase { display: grid; }
+  .lp .phase span { grid-area: 1 / 1; text-align: center; font: var(--display-weight, 700) 2.3em/1 var(--display, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Heebo, Arial, sans-serif); opacity: 0; }
+  .lp .lap { font-size: max(12px, .82em); opacity: .65; font-variant-numeric: tabular-nums; }
+
+  .lp .side p { margin: 0 0 1em; font-size: max(13px, .95em); line-height: 1.45; opacity: .78; }
+  .lp button { font: inherit; font-size: max(14px, .95em); font-weight: 650; color: var(--paper, #fff); background: var(--ink); border: 0; border-radius: 999px; padding: .8em 1.4em; min-block-size: 44px; cursor: pointer; transition: transform .2s cubic-bezier(.2, .8, .2, 1); }
+  .lp button:hover { transform: translateY(-2px); }
+  .lp button:focus-visible { outline: 2px solid var(--accent, #b93372); outline-offset: 3px; }
+
+  /* The log: one row per lap, one cell per phase. Unwritten cells are faint, so the shape of the job shows from the start. */
+  .lp .log { list-style: none; margin: 1.8em 0 0; padding: 0; display: grid; gap: .5em; }
+  .lp .log li { display: grid; grid-template-columns: 1.4em repeat(3, 1fr); gap: .5em; align-items: stretch; }
+  .lp .log .n { align-self: center; font: 500 max(12px, .8em)/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; opacity: .5; }
+  .lp .log .cell { --w: 0; padding: .6em .7em; border-radius: .6em; font-size: max(11.5px, .86em); line-height: 1.3; min-block-size: 2.6em;
+    background: color-mix(in srgb, var(--c) calc(18% + var(--w) * 62%), transparent); opacity: calc(.38 + var(--w) * .62); }
+  .lp .log .cell b { display: block; margin-bottom: .2em; font: 500 max(11px, .78em)/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .08em; opacity: .7; }
+  .lp .log .cell span { opacity: var(--w); }
+  .lp .live { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  @container (max-width: 560px) { .lp .top { grid-template-columns: 1fr; justify-items: center; gap: 1.2em; } .lp .side { text-align: center; } }
+</style>
+</head>
+<body>
+<!-- piece:start -->
+<section class="lp" data-piece="loop">
+  <div class="top">
+    <div class="dial" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="3" data-grab>
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <g fill="none" stroke-width="24" stroke-linecap="butt">
+          <path class="arc" data-i="0" stroke="var(--think)"/><path class="arc" data-i="1" stroke="var(--act)"/><path class="arc" data-i="2" stroke="var(--check)"/>
+        </g>
+        <path class="done" fill="none" stroke="var(--ink)" stroke-width="5" stroke-linecap="round"/>
+        <g class="bead"><circle r="15" fill="var(--paper, #fff)" stroke="var(--ink)" stroke-width="5"/><circle r="4.5" fill="var(--ink)"/></g>
+      </svg>
+      <div class="hub"><div class="phase"><span></span><span></span><span></span><span></span></div><div class="lap"></div></div>
+    </div>
+    <div class="side"><p></p><button type="button"></button></div>
+  </div>
+  <ol class="log"></ol>
+  <p class="live" aria-live="polite"></p>
+</section>
+<!-- piece:end -->
+
+<script>
+/* kit:start — helpers a self-contained piece inlines. No dependencies. Source: component-director/scripts/kit.js */
+const K = (() => {
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  // Remap x from a..b to c..d, clamped. map(p, .2, .6) is "the part of p between 20% and 60%, as 0..1".
+  const map = (x, a, b, c = 0, d = 1) => c + (d - c) * clamp((x - a) / (b - a || 1e-9));
+  const smooth = (t) => { t = clamp(t); return t * t * (3 - 2 * t); };
+  const gauss = (d, sigma) => Math.exp(-(d * d) / (2 * sigma * sigma));
+  // Seeded random: the same piece looks the same on every load and in every screenshot.
+  const rand = (seed = 1) => () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+
+  // A damped spring stepped at a fixed 1/120 s, so it feels the same at 60, 120 or 30 fps.
+  // z is the damping ratio: 1 arrives without overshoot, 0.7 overshoots a hair, below 0.4 rings.
+  function spring(x = 0, { k = 180, z = 1, eps = 5e-4 } = {}) {
+    const s = {
+      x, v: 0, to: x, k, z,
+      step(dt) {
+        const c = 2 * s.z * Math.sqrt(s.k);
+        for (let t = Math.min(dt, 0.1); t > 1e-6; t -= 1 / 120) {
+          const h = Math.min(t, 1 / 120);
+          s.v += (-s.k * (s.x - s.to) - c * s.v) * h;
+          s.x += s.v * h;
+        }
+        if (Math.abs(s.x - s.to) < eps && Math.abs(s.v) < eps * 20) { s.x = s.to; s.v = 0; return false; }
+        return true;
+      },
+      snap(v = s.to) { s.x = s.to = v; s.v = 0; },
+    };
+    return s;
+  }
+
+  // One requestAnimationFrame loop per piece. tick(dt, t) returns false when nothing is moving and the
+  // loop goes to sleep; call wake() from any input. It also sleeps while the piece is off screen or the
+  // tab is hidden, and picks up where it left off.
+  function loop(root, tick) {
+    let raf = 0, last = 0, want = false, seen = true;
+    const frame = (now) => {
+      raf = 0;
+      const dt = last ? Math.min((now - last) / 1000, 0.05) : 1 / 60;
+      last = now;
+      want = tick(dt, now / 1000) !== false;
+      if (want && seen && !document.hidden) raf = requestAnimationFrame(frame); else last = 0;
+    };
+    const wake = () => { want = true; if (!raf && seen && !document.hidden) raf = requestAnimationFrame(frame); };
+    const io = new IntersectionObserver(([e]) => { seen = e.isIntersecting; if (seen && want) wake(); }, { rootMargin: '64px' });
+    io.observe(root);
+    const vis = () => { if (!document.hidden && want) wake(); };
+    document.addEventListener('visibilitychange', vis);
+    return { wake, stop() { cancelAnimationFrame(raf); raf = 0; want = false; io.disconnect(); document.removeEventListener('visibilitychange', vis); } };
+  }
+
+  // Mouse, touch and pen through one path, with pointer capture and a release velocity in px/s measured
+  // over the last 90 ms. Coordinates are local to el. Set touch-action in CSS on el (pan-y for a
+  // horizontal drag) or the browser will scroll instead. Returns an unsubscribe function.
+  function drag(el, on) {
+    let id = null, hist = [], x0 = 0, y0 = 0;
+    const pt = (e) => { const r = el.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height }; };
+    const down = (e) => {
+      if (id !== null || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      id = e.pointerId; el.setPointerCapture(id);
+      const p = pt(e); x0 = p.x; y0 = p.y; hist = [{ ...p, t: e.timeStamp }];
+      on.start?.({ ...p, e });
+    };
+    const move = (e) => {
+      if (e.pointerId !== id) return;
+      const p = pt(e); hist.push({ ...p, t: e.timeStamp });
+      while (hist.length > 2 && e.timeStamp - hist[0].t > 90) hist.shift();
+      on.move?.({ ...p, dx: p.x - x0, dy: p.y - y0, e });
+    };
+    const up = (e) => {
+      if (e.pointerId !== id) return;
+      id = null;
+      const p = pt(e), a = hist[0], b = hist[hist.length - 1], dt = (b.t - a.t) / 1000;
+      const stale = e.timeStamp - b.t > 60;                  // held still before letting go: no throw
+      const vx = dt > 0.005 && !stale ? (b.x - a.x) / dt : 0, vy = dt > 0.005 && !stale ? (b.y - a.y) / dt : 0;
+      on.end?.({ ...p, dx: p.x - x0, dy: p.y - y0, vx, vy, e });
+    };
+    el.addEventListener('pointerdown', down); el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    return () => { el.removeEventListener('pointerdown', down); el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); };
+  }
+
+  // Keep a canvas sharp: size its backing store to its CSS box times the device pixel ratio (capped at 2).
+  function fit(canvas, onSize) {
+    const ro = new ResizeObserver(() => {
+      const r = canvas.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.max(1, Math.round(r.width * d)); canvas.height = Math.max(1, Math.round(r.height * d));
+      onSize?.(r.width, r.height, d);
+    });
+    ro.observe(canvas);
+    return () => ro.disconnect();
+  }
+
+  // Read a colour from a custom property as [r, g, b], so the page a piece sits in can theme it:
+  // .host .piece { --hot: #b93372 }. Any CSS colour works; fallback is used when the property is not set.
+  function rgb(el, name, fallback) {
+    const t = document.createElement('i');
+    t.style.color = fallback;
+    t.style.color = getComputedStyle(el).getPropertyValue(name).trim() || fallback;
+    el.append(t);
+    const out = getComputedStyle(t).color.match(/[\d.]+/g).slice(0, 3).map(Number);
+    t.remove();
+    return out;
+  }
+  const hex = (c) => '#' + c.map((x) => Math.round(clamp(x, 0, 255)).toString(16).padStart(2, '0')).join('');
+  const mix = (a, b, t) => a.map((x, i) => lerp(x, b[i], t));
+
+  const rm = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reduced = () => rm.matches;
+
+  // Split text so each letter (or each word) can move alone, without breaking right-to-left text, line
+  // wrapping or screen readers. A word and its punctuation stay on one line; every word keeps its own
+  // direction, so a Latin word or "16:30" inside a Hebrew sentence is not reversed. The readable text
+  // stays in the page for assistive tech. Never split Arabic or other joined scripts by letter: pass 'word'.
+  function split(el, by = 'grapheme') {
+    const text = el.textContent, lang = el.closest('[lang]')?.lang || undefined, S = 'Segmenter' in Intl;
+    const letters = (s) => (S ? [...new Intl.Segmenter(lang, { granularity: 'grapheme' }).segment(s)].map((x) => x.segment) : [...s]);
+    const words = (s) => (S ? [...new Intl.Segmenter(lang, { granularity: 'word' }).segment(s)].map((x) => ({ s: x.segment, word: !!x.isWordLike })) : [{ s, word: true }]);
+    const rtl = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+    const mk = (css, txt) => { const n = document.createElement('span'); if (css) n.style.cssText = css; if (txt) n.textContent = txt; return n; };
+    const sr = mk('position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap', text);
+    const box = mk();
+    box.setAttribute('aria-hidden', 'true');
+    const out = [];
+    for (const chunk of text.split(/(\s+)/)) {
+      if (!chunk) continue;
+      if (/^\s+$/.test(chunk)) { box.append(document.createTextNode(chunk)); continue; }
+      if (by === 'word') { const w = mk('display:inline-block;white-space:nowrap', chunk); out.push(w); box.append(w); continue; }
+      // group: no line break inside. core: first word to last word, in its own direction. Punctuation before
+      // and after the core follows the sentence, so the full stop after a Latin word lands on the correct side.
+      const group = mk('white-space:nowrap'), parts = words(chunk);
+      const first = parts.findIndex((x) => x.word), last = parts.length - 1 - [...parts].reverse().findIndex((x) => x.word);
+      let core = null;
+      parts.forEach(({ s, word }, k) => {
+        const inCore = first >= 0 && k >= first && k <= last;
+        if (inCore && !core) { core = mk(); core.dir = rtl.test(parts.slice(first, last + 1).map((x) => x.s).join('')) ? 'rtl' : 'ltr'; group.append(core); }
+        let into = inCore ? core : group;
+        if (word) { const w = mk('display:inline-block;white-space:nowrap'); w.dir = rtl.test(s) ? 'rtl' : 'ltr'; into.append(w); into = w; }
+        for (const g of letters(s)) { const n = mk('display:inline-block', g); into.append(n); out.push(n); }
+      });
+      box.append(group);
+    }
+    el.textContent = '';
+    el.append(sr, box);
+    return out;
+  }
+
+  return { clamp, lerp, map, smooth, gauss, rand, rgb, hex, mix, spring, loop, drag, fit, reduced, onReduced: (f) => rm.addEventListener('change', f), split };
+})();
+/* kit:end */
+</script>
+<script>
+/* stage: ?lang=he shows this demo in Hebrew, right to left. compose.mjs leaves this block out. */
+if (new URLSearchParams(location.search).get('lang') === 'he') { document.documentElement.lang = 'he'; document.documentElement.dir = 'rtl'; }
+</script>
+<script data-for="loop">
+(() => {
+  const COPY = {
+    en: { phases: ['Thinks', 'Acts', 'Checks'], done: 'Done', label: 'Turns of the loop', lap: (n) => `Lap ${n} of 3`, laps: 'Three laps', hint: 'Turn the wheel, or let it take a lap. Turn it back and the log un-writes itself.',
+      next: 'One more lap', again: 'From the top',
+      log: [['When is Thursday free?', 'Opens the calendar', '10:00 is free'], ['Who is Dana?', 'Searches the contacts', 'Dana Levi, with an address'], ['An invite is left to send', 'Emails Dana', 'Sent. The job is done']] },
+    he: { phases: ['חושב', 'פועל', 'בודק'], done: 'גמור', label: 'סיבובי הלולאה', lap: (n) => `סיבוב ${n} מתוך 3`, laps: 'שלושה סיבובים', hint: 'סובבו את הגלגל, או תנו לו לעשות סיבוב. סובבו אחורה והיומן נמחק בחזרה.',
+      next: 'עוד סיבוב', again: 'מהתחלה',
+      log: [['מתי יש פנוי בחמישי?', 'פותח את היומן', '10:00 פנוי'], ['מי זאת דנה?', 'מחפש באנשי הקשר', 'דנה לוי, יש כתובת'], ['נשאר לשלוח זימון', 'שולח מייל לדנה', 'נשלח. המשימה גמורה']] },
+  };
+  const lang = document.documentElement.lang.startsWith('he') ? 'he' : 'en';
+  const T = COPY[lang];
+
+  const root = document.querySelector('[data-piece="loop"]');
+  const $ = (s) => root.querySelector(s);
+  const dial = $('.dial'), bead = $('.bead'), done = $('.done'), lapEl = $('.lap'), button = $('button'), log = $('.log'), live = $('.live');
+  const words = [...root.querySelectorAll('.phase span')];
+  [...T.phases, T.done].forEach((w, i) => { words[i].textContent = w; });
+  $('.side p').textContent = T.hint;
+  dial.setAttribute('aria-label', T.label);
+  const rtl = getComputedStyle(root).direction === 'rtl';
+
+  // Geometry: three arcs of a ring, clockwise from the top, with a small gap between them. A wheel does not mirror.
+  const R = 78, GAP = 7, pt = (deg, r = R) => { const a = (deg - 90) * Math.PI / 180; return [100 + r * Math.cos(a), 100 + r * Math.sin(a)]; };
+  const arc = (a0, a1, r = R) => { const [x0, y0] = pt(a0, r), [x1, y1] = pt(a1, r); return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`; };
+  root.querySelectorAll('.arc').forEach((el, i) => el.setAttribute('d', arc(i * 120 + GAP / 2, (i + 1) * 120 - GAP / 2)));
+
+  const TONES = ['var(--think)', 'var(--act)', 'var(--check)'];
+  const cells = [];
+  T.log.forEach((row, r) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="n">${r + 1}</span>`;
+    row.forEach((text, c) => {
+      const cell = document.createElement('div'), b = document.createElement('b'), s = document.createElement('span');
+      cell.className = 'cell'; cell.style.setProperty('--c', TONES[c]);
+      b.textContent = T.phases[c]; s.textContent = text;
+      cell.append(b, s); li.append(cell); cells.push(cell);
+    });
+    log.append(li);
+  });
+
+  const value = K.spring(0, { k: 300, z: 1 });               // laps turned, 0..3
+  const show = words.map(() => K.spring(0, { k: 160, z: 1 }));
+  let phase = -1, said = '';
+
+  function render(p) {
+    const turn = p >= 3 ? 360 : (p % 1) * 360, [x, y] = pt(turn);
+    bead.setAttribute('transform', `translate(${x.toFixed(2)} ${y.toFixed(2)})`);
+    done.setAttribute('d', turn > 0.5 ? (turn >= 359.5 ? arc(0, 359.9, 60) : arc(0, turn, 60)) : '');
+    cells.forEach((cell, i) => cell.style.setProperty('--w', K.smooth(K.map(p * 3, i, i + 0.6)).toFixed(3)));   // each cell is written as its phase begins
+    words.forEach((el, i) => { const w = K.clamp(show[i].x); el.style.opacity = w.toFixed(3); el.style.filter = w > 0.005 && w < 0.995 ? `blur(${((1 - w) * 4).toFixed(2)}px)` : 'none'; });
+  }
+  // The hub and the readout follow what is drawn, not where it is heading, so a slow lap reads true all the way round.
+  function announce(still, p = value.to) {
+    const now = p >= 3 ? 3 : Math.floor((p % 1) * 3 + 1e-6), lap = Math.min(3, Math.floor(p + 1e-6) + 1);
+    if (now !== phase) { phase = now; show.forEach((s, i) => { s.to = i === phase ? 1 : 0; if (still) s.snap(); }); }
+    lapEl.textContent = p >= 3 ? T.laps : T.lap(lap);
+    button.textContent = p >= 3 ? T.again : T.next;
+    dial.setAttribute('aria-valuenow', p.toFixed(2));
+    const i = Math.min(8, Math.floor(p * 3 + 1e-6)), text = p >= 3 ? T.done : `${T.lap(lap)}. ${T.phases[phase]}: ${T.log[Math.floor(i / 3)][i % 3]}`;
+    dial.setAttribute('aria-valuetext', text);
+    if (text !== said) { said = text; live.textContent = text; }
+  }
+  const loop = K.loop(root, (dt) => { let moving = value.step(dt); announce(false, value.x); for (const s of show) moving = s.step(dt) || moving; render(value.x); return moving; });
+
+  function go(p, { instant = false, slow = false } = {}) {
+    value.to = K.clamp(p, 0, 3);
+    value.k = slow ? 9 : 300;
+    const still = instant || K.reduced();
+    if (still) value.snap();
+    if (still) { announce(true); render(value.x); } else loop.wake();
+  }
+
+  // Turn it: the drag follows the angle round the hub, and can go either way.
+  let last = 0;
+  const angle = (e) => { const r = dial.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)); };
+  K.drag(dial, {
+    start: ({ e }) => { last = angle(e); },
+    move: ({ e }) => { const a = angle(e); let d = a - last; if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; last = a; go(value.to + d / (2 * Math.PI)); },
+  });
+  dial.addEventListener('keydown', (e) => {
+    const fwd = rtl ? 'ArrowLeft' : 'ArrowRight', back = rtl ? 'ArrowRight' : 'ArrowLeft';
+    const step = { [fwd]: 1 / 12, ArrowUp: 1 / 12, [back]: -1 / 12, ArrowDown: -1 / 12, PageUp: 1, PageDown: -1 }[e.key];
+    if (step !== undefined) go(value.to + step); else if (e.key === 'Home') go(0); else if (e.key === 'End') go(3);
+    else if (e.key === 'Enter' || e.key === ' ') button.click(); else return;
+    e.preventDefault();
+  });
+  button.addEventListener('click', () => { if (value.to >= 3) go(0); else go(Math.floor(value.to + 1e-6) + 1, { slow: true }); });
+
+  (window.PIECES ||= {}).loop = window.PIECE = {
+    name: 'loop',
+    get value() { return value.to / 3; },
+    set: (p) => go(K.clamp(p) * 3, { slow: true }),
+    scrub: (p) => go(K.clamp(p) * 3, { instant: true }),
+    hello: () => go(1, { slow: true }),                       // one unhurried lap, for a page that wants to show it once
+  };
+  go(0, { instant: true });
+})();
+</script>
+</body>
+</html>

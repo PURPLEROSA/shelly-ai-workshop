@@ -12,10 +12,10 @@ How the study was done, on 24 November 2026:
 
 ## What is stored here and what is not
 
-- **Stored:** the method and recipes in this folder, written fresh; the scripts and the kit; three original example pieces; and `data/gallery-index.json`.
+- **Stored:** the method and recipes in this folder, written fresh; the scripts and the kit; six original example pieces and an explainer page composed from them; and `data/gallery-index.json`.
 - **In the index:** per piece, its name, slug, category, date added, the site's own public tags, the length and link of its public preview clip and poster, and four labels worked out here from watching the clip: `job`, `material`, `family`, `gestures`. `tech` is derived from the site's tags.
 - **Not stored:** Scrolltide's descriptions, its prompts, or any of its code. The descriptions are the site's copy and are one click away. The prompts and code are the paid product and were never seen.
-- **Not done:** no gallery piece is rebuilt here. The three examples have their own jobs, things and content; they share families with gallery pieces, as any two carousels share a ring.
+- **Not done:** no gallery piece is rebuilt here. The examples have their own jobs, things and content; they share families with gallery pieces, as any two carousels share a ring.
 - **If someone wants an exact gallery piece:** it is Scrolltide's to sell. Point them to the gallery. Their prompt, pasted into a session with this skill loaded, can then be built and probed like any other.
 
 ## The gallery in numbers

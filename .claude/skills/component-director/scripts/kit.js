@@ -91,6 +91,20 @@ const K = (() => {
     return () => ro.disconnect();
   }
 
+  // Read a colour from a custom property as [r, g, b], so the page a piece sits in can theme it:
+  // .host .piece { --hot: #b93372 }. Any CSS colour works; fallback is used when the property is not set.
+  function rgb(el, name, fallback) {
+    const t = document.createElement('i');
+    t.style.color = fallback;
+    t.style.color = getComputedStyle(el).getPropertyValue(name).trim() || fallback;
+    el.append(t);
+    const out = getComputedStyle(t).color.match(/[\d.]+/g).slice(0, 3).map(Number);
+    t.remove();
+    return out;
+  }
+  const hex = (c) => '#' + c.map((x) => Math.round(clamp(x, 0, 255)).toString(16).padStart(2, '0')).join('');
+  const mix = (a, b, t) => a.map((x, i) => lerp(x, b[i], t));
+
   const rm = window.matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => rm.matches;
 
@@ -131,6 +145,6 @@ const K = (() => {
     return out;
   }
 
-  return { clamp, lerp, map, smooth, gauss, rand, spring, loop, drag, fit, reduced, onReduced: (f) => rm.addEventListener('change', f), split };
+  return { clamp, lerp, map, smooth, gauss, rand, rgb, hex, mix, spring, loop, drag, fit, reduced, onReduced: (f) => rm.addEventListener('change', f), split };
 })();
 /* kit:end */

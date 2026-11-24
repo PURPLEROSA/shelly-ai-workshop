@@ -1,0 +1,8 @@
+[
+  { "down": [0.5, 0.11] },
+  { "move": [0.78, 0.22] }, { "move": [0.89, 0.5] }, { "shot": "a third of a lap, held" },
+  { "move": [0.78, 0.78] }, { "move": [0.5, 0.89] }, { "move": [0.22, 0.78] }, { "shot": "two thirds" },
+  { "move": [0.11, 0.5] }, { "move": [0.22, 0.22] }, { "move": [0.5, 0.11] }, { "shot": "one full lap" },
+  { "move": [0.78, 0.22] }, { "move": [0.89, 0.5] }, { "move": [0.78, 0.78] }, { "up": true }, { "wait": 400 }, { "shot": "let go in lap two" },
+  { "down": [0.78, 0.78] }, { "move": [0.89, 0.5] }, { "move": [0.78, 0.22] }, { "up": true }, { "wait": 400 }, { "shot": "turned back" }
+]

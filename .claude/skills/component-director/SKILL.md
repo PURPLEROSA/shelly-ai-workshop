@@ -1,6 +1,6 @@
 ---
 name: component-director
-description: Direct single interactive UI pieces made with code. Use when someone wants one animated or interactive component built (a button, toggle, slider, input, loader, card, carousel, nav, text effect, background or 3D object) in HTML, React, canvas, WebGL or three.js; wants a prompt for one written, upgraded or customised for their product; wants a component critiqued, checked or fixed; wants something "like the Scrolltide components"; or mentions Scrolltide or scrolltide.co. Supplies a method for finding the idea, the prompt architecture for a one-piece prompt, mechanism recipes by family, the habits that make a component look AI-made and what to do instead, a starter with a small dependency-free kit, a browser probe that drives a piece through hover, press, drag, keys, touch, reduced motion and right-to-left and photographs every state on one sheet, three worked examples, and a searchable index of 132 reference previews.
+description: Direct single interactive UI pieces made with code, and explainer pages built from them. Use when someone wants one animated or interactive component built (a button, toggle, slider, input, loader, card, carousel, nav, text effect, background or 3D object) in HTML, React, canvas, WebGL or three.js; wants an interactive explainer site, guide or teaching page where each idea is something the reader can move; wants a prompt for a component written, upgraded or customised for their product; wants a component critiqued, checked or fixed; wants something "like the Scrolltide components"; or mentions Scrolltide or scrolltide.co. Supplies a method for finding the idea, the prompt architecture for a one-piece prompt, mechanism recipes by family, the habits that make a component look AI-made and what to do instead, a starter with a small dependency-free kit, a browser probe that drives a piece through hover, press, drag, keys, touch, reduced motion and right-to-left and photographs every state on one sheet, a composer that sets pieces into one page, six worked examples with a full explainer page built from them, and a searchable index of 132 reference previews.
 metadata:
   source: Distilled from the public Scrolltide component gallery (https://www.scrolltide.co/components) by watching its 132 preview clips. Scrolltide's prompts and source code are its paid product; they are not copied, summarised or reconstructed here.
 ---
@@ -20,7 +20,8 @@ Reply in the language the person writes in. Write build prompts in English unles
 | A reference ("how did others do a paper tear?") | `python3 scripts/gallery.py search ...`, then `clip <slug>` to study the public preview. |
 | An idea nobody has done | `python3 scripts/gallery.py gaps`, then the candidates step in `references/conceit.md`. |
 | A fix to a piece that exists | `node scripts/probe.mjs <file or url>` first. Read the sheet, then `references/review-loop.md`. Change one thing. |
-| A whole animated page, a video, or a product demo window | Another skill, see the end of this file. |
+| An explainer site: a page that teaches something by letting the reader move it | `references/explainer.md`. Decide the question, the through-line and the stations; build each station as a piece; set them into a shell with `scripts/compose.mjs`. |
+| A video, or a product demo window | Another skill, see the end of this file. |
 
 ## The five decisions
 
@@ -53,6 +54,7 @@ Say plainly what stills cannot judge: how the motion feels, how it sounds, how i
 - Springs settle. A damping ratio of 0.7 to 1 is the default; one thing with mass may overshoot once.
 - One material, one accent, real content. No lorem ipsum, no "Card Title", no invented numbers.
 - One file or one component, nothing fetched from other hosts unless the person asked for it.
+- A piece takes its colours and typeface from custom properties with defaults, and keeps page-level rules out of its own styles, so a page can theme it and `compose.mjs` can lift it.
 - Take the mechanism from a reference, bring your own job, thing and content. Do not rebuild a named gallery piece under another name.
 
 ## Scripts
@@ -64,18 +66,24 @@ All in `scripts/`, tested with Node 22, Playwright Chromium, Python 3.11+ and ff
 | `piece-starter.html` | Starting point: a working switch that follows every rule above. Opens in a browser. |
 | `kit.js` | The helpers pieces carry: fixed-step `spring`, sleeping `loop`, unified `drag` with release velocity, `fit` for a sharp canvas, seeded `rand`, `gauss`, `map`, and `split` for per-letter text that survives right-to-left and line wrapping. |
 | `kit-sync.mjs` | Writes the current kit between the `kit:start` and `kit:end` markers of a piece, or checks that a copy is current. |
-| `probe.mjs` | Drives a piece in a real browser and photographs each state: pointer, keys, scrub, reduced motion, a 390 px phone with touch, and optional RTL or query-string variants. Writes `sheet.png` and `report.json`. |
+| `probe.mjs` | Drives a piece in a real browser and photographs each state: pointer, keys, scrub, reduced motion, a 390 px phone with touch, and optional RTL or query-string variants. Works on a piece alone or in place on a page (`--root`). Writes `sheet.png` and `report.json`. |
+| `compose.mjs` | Sets pieces into a page shell and writes one file; `--artifact` also writes a variant for a Claude artifact. Refuses a piece that would arrive half styled or clash with the page's class names. |
 | `gallery.py` | Searches the reference index by job, material, family, tech or gesture; `clip` fetches a public preview and cuts a strip; `gaps` shows the job and material pairs nobody has built. |
 
 ## Examples
 
-Three original pieces built with this method, each one file, each passing the probe clean in English and Hebrew. Open them in a browser; add `?lang=he` for right to left.
+Six original pieces built with this method, each one file, each passing the probe clean in English and Hebrew. Open them in a browser; add `?lang=he` for right to left.
 
 | File | Sentence | Family |
 |---|---|---|
+| `examples/tokens.html` | A how-closely-are-you-looking slider over a sentence on a paper strip: slide it and the sentence is cut into slips, each slip gets a number, and the words fade while the numbers stay. | world |
 | `examples/fever.html` | A model-temperature slider that is a thermometer: push the mercury up and the sentence above it loses its composure, letter by letter, while its wording drifts from fact to rumour. | world, glyph |
 | `examples/spill.html` | A loader whose context window is a window: tokens print in, the tape climbs, and what no longer fits leaves over the sill and thins to an outline, while the counters stay honest. | story |
+| `examples/keys.html` | A tool-permission panel that is a key rack: hand the agent a key and it swings across to the agent's rail, while the answer to the same request changes from words to deeds. | physics |
+| `examples/loop.html` | An agent's work as a wheel you turn by hand: each lap it thinks, acts and checks, and the log beside it writes one line per lap. `loop.steps.json` is its turning gesture for the probe. | ring, story |
 | `examples/spike.html` | A done-list that is a desk spike: reach for the pile and the slips fan open around the pin; pick one and it lifts off and lies flat to be read. | ring |
+
+And one page built from all six: `examples/explainer/agent.shell.html`, an explainer in Hebrew that follows one request through an AI agent in six stations. Compose it with `node scripts/compose.mjs examples/explainer/agent.shell.html --out agent-explainer.html`.
 
 ## When another skill fits better
 
@@ -83,7 +91,7 @@ Three original pieces built with this method, each one file, each passing the pr
 |---|---|
 | A video file: launch film, explainer, kinetic type, showreel | `motion-director`, or the specialist it points to |
 | A product demo window that plays the app step by step on a web page | `html-demo` |
-| A whole page or site design | the project's own design system first; this skill supplies the pieces that sit in it |
+| A marketing or product site that is not an explainer | the project's own design system first; this skill supplies the pieces that sit in it |
 
 ## References
 
@@ -93,4 +101,5 @@ Three original pieces built with this method, each one file, each passing the pr
 - `references/contract.md`: what every piece must do, the renderer ladder, performance budget, accessibility by job, right-to-left, packaging as a React component.
 - `references/tells.md`: the habits that read as AI-made, why, the replacement, and a banned list to paste.
 - `references/review-loop.md`: reading the probe sheet, symptom to fix, custom gesture scripts, what a person still has to judge.
+- `references/explainer.md`: the question, the through-line, stations as claims, the four lines of copy, the page shell, composing, and the faults that only appear once pieces share a page.
 - `references/sources.md`: where this comes from, what is stored and what is not, the gallery in numbers.

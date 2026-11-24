@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>סוכן AI מבפנים</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="מדריך אינטראקטיבי בשש תחנות: מה קורה לבקשה אחת בדרך מהמשפט שכתבתם ועד שהסוכן ביצע אותה.">
+<!--
+  An explainer page: one request followed through six stations, each station one live piece.
+  This file is a shell. The pieces live in their own files and are set in by
+      node scripts/compose.mjs examples/explainer/agent.shell.html --out <page>.html
+  Edit copy, order, colours and page behaviour here. Edit a piece in its own file, then compose again.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap">
+<style>
+  /* Layout: a stack of coloured paper sheets, one per station. On each sheet the words sit at the reading
+     edge and the live piece takes the wide side; the two swap sides from sheet to sheet. */
+  @font-face { font-family: Bamberger; src: url('assets/bamberger-black.otf') format('opentype'); font-weight: 900; font-display: swap; }
+  :root {
+    --ink: #303039; --night: #27262e; --paper: #fffdfb; --cream: #f7f2ed; --sky: #ddf4ff; --pink: #f4b8ca; --lilac: #e8e0f2;
+    --mag: #b93372; --plum: #60445d; --rose: #f29bb6; --blue: #8fd0f2; --violet: #cbb8f0;
+    --grad: linear-gradient(120deg, #c2337a 0%, #8e3fb8 55%, #5b4bd6 100%);
+    --font-display: Bamberger, Heebo, "Arial Hebrew", Arial, sans-serif;
+    --font-text: Heebo, "Arial Hebrew", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --lap: 44px;                                   /* how far each sheet laps over the one before */
+  }
+  :root { color-scheme: light; }                    /* one committed look: the sheets are the palette, in any host theme */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--cream); color: var(--ink); font: 400 18px/1.7 var(--font-text); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  h1, h2, p, ol { margin: 0; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent, var(--mag)); outline-offset: 3px; border-radius: 4px; }
+
+  .progress { position: fixed; inset: 0 0 auto; z-index: 30; padding-top: env(safe-area-inset-top, 0px); pointer-events: none; }
+  .progress i { display: block; block-size: 4px; background: var(--grad); transform: scaleX(var(--read, 0)); transform-origin: right center; }
+
+  .stops { position: fixed; z-index: 20; left: max(18px, env(safe-area-inset-left, 0px)); top: 50%; translate: 0 -50%; display: grid; gap: 4px; mix-blend-mode: difference; color: #fff; }
+  .stops a { display: flex; flex-direction: row-reverse; align-items: center; gap: 10px; min-block-size: 30px; padding: 2px 4px; text-decoration: none; font: 500 12px/1 var(--font-mono); opacity: .45; transition: opacity .25s; }
+  .stops a span { font: 700 13px/1 var(--font-text); opacity: 0; translate: -6px 0; transition: opacity .25s, translate .25s; white-space: nowrap; }
+  .stops a::after { content: ""; inline-size: 14px; block-size: 2px; background: currentColor; transition: inline-size .3s cubic-bezier(.2, .8, .2, 1); }
+  .stops a:hover, .stops a:focus-visible, .stops a[aria-current] { opacity: 1; }
+  .stops a:hover span, .stops a:focus-visible span, .stops a[aria-current] span { opacity: 1; translate: 0 0; }
+  .stops a[aria-current]::after { inline-size: 34px; }
+  @media (max-width: 1240px) { .stops { display: none; } }
+
+  /* A sheet is a full-width band of colour with a rounded top edge that laps over the sheet before it. */
+  .sheet { position: relative; background: var(--ground); color: var(--fg, var(--ink)); border-radius: var(--lap) var(--lap) 0 0; margin-top: calc(-1 * var(--lap)); padding-bottom: var(--lap);
+    box-shadow: 0 -22px 44px -34px rgb(30 20 40 / .5); }
+  .sheet.hero { margin-top: calc(-1 * env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); border-radius: 0; box-shadow: none; }   /* the ground runs up under a phone's status bar */
+  .wrap { max-inline-size: 1180px; margin-inline: auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .kicker { font: 500 13px/1.4 var(--font-mono); letter-spacing: .04em; opacity: .62; }
+  .hl { background: linear-gradient(transparent 56%, var(--mark, var(--pink)) 56% 94%, transparent 94%) no-repeat right center / 100% 100%; padding: 0 .12em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+
+  /* Hero */
+  .hero { --ground: var(--cream); }
+  .hero .wrap { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: center; gap: clamp(28px, 5vw, 72px); padding-block: clamp(56px, 9vh, 104px) clamp(56px, 8vh, 88px); }
+  .hero h1 { margin-block: 18px 22px; font: 900 clamp(54px, 10.4vw, 142px)/.92 var(--font-display); letter-spacing: -.01em; }
+  .hero h1 .l { display: block; }
+  .hero .lede { max-inline-size: 30ch; font-size: clamp(19px, 2vw, 23px); line-height: 1.55; }
+  .hero .cue { display: inline-flex; align-items: center; gap: 10px; margin-top: 30px; font: 700 15px/1 var(--font-text); color: var(--mag); text-decoration: none; }
+  .hero .cue svg { inline-size: 18px; block-size: 18px; }
+  .requestbox { justify-self: center; display: grid; gap: 16px; justify-items: center; }
+  .request { inline-size: min(340px, 78vw); padding: 20px 22px 26px; border-radius: 6px; background: var(--paper); cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; rotate: -3deg;
+    box-shadow: 0 1px 0 #0001, 0 26px 44px -24px rgb(60 40 70 / .5); }
+  .request:active { cursor: grabbing; }
+  .request time { display: block; margin-bottom: 12px; font: 500 13px/1 var(--font-mono); opacity: .55; }
+  .request q { quotes: none; font: 800 clamp(22px, 2.5vw, 29px)/1.25 var(--font-text); letter-spacing: -.01em; }
+  .requestbox p { font-size: 14px; opacity: .6; }
+
+  /* Station */
+  .station .wrap { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: center; gap: clamp(28px, 5vw, 76px); padding-block: clamp(76px, 12vh, 132px) clamp(56px, 9vh, 104px); }
+  .station.flip .copy { order: 2; }
+  .copy { display: grid; gap: 16px; justify-items: start; }
+  .copy .num { font: 900 clamp(60px, 8vw, 104px)/.8 var(--font-text); color: transparent; -webkit-text-stroke: 1.5px color-mix(in srgb, var(--fg, var(--ink)) 42%, transparent); letter-spacing: -.02em; }
+  .copy h2 { font: 900 clamp(36px, 4.5vw, 60px)/1.03 var(--font-display); text-wrap: balance; }
+  .copy p { max-inline-size: 34ch; }
+  .copy .try { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--accent, var(--mag)); }
+  .copy .try svg { flex: none; inline-size: 22px; block-size: 22px; }
+  .copy .take { margin-top: 6px; font: 800 clamp(19px, 1.9vw, 22px)/1.4 var(--font-text); }
+  .copy .take .hl { background-size: 0% 100%; transition: background-size .9s cubic-bezier(.2, .8, .2, 1) .25s; }
+  .station.in .copy .take .hl { background-size: 100% 100%; }
+  .bench { container-type: inline-size; display: grid; justify-items: center; min-inline-size: 0; }
+
+  #tokens      { --ground: var(--paper); }
+  #temperature { --ground: var(--sky); }
+  #memory      { --ground: var(--night); --fg: var(--cream); --accent: var(--pink); --mark: #b9337299; }
+  #tools       { --ground: var(--lilac); --mark: #fff; }
+  #loop        { --ground: var(--cream); }
+  #result      { --ground: var(--pink); --mark: #fff; --accent: #8f1f55; }
+
+  /* The pieces, in this page's colours and type. Each piece lists what it accepts above its own styles. */
+  .tok   { --accent: var(--mag); --display-weight: 800; --tint-1: #cdeafb; --tint-2: #f8cfdc; --tint-3: #e2d7f4; --tint-4: #f4e6c3; }
+  .fever { --cold: #6d7fb3; --hot: var(--mag); --say-hot: #8f1f55; --ink: #303039; --display: var(--font-display); --display-weight: 900; }
+  .spill { --fg: var(--cream); --focus: var(--pink); --tone-2: #9fd6f4; --tone-3: #c9b6f0; }
+  .keys  { --accent: var(--mag); --mark: var(--pink); --display-weight: 800; --cap-1: var(--pink); --cap-2: #bfe6fb; --cap-3: #fffdfb; }
+  .lp    { --accent: var(--mag); --think: var(--violet); --act: var(--rose); --check: var(--blue); --paper: var(--cream); --display: var(--font-display); --display-weight: 900; }
+  .spike { --focus: var(--mag); --ink: #303039; }
+
+  /* Recap */
+  .recap { --ground: var(--night); --fg: var(--cream); --accent: var(--pink); }
+  .recap .wrap { padding-block: clamp(76px, 12vh, 132px) clamp(48px, 8vh, 80px); display: grid; gap: clamp(28px, 5vh, 52px); }
+  .recap h2 { font: 900 clamp(44px, 7vw, 96px)/1 var(--font-display); }
+  .recap ol { list-style: none; padding: 0; display: grid; gap: 2px; counter-reset: s; max-inline-size: 760px; }
+  .recap li a { counter-increment: s; display: grid; grid-template-columns: 3.2em 1fr; align-items: baseline; gap: 12px; padding: 16px 0; text-decoration: none; border-top: 1px solid #ffffff26; font-size: clamp(19px, 2.2vw, 26px); font-weight: 500; line-height: 1.4; transition: padding .3s cubic-bezier(.2, .8, .2, 1); }
+  .recap li a::before { content: "0" counter(s); font: 500 14px/1 var(--font-mono); opacity: .55; }
+  .recap li a:hover { padding-inline-start: 14px; }
+  .recap .sum { font: 900 clamp(30px, 5vw, 64px)/1.1 var(--font-display); }
+  .recap .sum b { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 900; }
+  .recap .sign { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; padding-top: 22px; border-top: 1px solid #ffffff26; font: 500 13px/1.4 var(--font-mono); letter-spacing: .08em; opacity: .7; }
+  .recap .sign span { direction: ltr; }
+
+  @media (max-width: 900px) {
+    body { font-size: 17px; }
+    .hero .wrap, .station .wrap { grid-template-columns: minmax(0, 1fr); }
+    .station.flip .copy { order: 0; }
+    .requestbox { justify-self: start; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .copy .take .hl { background-size: 100% 100%; transition: none; }
+    .stops a, .stops a span, .stops a::after, .recap li a { transition: none; }
+  }
+</style>
+<!-- pieces:css -->
+</head>
+<body>
+<div class="progress" aria-hidden="true"><i></i></div>
+
+<nav class="stops" aria-label="תחנות">
+  <a href="#tokens"><i>01</i><span>טוקנים</span></a>
+  <a href="#temperature"><i>02</i><span>טמפרטורה</span></a>
+  <a href="#memory"><i>03</i><span>חלון ההקשר</span></a>
+  <a href="#tools"><i>04</i><span>כלים</span></a>
+  <a href="#loop"><i>05</i><span>הלולאה</span></a>
+  <a href="#result"><i>06</i><span>התוצאה</span></a>
+</nav>
+
+<header class="sheet hero" id="top">
+  <div class="wrap">
+    <div>
+      <p class="kicker">מדריך אינטראקטיבי · שש תחנות · חמש דקות</p>
+      <h1><span class="l"><span data-split>סוכן AI,</span></span><span class="l"><span class="hl" data-split>מבפנים.</span></span></h1>
+      <p class="lede">בלי קוד ובלי קסמים. נעקוב אחרי בקשה אחת, מהרגע שנכתבה ועד שהיא מחכה לכם מבוצעת.</p>
+      <a class="cue" href="#tokens">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15M5.5 12.5 12 19l6.5-6.5"/></svg>
+        גוללים, ונוגעים בכל דבר
+      </a>
+    </div>
+    <div class="requestbox">
+      <div class="request"><time>אתמול, 23:14</time><q>תקבע לי פגישה עם דנה ביום חמישי.</q></div>
+      <p>זאת הבקשה. אפשר לגרור אותה.</p>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="sheet station" id="tokens" aria-labelledby="tokens-h">
+  <div class="wrap">
+    <div class="copy">
+      <p class="num" aria-hidden="true">01</p>
+      <h2 id="tokens-h">הוא לא קורא מילים.</h2>
+      <p>לפני שמודל שפה עושה משהו עם הבקשה, הוא חותך אותה לחתיכות קטנות שנקראות טוקנים, ונותן לכל חתיכה מספר. מכאן והלאה הוא רואה רק מספרים.</p>
+      <p class="try"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a5 5 0 0 1-4-2l-3-4a1.5 1.5 0 0 1 2.4-1.8L9 15"/></svg>הזיזו את הכפתור שמאלה, או כתבו משפט משלכם.</p>
+      <p class="take"><span class="hl">מילים נכנסות, מספרים נשארים.</span></p>
+    </div>
+    <div class="bench"><!-- piece: ../tokens.html --></div>
+  </div>
+</section>
+
+<section class="sheet station flip" id="temperature" aria-labelledby="temperature-h">
+  <div class="wrap">
+    <div class="copy">
+      <p class="num" aria-hidden="true">02</p>
+      <h2 id="temperature-h">הוא מנחש. ואפשר לכוון כמה יעז.</h2>
+      <p>את התשובה המודל בונה חתיכה אחרי חתיכה, ובכל פעם בוחר מה הכי מתאים שיבוא עכשיו. הטמפרטורה קובעת אם ילך על הבחירה הבטוחה, או ירשה לעצמו להפתיע.</p>
+      <p class="try"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a5 5 0 0 1-4-2l-3-4a1.5 1.5 0 0 1 2.4-1.8L9 15"/></svg>גררו את הכספית.</p>
+      <p class="take"><span class="hl">נמוך לחשבוניות. גבוה לסיעור מוחות.</span></p>
+    </div>
+    <div class="bench"><!-- piece: ../fever.html --></div>
+  </div>
+</section>
+
+<section class="sheet station" id="memory" aria-labelledby="memory-h">
+  <div class="wrap">
+    <div class="copy">
+      <p class="num" aria-hidden="true">03</p>
+      <h2 id="memory-h">השולחן שלו לא גדול.</h2>
+      <p>כל מה שהסוכן יודע ברגע נתון חייב להיכנס לחלון ההקשר: הבקשה, השיחה, הקבצים שקרא. כשהחלון מתמלא, מה שנכנס ראשון יוצא ראשון.</p>
+      <p class="try"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a5 5 0 0 1-4-2l-3-4a1.5 1.5 0 0 1 2.4-1.8L9 15"/></svg>גררו את החלון לצדדים, או לחצו ״לקרוא שוב״.</p>
+      <p class="take"><span class="hl">מה שיצא מהחלון, מבחינתו לא קרה.</span></p>
+    </div>
+    <div class="bench"><!-- piece: ../spill.html --></div>
+  </div>
+</section>
+
+<section class="sheet station flip" id="tools" aria-labelledby="tools-h">
+  <div class="wrap">
+    <div class="copy">
+      <p class="num" aria-hidden="true">04</p>
+      <h2 id="tools-h">לבד, הוא רק מדבר.</h2>
+      <p>מודל שפה יודע לנסח. כדי לעשות משהו בעולם הוא צריך כלים: גישה ליומן, למייל, לאנשי הקשר. כל כלי הוא מפתח, ואתם מחליטים איזה מפתחות לתת.</p>
+      <p class="try"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a5 5 0 0 1-4-2l-3-4a1.5 1.5 0 0 1 2.4-1.8L9 15"/></svg>תנו לו מפתח. ואז עוד אחד.</p>
+      <p class="take"><span class="hl">אותה בקשה, תוצאה אחרת. ההבדל במפתחות.</span></p>
+    </div>
+    <div class="bench"><!-- piece: ../keys.html --></div>
+  </div>
+</section>
+
+<section class="sheet station" id="loop" aria-labelledby="loop-h">
+  <div class="wrap">
+    <div class="copy">
+      <p class="num" aria-hidden="true">05</p>
+      <h2 id="loop-h">חושב. פועל. בודק. ושוב.</h2>
+      <p>זה מה שהופך צ׳אט לסוכן. הוא לא עונה פעם אחת ונעצר: הוא מחליט מה הצעד הבא, עושה אותו, בודק מה יצא, וחוזר על זה עד שהמשימה גמורה.</p>
+      <p class="try"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a5 5 0 0 1-4-2l-3-4a1.5 1.5 0 0 1 2.4-1.8L9 15"/></svg>סובבו את הגלגל.</p>
+      <p class="take"><span class="hl">סוכן הוא מודל, עם כלים, בלולאה.</span></p>
+    </div>
+    <div class="bench"><!-- piece: ../loop.html --></div>
+  </div>
+</section>
+
+<section class="sheet station flip" id="result" aria-labelledby="result-h">
+  <div class="wrap">
+    <div class="copy">
+      <p class="num" aria-hidden="true">06</p>
+      <h2 id="result-h">ובבוקר: ערימת פתקים.</h2>
+      <p>כשהכול מחובר, הסוכן עובד גם כשאתם לא שם. הבקשה מאתמול בלילה כבר על השולחן, בין שאר הדברים שהספיק.</p>
+      <p class="try"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a5 5 0 0 1-4-2l-3-4a1.5 1.5 0 0 1 2.4-1.8L9 15"/></svg>פתחו את הערימה ומצאו את הפגישה עם דנה.</p>
+      <p class="take"><span class="hl">אתם מבקשים פעם אחת. הוא מסיים.</span></p>
+    </div>
+    <div class="bench"><!-- piece: ../spike.html --></div>
+  </div>
+</section>
+</main>
+
+<footer class="sheet recap" id="recap">
+  <div class="wrap">
+    <p class="kicker">בשורה התחתונה</p>
+    <h2>זה כל הסוד.</h2>
+    <ol>
+      <li><a href="#tokens">קורא טוקנים, לא מילים.</a></li>
+      <li><a href="#temperature">מנחש את החתיכה הבאה, בטמפרטורה שקבעתם.</a></li>
+      <li><a href="#memory">יודע רק מה שנכנס בחלון.</a></li>
+      <li><a href="#tools">עושה רק מה שהמפתחות מאפשרים.</a></li>
+      <li><a href="#loop">חוזר על הלולאה עד שגמר.</a></li>
+    </ol>
+    <p class="sum">מודל + כלים + לולאה = <b>סוכן.</b></p>
+    <p class="sign"><span>SHELLY OR GISSER / AGENT WORKSHOP</span><a href="#top">חזרה להתחלה</a></p>
+  </div>
+</footer>
+
+<!-- pieces:js -->
+<script>
+/* The page: reading progress, the rail, a first showing of each piece, the hero. Uses the kit the pieces share. */
+(() => {
+  // ?quiet turns off the page's own theatre (first showings, the hero's settling) so a piece can be probed in place.
+  const quiet = new URLSearchParams(location.search).has('quiet');
+  const still = () => quiet || K.reduced();
+  const stations = [...document.querySelectorAll('.station')], links = [...document.querySelectorAll('.stops a')];
+
+  // Reading progress, read once per frame.
+  const bar = document.querySelector('.progress i');
+  let queued = false;
+  const read = () => { queued = false; const max = document.documentElement.scrollHeight - innerHeight; bar.style.setProperty('--read', max > 0 ? K.clamp(scrollY / max).toFixed(4) : '0'); };
+  addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(read); } }, { passive: true });
+  addEventListener('resize', read);
+  read();
+
+  // The rail marks the station under the middle of the screen; a sheet's highlight draws when it arrives.
+  const here = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) links.forEach((a) => { if (a.hash === '#' + e.target.id) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+  }, { rootMargin: '-45% 0px -45% 0px' });
+  document.querySelectorAll('.sheet').forEach((s) => here.observe(s));     // the hero and the recap clear the mark
+  const arrive = new IntersectionObserver((entries) => { for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); arrive.unobserve(e.target); } }, { threshold: 0.3 });
+  stations.forEach((s) => arrive.observe(s));
+
+  // Each piece shows what it does once, the first time most of it is on screen. After that it is the reader's.
+  const HELLO = {
+    tokens: (p) => p.hello(),
+    fever: (p) => p.set(0.62),
+    spill: (p) => { p.scrub(0.08); p.set(1); },
+    loop: (p) => p.hello(),
+    spike: (p) => p.set(1),
+  };
+  const greet = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      greet.unobserve(e.target);
+      const name = e.target.getAttribute('data-piece'), piece = window.PIECES && window.PIECES[name];
+      if (piece && HELLO[name] && !still()) setTimeout(() => HELLO[name](piece), 380);
+    }
+  }, { threshold: 0.6 });
+  document.querySelectorAll('.bench [data-piece]').forEach((el) => greet.observe(el));
+
+  // Hero: the letters start a little loose and find their composure; the slip can be picked up and springs home.
+  const rnd = K.rand(5), glyphs = [...document.querySelectorAll('.hero [data-split]')].flatMap((el) => K.split(el)).map((el) => ({ el, lean: rnd() * 2 - 1, drop: rnd() * 2 - 1 }));
+  const loose = K.spring(still() ? 0 : 1, { k: 16, z: 1 });
+  const slip = document.querySelector('.request');
+  const sx = K.spring(0, { k: 150, z: 0.5 }), sy = K.spring(0, { k: 150, z: 0.5 }), tilt = K.spring(0, { k: 70, z: 0.3 });
+  const hero = K.loop(document.querySelector('.hero'), (dt) => {
+    let moving = loose.step(dt);
+    for (const g of glyphs) g.el.style.transform = loose.x < 0.002 ? 'none' : `translateY(${(g.drop * 0.16 * loose.x).toFixed(3)}em) rotate(${(g.lean * 11 * loose.x).toFixed(2)}deg)`;
+    moving = sx.step(dt) || moving; moving = sy.step(dt) || moving; moving = tilt.step(dt) || moving;
+    slip.style.translate = `${sx.x.toFixed(1)}px ${sy.x.toFixed(1)}px`;
+    slip.style.rotate = `${(-3 + tilt.x).toFixed(2)}deg`;
+    return moving;
+  });
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => { loose.to = 0; hero.wake(); });
+  let lastX = 0;
+  K.drag(slip, {
+    start: () => { lastX = 0; },
+    move: ({ dx, dy }) => { if (still()) return; tilt.v += (dx - lastX) * 1.6; lastX = dx; sx.snap(dx); sy.snap(dy); hero.wake(); },
+    end: () => { sx.to = 0; sy.to = 0; hero.wake(); },
+  });
+})();
+</script>
+</body>
+</html>

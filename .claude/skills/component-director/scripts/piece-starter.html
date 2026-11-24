@@ -19,14 +19,18 @@
     · mouse, touch and pen through one drag handler; a real <button> for keys and screen readers
     · prefers-reduced-motion jumps to the settled state
     · window.PIECE.scrub(p) and .set(p), so scripts/probe.mjs can photograph every state
+    · three marked blocks (style data-for, piece:start/end, script data-for), so scripts/compose.mjs
+      can lift the piece into a page with others. Keep page-level rules in the stage blocks only.
   Check it:  node probe.mjs your-piece.html
 -->
 <style>
+  /* stage: only for looking at this file by itself. compose.mjs leaves this block out. */
   html, body { height: 100%; margin: 0; }
   /* The stage: one quiet colour, the piece alone on it. Swap to #15151a with light ink for a dark stage. */
   body { display: grid; place-items: center; background: #efeae1; color: #1d1b1a; overflow-x: hidden;
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Heebo, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-
+</style>
+<style data-for="starter">
   .piece { --p: 0; display: grid; justify-items: center; gap: 18px; }
   .piece button { position: relative; inline-size: 132px; block-size: 64px; padding: 0; border: 0; border-radius: 32px; cursor: pointer; touch-action: pan-y;
     background: color-mix(in srgb, #1d1b1a calc(var(--p) * 100%), #d8d1c4); box-shadow: inset 0 1px 3px #0003; -webkit-tap-highlight-color: transparent; }
@@ -37,10 +41,12 @@
 </style>
 </head>
 <body>
+<!-- piece:start -->
 <section class="piece" data-piece="starter">
   <button type="button" role="switch" aria-checked="false" aria-label="Example switch" data-grab><span class="knob"></span></button>
   <p aria-live="polite">Off</p>
 </section>
+<!-- piece:end -->
 
 <script>
 /* kit:start — helpers a self-contained piece inlines. No dependencies. Source: component-director/scripts/kit.js */
@@ -136,6 +142,20 @@ const K = (() => {
     return () => ro.disconnect();
   }
 
+  // Read a colour from a custom property as [r, g, b], so the page a piece sits in can theme it:
+  // .host .piece { --hot: #b93372 }. Any CSS colour works; fallback is used when the property is not set.
+  function rgb(el, name, fallback) {
+    const t = document.createElement('i');
+    t.style.color = fallback;
+    t.style.color = getComputedStyle(el).getPropertyValue(name).trim() || fallback;
+    el.append(t);
+    const out = getComputedStyle(t).color.match(/[\d.]+/g).slice(0, 3).map(Number);
+    t.remove();
+    return out;
+  }
+  const hex = (c) => '#' + c.map((x) => Math.round(clamp(x, 0, 255)).toString(16).padStart(2, '0')).join('');
+  const mix = (a, b, t) => a.map((x, i) => lerp(x, b[i], t));
+
   const rm = window.matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => rm.matches;
 
@@ -176,10 +196,11 @@ const K = (() => {
     return out;
   }
 
-  return { clamp, lerp, map, smooth, gauss, rand, spring, loop, drag, fit, reduced, onReduced: (f) => rm.addEventListener('change', f), split };
+  return { clamp, lerp, map, smooth, gauss, rand, rgb, hex, mix, spring, loop, drag, fit, reduced, onReduced: (f) => rm.addEventListener('change', f), split };
 })();
 /* kit:end */
-
+</script>
+<script data-for="starter">
 (() => {
   const root = document.querySelector('[data-piece="starter"]');
   const button = root.querySelector('button'), label = root.querySelector('p');
@@ -215,7 +236,7 @@ const K = (() => {
   });
   button.addEventListener('click', () => { if (!moved) commit(!on); moved = false; });   // also fired by Space and Enter
 
-  window.PIECE = {
+  (window.PIECES ||= {}).starter = window.PIECE = {
     name: 'starter',
     get value() { return value.to; },
     set: (p) => go(p),                                                   // travel there

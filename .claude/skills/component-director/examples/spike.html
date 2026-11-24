@@ -14,12 +14,16 @@
   and how it leans; there is no per-slip positioning. Add ?lang=he for Hebrew. PIECE.scrub(p) sets the fan.
 -->
 <style>
+  /* stage: only for looking at this file by itself. compose.mjs leaves this block out. */
   html, body { height: 100%; margin: 0; }
-  body { display: grid; place-items: center; background: radial-gradient(120% 90% at 50% 40%, #ece6da, #dfd7c8); color: #2b2622; overflow-x: hidden;
+  body { display: grid; place-items: center; background: radial-gradient(120% 90% at 50% 40%, #ece6da, #dfd7c8); color: #2b2622; overflow-x: hidden; container-type: inline-size;
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Heebo, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
 
-  /* Everything inside is sized in em, and the em shrinks with the viewport, so the piece keeps its proportions. */
-  .spike { font-size: clamp(12.5px, (100vw - 32px) / 28.6, 19px); inline-size: 28em; padding: 1em 0; }
+</style>
+<style data-for="spike">
+  /* Everything inside is sized in em, and the em follows the container, so the piece keeps its proportions.
+     Theme it from the page: --ink (text), --focus (focus ring), --tint-1 to --tint-5 (paper). */
+  .spike { --ink: #2b2622; color: var(--ink); font-size: clamp(12.5px, (100cqi - 32px) / 28.6, 19px); inline-size: 28em; padding: 1em 0; }
   .spike .eyebrow { margin: 0 0 .6em; font: 500 max(12px, .75em)/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .14em; text-transform: uppercase; opacity: .55; }
   .spike .desk { position: relative; block-size: 27em; }
   .spike ul { list-style: none; margin: 0; padding: 0; }
@@ -33,19 +37,19 @@
     -webkit-mask: radial-gradient(circle .34em at 1.9em 50%, #0000 96%, #000); mask: radial-gradient(circle .34em at 1.9em 50%, #0000 96%, #000); }
   [dir="rtl"] .spike .paper { -webkit-mask: radial-gradient(circle .34em at calc(100% - 1.9em) 50%, #0000 96%, #000); mask: radial-gradient(circle .34em at calc(100% - 1.9em) 50%, #0000 96%, #000); }
   .spike .slip:focus-visible { outline: none; }
-  .spike .slip:focus-visible .paper { box-shadow: inset 0 0 0 .14em #b93372; }
+  .spike .slip:focus-visible .paper { box-shadow: inset 0 0 0 .14em var(--focus, #b93372); }
   .spike .title, .spike .detail, .spike time { position: absolute; font-size: .9em; }
   .spike .title { inset-inline-start: 8.8em; inset-block-start: .5em; font-weight: 650; letter-spacing: -.005em; white-space: nowrap; }
   .spike time { inset-inline-end: .9em; inset-block-start: .56em; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; opacity: .55; }
   .spike .detail { inset-inline: 8.8em .9em; inset-block-start: 2.25em; line-height: 1.32; opacity: calc(var(--d, 1) * .72); }
   .spike .rule { position: absolute; inset-inline: 3.6em .9em; inset-block-end: .7em; block-size: 1px; background: currentColor; opacity: .09; }
-
   .spike .pin { position: absolute; inset-inline-start: 2.5em; inset-block-start: 12.8em; inline-size: 1.4em; block-size: 1.4em; border-radius: 50%; z-index: 20; pointer-events: none;
     background: radial-gradient(circle at 36% 30%, #fff6d8 0 10%, #d9b25c 34%, #8a6a2a 78%, #5f4718); box-shadow: .18em .3em .5em -.1em #3b2a1a99, 0 0 0 .05em #5f471880; }
   .spike .hint { margin: .2em 0 0; font-size: max(13px, .88em); opacity: .6; }
 </style>
 </head>
 <body>
+<!-- piece:start -->
 <section class="spike" data-piece="spike">
   <p class="eyebrow"></p>
   <div class="desk" data-grab>
@@ -54,6 +58,7 @@
   </div>
   <p class="hint"></p>
 </section>
+<!-- piece:end -->
 
 <script>
 /* kit:start — helpers a self-contained piece inlines. No dependencies. Source: component-director/scripts/kit.js */
@@ -149,6 +154,20 @@ const K = (() => {
     return () => ro.disconnect();
   }
 
+  // Read a colour from a custom property as [r, g, b], so the page a piece sits in can theme it:
+  // .host .piece { --hot: #b93372 }. Any CSS colour works; fallback is used when the property is not set.
+  function rgb(el, name, fallback) {
+    const t = document.createElement('i');
+    t.style.color = fallback;
+    t.style.color = getComputedStyle(el).getPropertyValue(name).trim() || fallback;
+    el.append(t);
+    const out = getComputedStyle(t).color.match(/[\d.]+/g).slice(0, 3).map(Number);
+    t.remove();
+    return out;
+  }
+  const hex = (c) => '#' + c.map((x) => Math.round(clamp(x, 0, 255)).toString(16).padStart(2, '0')).join('');
+  const mix = (a, b, t) => a.map((x, i) => lerp(x, b[i], t));
+
   const rm = window.matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => rm.matches;
 
@@ -189,23 +208,27 @@ const K = (() => {
     return out;
   }
 
-  return { clamp, lerp, map, smooth, gauss, rand, spring, loop, drag, fit, reduced, onReduced: (f) => rm.addEventListener('change', f), split };
+  return { clamp, lerp, map, smooth, gauss, rand, rgb, hex, mix, spring, loop, drag, fit, reduced, onReduced: (f) => rm.addEventListener('change', f), split };
 })();
 /* kit:end */
-
+</script>
+<script>
+/* stage: ?lang=he shows this demo in Hebrew, right to left. compose.mjs leaves this block out. */
+if (new URLSearchParams(location.search).get('lang') === 'he') { document.documentElement.lang = 'he'; document.documentElement.dir = 'rtl'; }
+</script>
+<script data-for="spike">
 (() => {
   const COPY = {
     en: { eyebrow: 'While you slept', hint: 'Five jobs done. Open the pile, pick a slip.',
       slips: [['07:58', 'Answered three leads', 'In your voice. Waiting for your yes.'], ['08:02', 'Drafted three posts', 'On what is trending in your field today.'],
-        ['08:05', 'Morning brief sent', 'Calendar, weather, and the one thing that cannot slip.'], ['08:11', 'Filed two invoices', 'Matched to payments. One is late.'],
+        ['08:05', 'Booked Dana, Thursday', 'At 10:00. The invite has gone out.'], ['08:11', 'Filed two invoices', 'Matched to payments. One is late.'],
         ['08:20', 'Newsletter is ready', 'Draft four, the short one. Send at 10?']] },
-    he: { eyebrow: 'בזמן שישנת', hint: 'חמש משימות בוצעו. פתחו את הערימה ובחרו פתק.',
-      slips: [['07:58', 'נענו שלושה לידים', 'בקול שלך. מחכה לאישור.'], ['08:02', 'שלוש טיוטות לפוסטים', 'לפי מה שחם היום בתחום.'],
-        ['08:05', 'תדריך הבוקר נשלח', 'יומן, מזג אוויר, והדבר האחד שאסור לפספס.'], ['08:11', 'תויקו שתי חשבוניות', 'הותאמו לתשלומים. אחת באיחור.'],
+    he: { eyebrow: 'בזמן שישנתם', hint: 'חמש משימות בוצעו. פתחו את הערימה ובחרו פתק.',
+      slips: [['07:58', 'נענו שלושה לידים', 'בקול שלכם. מחכה לאישור.'], ['08:02', 'שלוש טיוטות לפוסטים', 'לפי מה שחם היום בתחום.'],
+        ['08:05', 'נקבעה פגישה עם דנה', 'חמישי, 10:00. הזימון נשלח.'], ['08:11', 'תויקו שתי חשבוניות', 'הותאמו לתשלומים. אחת באיחור.'],
         ['08:20', 'הניוזלטר מוכן', 'טיוטה רביעית, הקצרה. לשלוח ב-10?']] },
   };
-  const lang = new URLSearchParams(location.search).get('lang') === 'he' ? 'he' : 'en';
-  if (lang === 'he') { document.documentElement.lang = 'he'; document.documentElement.dir = 'rtl'; }
+  const lang = document.documentElement.lang.startsWith('he') ? 'he' : 'en';
   const T = COPY[lang];
 
   const root = document.querySelector('[data-piece="spike"]');
@@ -219,7 +242,7 @@ const K = (() => {
     const li = document.createElement('li'), el = document.createElement('button');
     el.type = 'button'; el.className = 'slip'; el.setAttribute('aria-expanded', 'false');
     el.innerHTML = '<span class="paper"></span><span class="title"></span><time></time><span class="detail"></span><span class="rule"></span>';
-    el.querySelector('.paper').style.setProperty('--tint', TINTS[i % TINTS.length]);
+    el.querySelector('.paper').style.setProperty('--tint', `var(--tint-${(i % TINTS.length) + 1}, ${TINTS[i % TINTS.length]})`);
     el.querySelector('.title').textContent = title; el.querySelector('time').textContent = time; el.querySelector('.detail').textContent = detail;
     li.append(el); list.append(li);
     const mess = (rnd() * 2 - 1) * 8 + (i - 2) * 1.2;                  // how it lies in the pile
@@ -280,7 +303,7 @@ const K = (() => {
   document.addEventListener('pointerdown', (e) => { if (!desk.contains(e.target) || e.target === desk) { picked = -1; touched = false; update(); } });
   K.onReduced(() => update());
 
-  window.PIECE = {
+  (window.PIECES ||= {}).spike = window.PIECE = {
     name: 'spike',
     get value() { return slips[0].open.to; },
     set: (p) => { picked = -1; hover = -1; touched = p > 0.5; inside = focused = false; update(); },

@@ -9,7 +9,10 @@ What every piece does, whatever it looks like. `scripts/probe.mjs` checks most o
 | **One file or one component** | A single HTML file, or one React component file. Styles and helpers travel inside it. |
 | **Root** | `data-piece="<name>"` on the outermost element. Add `data-ambient` if it moves at rest on purpose, `aria-hidden="true"` if it is decoration. |
 | **Grab** | `data-grab` on the element people press and drag, when that is not obvious from a slider or switch role. |
-| **Handle** | `window.PIECE = { name, value, scrub(p), set(p) }`. `scrub` draws the settled state for `p` at once. `set` travels there as a person would see it. |
+| **Handle** | `(window.PIECES ||= {}).name = window.PIECE = { name, value, scrub(p), set(p) }`. `scrub` draws the settled state for `p` at once. `set` travels there as a person would see it. A piece may add `hello()`: one unhurried showing of what it does, for a page to play once. |
+| **Three marked blocks** | `<style data-for="name">`, `<!-- piece:start -->` to `<!-- piece:end -->`, and `<script data-for="name">`. `compose.mjs` lifts exactly these into a page. Anything for viewing the file alone (the stage, a `?lang` switch) sits in unmarked blocks and is left behind. |
+| **Themeable** | Colours and the display typeface come from custom properties with defaults (`var(--hot, #e2452b)`), listed in a comment above the piece's styles. A colour mixed in script is read with `K.rgb(root, '--hot', '#e2452b')`. |
+| **Scoped** | Every rule starts with the piece's own class. The piece sizes itself from its container (`100%`, `cqi`), never from the viewport. It reads the language from `document.documentElement.lang`. |
 | **Header comment** | The sentence, then `job · material · gesture · family`, then the trick in one line. |
 | **Nothing fetched** | No fonts, scripts or images from other hosts unless the person asked. System font stacks; inline SVG; pictures come in as props. |
 

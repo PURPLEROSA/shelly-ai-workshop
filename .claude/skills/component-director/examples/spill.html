@@ -14,15 +14,19 @@
   only the tape's scroll is a spring. Add ?lang=he for Hebrew. window.PIECE.scrub(p) draws any moment at once.
 -->
 <style>
+  /* stage: only for looking at this file by itself. compose.mjs leaves this block out. */
   html, body { height: 100%; margin: 0; }
-  body { display: grid; place-items: center; background: #15151a; color: #ecebf1; overflow-x: hidden;
+  body { display: grid; place-items: center; background: #15151a; color: #ecebf1; overflow-x: hidden; padding-inline: 20px; box-sizing: border-box;
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Heebo, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-
-  .spill { --lh: 30px; --rows: 6; --p: 0; inline-size: min(640px, 100vw - 40px); padding: 20px 0; }
+</style>
+<style data-for="spill">
+  /* Made for a dark ground. Theme it from the page: --fg (text), --tone-1 to --tone-5 (one per file), --focus. */
+  .spill { --lh: 30px; --rows: 6; --p: 0; --fg: #ecebf1; color: var(--fg); inline-size: min(640px, 100%); padding: 20px 0; }
   .spill header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 0 0 calc(var(--lh) * 2.5); }
   .spill .eyebrow { margin: 0; font: 500 12px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .14em; text-transform: uppercase; opacity: .5; white-space: nowrap; }
   .spill .cap { margin: 0; font-size: 15px; opacity: .86; text-align: end; }
-  .spill .cap bdi { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13.5px; }
+  .spill .cap bdi { font-weight: 650; }
+  :lang(en) .spill .cap bdi { font: 500 13.5px ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
 
   /* The window. The canvas reaches above it: that band is where forgotten lines thin out. */
   .spill .win { position: relative; block-size: calc(var(--lh) * var(--rows) + 16px); border-radius: 14px; cursor: ew-resize; touch-action: pan-y;
@@ -30,7 +34,7 @@
   .spill canvas { position: absolute; inset-inline: 0; inset-block-start: calc(var(--lh) * -2.5); inline-size: 100%; block-size: calc(100% + var(--lh) * 2.5); display: block; }
 
   .spill .meter { block-size: 2px; margin: 18px 0 0; background: #ffffff1c; border-radius: 2px; overflow: hidden; }
-  .spill .meter i { display: block; block-size: 100%; inline-size: calc(var(--p) * 100%); background: #ecebf1; }
+  .spill .meter i { display: block; block-size: 100%; inline-size: calc(var(--p) * 100%); background: var(--fg); }
 
   .spill .foot { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 18px 0 0; }
   .spill dl { display: flex; gap: 28px; margin: 0; }
@@ -40,11 +44,12 @@
   .spill button { font: inherit; font-size: 14px; color: inherit; background: none; border: 0; border-radius: 999px; padding: 12px 18px; min-block-size: 44px; cursor: pointer;
     box-shadow: inset 0 0 0 1px #ffffff40; transition: background .2s, box-shadow .2s; }
   .spill button:hover { background: #ffffff14; }
-  .spill button:focus-visible { outline: 2px solid #f4b8ca; outline-offset: 3px; }
+  .spill button:focus-visible { outline: 2px solid var(--focus, #f4b8ca); outline-offset: 3px; }
   @media (max-width: 520px) { .spill { --lh: 24px; } .spill dl { gap: 18px; } .spill dd { font-size: 19px; } .spill header { flex-direction: column; gap: 10px; } .spill .cap { text-align: start; } }
 </style>
 </head>
 <body>
+<!-- piece:start -->
 <section class="spill" data-piece="spill">
   <header>
     <p class="eyebrow"></p>
@@ -61,6 +66,7 @@
     <button type="button"></button>
   </div>
 </section>
+<!-- piece:end -->
 
 <script>
 /* kit:start — helpers a self-contained piece inlines. No dependencies. Source: component-director/scripts/kit.js */
@@ -156,6 +162,20 @@ const K = (() => {
     return () => ro.disconnect();
   }
 
+  // Read a colour from a custom property as [r, g, b], so the page a piece sits in can theme it:
+  // .host .piece { --hot: #b93372 }. Any CSS colour works; fallback is used when the property is not set.
+  function rgb(el, name, fallback) {
+    const t = document.createElement('i');
+    t.style.color = fallback;
+    t.style.color = getComputedStyle(el).getPropertyValue(name).trim() || fallback;
+    el.append(t);
+    const out = getComputedStyle(t).color.match(/[\d.]+/g).slice(0, 3).map(Number);
+    t.remove();
+    return out;
+  }
+  const hex = (c) => '#' + c.map((x) => Math.round(clamp(x, 0, 255)).toString(16).padStart(2, '0')).join('');
+  const mix = (a, b, t) => a.map((x, i) => lerp(x, b[i], t));
+
   const rm = window.matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => rm.matches;
 
@@ -196,19 +216,23 @@ const K = (() => {
     return out;
   }
 
-  return { clamp, lerp, map, smooth, gauss, rand, spring, loop, drag, fit, reduced, onReduced: (f) => rm.addEventListener('change', f), split };
+  return { clamp, lerp, map, smooth, gauss, rand, rgb, hex, mix, spring, loop, drag, fit, reduced, onReduced: (f) => rm.addEventListener('change', f), split };
 })();
 /* kit:end */
-
+</script>
+<script>
+/* stage: ?lang=he shows this demo in Hebrew, right to left. compose.mjs leaves this block out. */
+if (new URLSearchParams(location.search).get('lang') === 'he') { document.documentElement.lang = 'he'; document.documentElement.dir = 'rtl'; }
+</script>
+<script data-for="spill">
 (() => {
   const COPY = {
-    en: { eyebrow: 'Context window', read: 'read', hold: 'holding', gone: 'let go', again: 'Read it again', label: 'Reading progress',
+    en: { files: ['brief.md', 'calls.txt', 'notes.pdf', 'invoices.csv', 'site.html'], eyebrow: 'Context window', read: 'read', hold: 'holding', gone: 'let go', again: 'Read it again', label: 'Reading progress',
       ready: 'Ready.', reading: (f) => `Reading <bdi>${f}</bdi>`, full: (f) => `Reading <bdi>${f}</bdi>, letting the oldest go`, done: (n) => `Done. Holding the last ${n} tokens.` },
-    he: { eyebrow: 'חלון ההקשר', read: 'נקרא', hold: 'בזיכרון', gone: 'שוחרר', again: 'לקרוא שוב', label: 'התקדמות הקריאה',
+    he: { files: ['השיחה מאתמול', 'המיילים', 'קובץ הלקוחות', 'היומן', 'השיחה מהיום'], eyebrow: 'חלון ההקשר', read: 'נקרא', hold: 'בזיכרון', gone: 'שוחרר', again: 'לקרוא שוב', label: 'התקדמות הקריאה',
       ready: 'מוכן.', reading: (f) => `קורא את <bdi>${f}</bdi>`, full: (f) => `קורא את <bdi>${f}</bdi>, ומשחרר את הישן`, done: (n) => `סיימתי. בזיכרון: ${n} הטוקנים האחרונים.` },
   };
-  const lang = new URLSearchParams(location.search).get('lang') === 'he' ? 'he' : 'en';
-  if (lang === 'he') { document.documentElement.lang = 'he'; document.documentElement.dir = 'rtl'; }
+  const lang = document.documentElement.lang.startsWith('he') ? 'he' : 'en';
   const T = COPY[lang], fmt = new Intl.NumberFormat(lang === 'he' ? 'he-IL' : 'en-US');
 
   const root = document.querySelector('[data-piece="spill"]');
@@ -237,6 +261,7 @@ const K = (() => {
       }
     }
   });
+  FILES.forEach((f, i) => { f.name = T.files[i]; f.tone = K.rgb(root, `--tone-${i + 1}`, K.hex(f.tone)); });
   const N = tokens.length, LINES = line;
   let run = 0;
   for (const t of tokens) { t.before = run; run += t.weight; }
@@ -325,7 +350,7 @@ const K = (() => {
 
   K.fit(canvas, (w, h, d) => { W = w; H = h; unit = parseFloat(getComputedStyle(root).getPropertyValue('--lh')) || 30; ctx.setTransform(d, 0, 0, d, 0, 0); draw(p, scroll.x); });
 
-  window.PIECE = { name: 'spill', get value() { return goal; }, set: go, scrub: (q) => { hoverFile = -1; settle(q); } };
+  (window.PIECES ||= {}).spill = window.PIECE = { name: 'spill', get value() { return goal; }, set: go, scrub: (q) => { hoverFile = -1; settle(q); } };
   settle(0.52);
 })();
 </script>
