@@ -613,7 +613,7 @@ function animate(p,i,beat,t,dt){
   var open=jawOpen(p.seq,beat)*S.jaw,a=.16+open*.47;p.open=open;p.jawP.rotation.x=a*.74;p.upP.rotation.x=-a*.26;
   for(var k=0;k<p.eyes.length;k++){var e=p.eyes[k];if(e.button)continue;
     e.pg.position.x=e.px+Math.sin(b*Math.PI*.5+k)*e.r*.06;e.pg.position.y=e.py-hit*e.r*.16;
-    var tb=t*.29+i*.37+k*.02,bf=tb-Math.floor(tb),blk=bf<.04?Math.sin(bf/.04*Math.PI):0;e.lid.rotation.x=-1.25+Math.min(1,e.rest+blk*(1-e.rest))*2.5}
+    var tb=t*.29+.45+i*.37+k*.02,bf=tb-Math.floor(tb),blk=bf<.04?Math.sin(bf/.04*Math.PI):0;e.lid.rotation.x=-1.25+Math.min(1,e.rest+blk*(1-e.rest))*2.5}
   var A={beat:b,hit:hit,t:t,half:half,open:open};for(k=0;k<p.anim.length;k++)p.anim[k](A);
   var solo=S.view==='solo'&&i===S.sel,tg=solo?SPOT:SLOTS[i],kk=1-Math.exp(-dt*6);
   p.root.position.x=lerp(p.root.position.x,tg.x,kk);p.root.position.z=lerp(p.root.position.z,tg.z,kk);p.gy=lerp(p.gy==null?tg.y:p.gy,tg.y,kk);
