@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: a small theatre. One big stage; beside it the crew list and a card that says who the chosen agent is. */
-/* One committed look: a dark studio, with pink kept for the names, the selection and a few stitches. */
+/* Layout: a wide stage on the left, and on the right the agent's name, what it says and what it did for you. */
+/* One committed look: a dark studio, with pink kept for the names, the ticks and the selection. */
 :root{
   --bg:#141217; --panel:#1d1a21; --raised:#27232c; --line:#37313e;
   --ink:#eeeaf1; --muted:#a59eae; --dim:#746d7e;
@@ -26,7 +26,7 @@ html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.5 var(--ui);-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.app{min-height:100%;display:flex;flex-direction:column;gap:12px;max-width:1560px;margin-inline:auto;padding-block:12px 16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.app{min-height:100%;display:flex;flex-direction:column;gap:12px;max-width:1680px;margin-inline:auto;padding-block:12px 16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 
 /* top bar */
 .top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px}
@@ -41,53 +41,51 @@ button{font:inherit;color:inherit;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--seg);color:var(--ink)}
 
 /* bench */
-.bench{flex:1;min-height:0;display:grid;gap:12px;grid-template-columns:minmax(0,1fr);grid-template-areas:"stage" "crew" "brief"}
+.bench{flex:1;min-height:0;display:grid;gap:12px;grid-template-columns:minmax(0,1fr);grid-template-areas:"stage" "who"}
 .panel,.stageblock{background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0}
 .stageblock{grid-area:stage;display:flex;flex-direction:column;overflow:hidden}
-.crew{grid-area:crew}.brief{grid-area:brief}
-.phead{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:34px;padding:0 12px;border-bottom:1px solid var(--line);font:500 11px var(--mono);letter-spacing:.9px;text-transform:uppercase;color:var(--muted)}
-.phead span:first-child{color:var(--ink)}
+.who{grid-area:who}
 
-/* stage */
-.stage{position:relative;width:100%;aspect-ratio:4/5;max-height:700px;overflow:hidden;background:var(--stage)}
+/* stage: always wider than tall */
+.stage{position:relative;width:100%;aspect-ratio:4/3;max-height:640px;overflow:hidden;background:var(--stage)}
 .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:pan-y;cursor:grab}
 .stage canvas:active{cursor:grabbing}
 .stage::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(125% 95% at 50% 42%,transparent 52%,var(--shade))}
 .stage.lens::after{display:none}
 .wire{position:absolute;z-index:1;top:12px;right:12px;min-height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--hud);font:500 11px var(--mono);letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
 .wire[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
-.fail{position:absolute;z-index:2;inset:0;display:grid;place-items:center;text-align:center;padding:24px;background:var(--stage);font-weight:500}
-.vfoot{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:3px 18px;padding:11px 12px;border-top:1px solid var(--line)}
-.say{margin:0;min-width:0;min-height:1.5em;font-size:16px;font-weight:500;color:var(--ink)}
-.say b{margin-right:10px;font:500 11.5px var(--mono);letter-spacing:.9px;text-transform:uppercase;color:var(--accent)}
-.hint{margin:0;font:400 11px var(--mono);color:var(--dim)}
+.fail,.load{position:absolute;z-index:2;inset:0;display:grid;place-items:center;text-align:center;padding:24px;background:var(--stage);font-weight:500}
+.load{font:500 12px var(--mono);letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
 
-/* the crew */
-#cast{list-style:none;margin:0;padding:5px}
-#cast button{display:grid;grid-template-columns:12px auto minmax(0,1fr);align-items:center;gap:10px;width:100%;min-height:38px;padding:0 9px;border:0;border-radius:7px;background:none;text-align:left;color:var(--muted)}
-#cast button:hover{background:var(--raised)}
-#cast button[aria-pressed="true"]{background:var(--sel);color:var(--ink)}
-#cast b{font-weight:600;font-size:14px;color:var(--ink)}
-#cast em{font-style:normal;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* the crew, as a row of chips under the stage */
+#cast{list-style:none;margin:0;padding:8px;display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid var(--line)}
+#cast button{display:flex;align-items:center;gap:8px;min-height:36px;padding:0 13px 0 10px;border:1px solid var(--line);border-radius:999px;background:none;color:var(--muted);font-weight:500;font-size:13.5px}
+#cast button:hover{background:var(--raised);color:var(--ink)}
+#cast button[aria-pressed="true"]{background:var(--sel);border-color:var(--accent);color:var(--ink)}
 .sw{width:12px;height:12px;border-radius:50%;border:1px solid var(--dim)}
 
-/* who is this */
-.name{margin:0;padding:13px 12px 0;font:400 44px/1 var(--mark);letter-spacing:.8px;text-transform:uppercase}
-.role{margin:0;padding:6px 12px 0;font:500 12px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--accent)}
-.pitch{margin:0;padding:9px 12px 12px;font-size:15px;color:var(--ink);text-wrap:pretty}
-.brief dl{margin:0;padding:12px;border-top:1px solid var(--line);display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px 14px}
-.brief dt{font:500 11.5px/1.85 var(--mono);color:var(--accent);white-space:nowrap}
-.brief dd{margin:0;font-size:14px;color:var(--muted)}
-.made{margin:0;padding:10px 12px 12px;border-top:1px solid var(--line);color:var(--dim);font-size:12.5px;text-wrap:pretty}
+/* who is this, and what it did */
+.who{display:flex;flex-direction:column;padding:22px 22px 20px;overflow:hidden}
+.kick{margin:0;font:500 11.5px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.name{margin:8px 0 0;overflow:hidden;font:400 clamp(56px,9vw,92px)/1.02 var(--mark);letter-spacing:1px;text-transform:uppercase}
+.name span{display:block;will-change:transform}
+.role{margin:6px 0 0;font:500 14px var(--mono);letter-spacing:1.4px;text-transform:uppercase;color:var(--accent)}
+.line{margin:18px 0 0;min-height:3.1em;font-size:19px;font-weight:500;line-height:1.4;text-wrap:pretty}
+.didh{margin:20px 0 0;padding-top:16px;border-top:1px solid var(--line);font:500 11.5px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.did{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:11px}
+.did li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:11px;align-items:start}
+.did i{width:22px;height:22px;border-radius:50%;background:var(--accent);position:relative;margin-top:1px}
+.did i::after{content:"";position:absolute;left:7px;top:4px;width:6px;height:10px;border:solid var(--on-accent);border-width:0 2.5px 2.5px 0;transform:rotate(42deg)}
+.did b{display:block;font:500 11.5px var(--mono);letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+.did span{display:block;font-size:15.5px;line-height:1.38;color:var(--ink)}
+.hint{margin:auto 0 0;padding-top:18px;font:400 11px var(--mono);color:var(--dim)}
 
 @media (min-width:760px){.tagline{order:0;flex:1 1 auto}}
-@media (max-width:759px){.say{min-height:3em}}
 @media (min-width:1000px){
   .app{height:100%}
-  .bench{grid-template-columns:minmax(0,1fr) 350px;grid-template-rows:auto minmax(0,1fr);grid-template-areas:"stage crew" "stage brief"}
-  .stage{flex:1;aspect-ratio:auto;max-height:none;min-height:420px}
-  .brief{overflow-y:auto}
-  #cast button{min-height:33px}
+  .bench{grid-template-columns:minmax(0,1fr) clamp(340px,31vw,470px);grid-template-areas:"stage who"}
+  .stage{flex:1;aspect-ratio:auto;max-height:none;min-height:400px}
+  .name{font-size:clamp(60px,6.4vw,104px)}
 }
 </style>
 </head>
@@ -95,29 +93,27 @@ button{font:inherit;color:inherit;cursor:pointer}
 <div class="app">
  <header class="top">
   <div class="brand"><h1 class="mark"><i aria-hidden="true"></i>AI Crew</h1><p class="by">by Shelly Or Gisser</p></div>
-  <p class="tagline">Seven agents that keep working while you sleep. Tap one and it tells you who it is.</p>
+  <p class="tagline">Seven agents that keep working while you sleep. Tap one to see what it did for you.</p>
   <div class="seg" role="group" aria-label="View"><button type="button" id="vsolo" aria-pressed="true">One agent</button><button type="button" id="vteam" aria-pressed="false">Whole crew</button></div>
  </header>
  <main class="bench">
   <section class="stageblock" aria-label="Stage">
    <div class="stage" id="stage">
-    <canvas id="gl" aria-label="A 3D stage with seven fabric puppets, each holding a sign with its name"></canvas>
+    <canvas id="gl" aria-label="A 3D stage with seven plush agents; the one in front performs its own move"></canvas>
     <button type="button" class="wire" id="wire" aria-pressed="false">Wireframe</button>
+    <div class="load" id="load">Stitching the crew…</div>
     <div class="fail" id="fail" hidden>3D could not start in this browser. Reload the page or try another browser.</div>
    </div>
-   <div class="vfoot"><p class="say" id="say"></p><p class="hint">Drag to look around · Tap an agent to meet it</p></div>
+   <ol id="cast" aria-label="The crew"></ol>
   </section>
-  <section class="crew panel" aria-label="The crew">
-   <div class="phead"><span>The crew</span><span>7 agents</span></div>
-   <ol id="cast"></ol>
-  </section>
-  <section class="brief panel" aria-label="Who is this">
-   <div class="phead"><span>Who is this</span><span id="b-cloth"></span></div>
-   <h2 class="name" id="b-name"></h2>
-   <p class="role" id="b-role"></p>
-   <p class="pitch" id="b-pitch"></p>
-   <dl id="b-rows"></dl>
-   <p class="made" id="b-made"></p>
+  <section class="who panel" aria-label="Who is this and what it did">
+   <p class="kick" id="w-kick"></p>
+   <h2 class="name"><span id="w-name"></span></h2>
+   <p class="role" id="w-role"></p>
+   <p class="line" id="w-line"></p>
+   <h3 class="didh" id="w-didh"></h3>
+   <ul class="did" id="w-did"></ul>
+   <p class="hint">Drag the stage to look around · Tap an agent to meet it</p>
   </section>
  </main>
 </div>
@@ -131,10 +127,7 @@ function boot(){
   if(window.THREE)return go();
   var s=document.createElement('script');s.src=FALLBACK;s.onload=go;s.onerror=fail;document.head.appendChild(s);
 }
-function go(){ /* the name signs are drawn with the page fonts, so give them a moment to arrive */
-  var run=function(){try{start()}catch(e){console.error(e);fail()}},done=false,once=function(){if(!done){done=true;run()}};
-  if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load('100px Anton','S'),document.fonts.load('600 40px "IBM Plex Sans"','A'),document.fonts.load('500 40px "IBM Plex Mono"','A')]).then(once,once);setTimeout(once,1800)}else once();
-}
+function go(){setTimeout(function(){try{start();document.getElementById('load').hidden=true}catch(e){console.error(e);fail()}},60)} /* let the page paint first: drawing the cloth takes a moment */
 
 function start(){
 var T=window.THREE,$=function(s){return document.querySelector(s)};
@@ -220,18 +213,19 @@ function normalFrom(hc,k){
     d[q]=(-dx*l*.5+.5)*255;d[q+1]=(dy*l*.5+.5)*255;d[q+2]=(l*.5+.5)*255;d[q+3]=255}}
   g.putImageData(out,0,0);return nc;
 }
-var FUZZLEN={felt:.03,velvet:.02,cord:.022,knit:.03,cable:.03,tweed:.028,stripe:.014,stars:.018,kraft:0,airmail:0};
+var FUZZLEN={fur:.085,felt:.03,velvet:.02,cord:.022,knit:.03,cable:.03,tweed:.028,stripe:.014,stars:.018,kraft:0,airmail:0};
 function fabric(kind,base,o){
-  o=o||{};var S=512,c=cv(S),x=c.getContext('2d'),hc=cv(S),y=hc.getContext('2d'),R=rng(o.seed||7);
+  o=o||{};var S=o.size||512,q2=S*S/262144,c=cv(S),x=c.getContext('2d'),hc=cv(S),y=hc.getContext('2d'),R=rng(o.seed||7);
   var L=mixA(base,'#ffffff',.38),D=mixA(base,'#000000',.38),i,j,g;
   var gray=function(v,a){v=Math.round(v*255);return'rgba('+v+','+v+','+v+','+(a==null?1:a)+')'};
   x.fillStyle=base;x.fillRect(0,0,S,S);x.lineCap='round';y.fillStyle=gray(.48);y.fillRect(0,0,S,S);y.lineCap='round';
-  function blot(n,a,rad){for(var k=0;k<n;k++){var px=R()*S,py=R()*S,r=rad*(.5+R()),col=R()<.5?L:D,gr=x.createRadialGradient(px,py,0,px,py,r);gr.addColorStop(0,css(col,a));gr.addColorStop(1,css(col,0));x.fillStyle=gr;x.fillRect(px-r,py-r,r*2,r*2)}}
-  function fibers(n,len,a,ha){for(var k=0;k<n;k++){var px=R()*S,py=R()*S,an=R()*6.283,l=len*(.4+R()),lw=.6+R()*1.4,up=R()<.55,
+  function blot(n,a,rad){for(var k=0;k<n*q2;k++){var px=R()*S,py=R()*S,r=rad*(.5+R()),col=R()<.5?L:D,gr=x.createRadialGradient(px,py,0,px,py,r);gr.addColorStop(0,css(col,a));gr.addColorStop(1,css(col,0));x.fillStyle=gr;x.fillRect(px-r,py-r,r*2,r*2)}}
+  function fibers(n,len,a,ha){for(var k=0;k<n*q2;k++){var px=R()*S,py=R()*S,an=R()*6.283,l=len*(.4+R()),lw=.6+R()*1.4,up=R()<.55,
       mx=px+Math.cos(an)*l*.5+(R()-.5)*7,my=py+Math.sin(an)*l*.5+(R()-.5)*7,ex=px+Math.cos(an)*l,ey=py+Math.sin(an)*l;
     x.strokeStyle=css(up?L:D,a*(.35+R()*.65));x.lineWidth=lw;x.beginPath();x.moveTo(px,py);x.quadraticCurveTo(mx,my,ex,ey);x.stroke();
     if(ha){y.strokeStyle=gray(up?.95:.15,ha*(.4+R()*.6));y.lineWidth=lw+.5;y.beginPath();y.moveTo(px,py);y.quadraticCurveTo(mx,my,ex,ey);y.stroke()}}}
   if(kind==='felt'){blot(70,.17,70);fibers(12500,16,.46,.8)}
+  else if(kind==='fur'){blot(90,.22,60);fibers(7000,20,.34,.5)}
   else if(kind==='velvet'){blot(60,.2,110);fibers(6500,6,.22,.6)}
   else if(kind==='cord'){var P=32;for(i=0;i<S;i+=P){g=x.createLinearGradient(i,0,i+P,0);g.addColorStop(0,css(D,.7));g.addColorStop(.36,css(L,.3));g.addColorStop(.64,css(L,.3));g.addColorStop(1,css(D,.7));x.fillStyle=g;x.fillRect(i,0,P,S);
       g=y.createLinearGradient(i,0,i+P,0);g.addColorStop(0,gray(.04));g.addColorStop(.25,gray(.7));g.addColorStop(.5,gray(.98));g.addColorStop(.75,gray(.7));g.addColorStop(1,gray(.04));y.fillStyle=g;y.fillRect(i,0,P,S)}fibers(3800,7,.22,.22)}
@@ -251,45 +245,50 @@ function fabric(kind,base,o){
   else if(kind==='airmail'){var cols=['#3b5aa8',base,'#d43b80',base],bw=32;for(i=0;i<S*2/bw;i++){x.fillStyle=cols[i%4];x.beginPath();x.moveTo(i*bw,0);x.lineTo((i+1)*bw,0);x.lineTo((i+1)*bw-S,S);x.lineTo(i*bw-S,S);x.closePath();x.fill()}fibers(2600,8,.15,.3)}
   else if(kind==='stripe'){var B=64;for(j=0;j<S;j+=B*2){x.fillStyle=o.alt;x.fillRect(0,j,S,B)}y.lineWidth=1.6;y.strokeStyle=gray(.8,.7);for(i=0;i<S;i+=4){y.beginPath();y.moveTo(i,0);y.lineTo(i,S);y.stroke()}fibers(5200,11,.26,.3)}
   else if(kind==='stars'){fibers(4400,10,.24,.4);x.fillStyle=o.alt||'#fff6e6';y.fillStyle=gray(.9,.6);for(i=0;i<34;i++){var sx=R()*S,sy=R()*S,sr=7+R()*8,rot=R()*6.283;x.beginPath();y.beginPath();for(j=0;j<10;j++){var a=rot+j*Math.PI/5,q=j%2?sr*.45:sr;x.lineTo(sx+Math.cos(a)*q,sy+Math.sin(a)*q);y.lineTo(sx+Math.cos(a)*q,sy+Math.sin(a)*q)}x.closePath();x.fill();y.closePath();y.fill()}}
-  var rep=o.rep||1.5,mk=function(cn,srgb){var t=new T.CanvasTexture(cn);t.wrapS=t.wrapT=T.RepeatWrapping;if(srgb)t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;t.repeat.set(rep,rep);return t};
+  var rep=o.rep||1.5*512/S,mk=function(cn,srgb){var t=new T.CanvasTexture(cn);t.wrapS=t.wrapT=T.RepeatWrapping;if(srgb)t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;t.repeat.set(rep,rep);return t};
   var ns=o.relief==null?1.9:o.relief,mat=new T.MeshPhysicalMaterial({map:mk(c,true),normalMap:mk(normalFrom(hc,5),false),normalScale:new T.Vector2(ns,ns),aoMap:mk(hc,false),aoMapIntensity:.9,roughness:.95,metalness:0,
     sheen:o.sheen==null?.65:o.sheen,sheenRoughness:.45,sheenColor:new T.Color(css(mixA(base,'#ffffff',.5))),envMapIntensity:.5});
-  mat.userData.fuzz=o.fuzz==null?FUZZLEN[kind]:o.fuzz;return mat;
+  mat.userData.fuzz=o.fuzz==null?FUZZLEN[kind]:o.fuzz;if(kind==='fur'){mat.userData.fur=1;mat.color.setScalar(.6);mat.sheen=.25}return mat;
 }
 var M={
-  cordTeal:fabric('cord','#2f7a7c',{seed:1,rep:1.7}),feltPink:fabric('felt','#e86a95',{seed:2}),
-  tweed:fabric('tweed','#45414c',{seed:5,rep:1.7,fleck:['#e86a95','#e9dcc8','#6f93c4']}),
-  cable:fabric('cable','#eadfcd',{seed:6,rep:1.5}),paper:fabric('kraft','#efe6d2',{seed:24,rep:1.1,sheen:.15}),paperLite:fabric('kraft','#f8f1e2',{seed:25,rep:1.1,sheen:.15}),
-  airmail:fabric('airmail','#f3ecdc',{seed:26,rep:2,sheen:.15}),card:fabric('kraft','#8f6f4c',{seed:28,rep:.9,sheen:.1}),floorFelt:fabric('felt','#2a2830',{seed:27,fuzz:0,sheen:.3}),
+  furAqua:fabric('fur','#2fb8b4',{seed:1}),furPink:fabric('fur','#ff6fa6',{seed:2}),furSnow:fabric('fur','#f4eee4',{seed:3}),
+  furBlue:fabric('fur','#7684d6',{seed:4}),furButter:fabric('fur','#ffd98f',{seed:5}),furSun:fabric('fur','#ffab2e',{seed:6}),
   velvet:fabric('velvet','#262b5c',{seed:8}),
-  feltMag:fabric('felt','#d43b80',{seed:9}),feltCream:fabric('felt','#f3eadb',{seed:10}),feltSky:fabric('felt','#6f93c4',{seed:11}),
-  feltInk:fabric('felt','#2f2b36',{seed:12}),feltDark:fabric('felt','#2b2731',{seed:22,fuzz:0}),feltMustard:fabric('felt','#e2ac3f',{seed:13}),feltRust:fabric('felt','#c8553d',{seed:23}),
+  feltMag:fabric('felt','#d43b80',{seed:9}),feltCream:fabric('felt','#f3eadb',{seed:10,size:256}),feltSky:fabric('felt','#6f93c4',{seed:11,size:256}),
+  feltInk:fabric('felt','#2f2b36',{seed:12}),feltMustard:fabric('felt','#e2ac3f',{seed:13,size:256}),feltCoral:fabric('felt','#ff6b4a',{seed:23}),feltPink:fabric('felt','#ff8fb8',{seed:29,size:256}),
+  blush:fabric('felt','#ff8fb8',{seed:31,fuzz:0,sheen:.2,size:256}),blushDeep:fabric('felt','#ff3f86',{seed:32,fuzz:0,sheen:.2,size:256}),
   knitCream:fabric('knit','#eadfcd',{seed:14,rep:2.3}),knitMag:fabric('knit','#c9357a',{seed:15,rep:2.3}),knitMustard:fabric('knit','#dba63c',{seed:16,rep:2.3}),knitPink:fabric('knit','#f08db4',{seed:21,rep:3}),
-  stripe:fabric('stripe','#f3eadb',{seed:17,alt:'#2f2b36',rep:1.2}),pj:fabric('stars','#b9a6dc',{seed:18,rep:1.3,alt:'#f6ecda'}),capStripe:fabric('stripe','#b9a6dc',{seed:19,alt:'#f3eadb',rep:2.2}),
+  pj:fabric('stars','#b9a6dc',{seed:18,rep:1.3,alt:'#f6ecda'}),capStripe:fabric('stripe','#b9a6dc',{seed:19,alt:'#f3eadb',rep:2.2}),
+  airmail:fabric('airmail','#f3ecdc',{seed:26,rep:2,sheen:.15}),card:fabric('kraft','#8f6f4c',{seed:28,rep:.9,sheen:.1}),floorFelt:fabric('felt','#2a2830',{seed:27,fuzz:0,sheen:.3}),
   tooth:new T.MeshPhysicalMaterial({color:0xfbf5e9,roughness:.38,clearcoat:.45,clearcoatRoughness:.35,envMapIntensity:.7}),
-  eye:new T.MeshPhysicalMaterial({color:0xffffff,roughness:.14,clearcoat:1,clearcoatRoughness:.06,envMapIntensity:.9}),
-  pupil:new T.MeshPhysicalMaterial({color:0x121016,roughness:.1,clearcoat:1,envMapIntensity:1.1}),
+  eye:new T.MeshPhysicalMaterial({color:0xffffff,roughness:.1,clearcoat:1,clearcoatRoughness:.04,envMapIntensity:1.1}),
+  pupil:new T.MeshPhysicalMaterial({color:0x121016,roughness:.06,clearcoat:1,envMapIntensity:1.4}),
   glint:new T.MeshBasicMaterial({color:0xffffff}),
-  ink:new T.MeshStandardMaterial({color:0x26222c,roughness:.4}),
+  ink:new T.MeshStandardMaterial({color:0x26222c,roughness:.35}),
+  gloss:new T.MeshPhysicalMaterial({color:0x26222c,roughness:.12,clearcoat:1,envMapIntensity:1.2}),
   thread:new T.MeshStandardMaterial({color:0xf6ecda,roughness:.75}),
-  threadGold:new T.MeshStandardMaterial({color:0xe0a43a,roughness:.7}),
   threadPink:new T.MeshStandardMaterial({color:0xf0679f,roughness:.7}),
   roof:new T.MeshStandardMaterial({color:0x3c0e26,roughness:.9,side:T.DoubleSide}),
   gum:new T.MeshStandardMaterial({color:0x8f2457,roughness:.85,side:T.DoubleSide}),
   tongue:new T.MeshStandardMaterial({color:0xf0709a,roughness:.55})
 };
 var THREAD=M.thread;
-/* felt fuzz: a few thin shells pushed out along the normal, each keeping fewer fibres than the one below */
-var FUZZ=(function(){var c=cv(256),x=c.getContext('2d'),R=rng(77);x.fillStyle='#000';x.fillRect(0,0,256,256);for(var i=0;i<2400;i++){var px=R()*256,py=R()*256,r=1.1+R()*1.7,g=x.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(px-r,py-r,r*2,r*2)}
-  var t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(9,9);return t})();
-var SHELLS=[];
-function fuzzOn(mesh,cap){
-  var base=mesh.material,len=base.userData.fuzz;if(!len)return;var key='sh'+cap,set=base.userData[key];
-  if(!set){set=[];for(var k=1;k<=6;k++)(function(t){
-    var m=new T.MeshStandardMaterial({map:base.map,alphaMap:FUZZ,alphaTest:.16+.62*t,roughness:1,color:new T.Color().setScalar(.92+.42*t),envMapIntensity:.3});
-    m.onBeforeCompile=function(sh){sh.uniforms.uOff={value:len*t};sh.uniforms.uCap={value:cap};sh.vertexShader='uniform float uOff;uniform float uCap;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed+=normalize(objectNormal)*uOff*(1.-step(.999,objectNormal.y*uCap));')};
-    m.customProgramCacheKey=function(){return'fuzz'};set.push(m)})(k/6);base.userData[key]=set}
-  set.forEach(function(m){var s=new T.Mesh(mesh.geometry,m);s.userData.shell=1;s.receiveShadow=true;mesh.add(s);SHELLS.push(s)});
+/* fur and fuzz: thin shells pushed out along the normal, each keeping fewer strands than the one below.
+   Plush fur gets many long shells that sag and sway a little; felt and velvet get a few short ones. */
+var FURCV=(function(){var c=cv(256),x=c.getContext('2d'),R=rng(77);x.fillStyle='#000';x.fillRect(0,0,256,256);
+  for(var i=0;i<2500;i++){var px=R()*256,py=R()*256,r=1.3+R()*1.6,g=x.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.55,'rgba(255,255,255,.8)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(px-r,py-r,r*2,r*2)}
+  return c})();
+function furTex(ru,rv){var t=new T.CanvasTexture(FURCV);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(ru,rv);return t}
+var SHELLS=[],FURMATS=[];
+function fuzzOn(mesh,cap,ru,rv){
+  var base=mesh.material,len=base.userData.fuzz;if(!len)return;var fur=!!base.userData.fur,N=fur?16:6;
+  ru=ru||(fur?3.4:9);rv=rv||ru;var key='sh'+cap+'_'+ru+'_'+rv,set=base.userData[key];
+  if(!set){set=[];var am=furTex(ru,rv);for(var k=1;k<=N;k++)(function(t){
+    var m=new T.MeshStandardMaterial({map:base.map,alphaMap:am,alphaTest:fur?.06+.74*t:.16+.62*t,alphaToCoverage:true,roughness:fur?.95-.45*t:1,color:new T.Color().setScalar(fur?.55+.8*t:.92+.42*t),envMapIntensity:fur?.2+.6*t:.3});
+    m.onBeforeCompile=function(sh){var u=sh.uniforms;u.uOff={value:len*t};u.uCap={value:cap};u.uSag={value:fur?len*.42*t*t:0};u.uWind={value:fur?len*.2*t*t:0};u.uT=m.userData.uT={value:0};
+      sh.vertexShader='uniform float uOff;uniform float uCap;uniform float uSag;uniform float uWind;uniform float uT;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nfloat fm=1.-step(.999,objectNormal.y*uCap);transformed+=(normalize(objectNormal)*uOff+vec3(sin(uT*1.7+position.y*5.+position.x*3.)*uWind,-uSag,cos(uT*1.3+position.x*4.)*uWind))*fm;')};
+    m.customProgramCacheKey=function(){return'fur'};set.push(m);FURMATS.push(m)})(k/N);base.userData[key]=set}
+  set.forEach(function(m,k){var s=new T.Mesh(mesh.geometry,m);s.userData.shell=1;s.userData.lod=fur&&k%2===0?1:0;s.receiveShadow=true;mesh.add(s);SHELLS.push(s)});
 }
 
 /* ---------- geometry helpers ---------- */
@@ -321,7 +320,7 @@ function boltShape(s){return poly([[.1,.5],[-.3,-.05],[-.02,-.05],[-.14,-.5],[.3
 function moonShape(s){var a=[],i,t;for(i=0;i<=16;i++){t=-2.2+i/16*4.4;a.push([Math.cos(t)*s,Math.sin(t)*s])}for(i=16;i>=0;i--){t=-1.75+i/16*3.5;a.push([Math.cos(t)*s*.78+s*.36,Math.sin(t)*s*.78])}return poly(a)}
 
 var sph=new T.SphereGeometry(1,28,18),lidGeo=new T.SphereGeometry(1,24,12,0,Math.PI*2,0,Math.PI/2),cyl=new T.CylinderGeometry(1,1,1,28);
-var toothGeo=rbox(1,1,1,.3,3),stitchGeo=(function(){var g=new T.CapsuleGeometry(1,4,3,8);g.rotateZ(Math.PI/2);return g})(),armGeo=new T.CapsuleGeometry(.155,.6,6,14),neckGeo=new T.CylinderGeometry(.2,.24,.3,20);
+var toothGeo=rbox(1,1,1,.3,3),stitchGeo=(function(){var g=new T.CapsuleGeometry(1,4,3,8);g.rotateZ(Math.PI/2);return g})(),armGeo=new T.CapsuleGeometry(.155,.6,6,14),handGeo=new T.SphereGeometry(.2,22,14),neckGeo=new T.CylinderGeometry(.2,.24,.3,20);
 var totalStitches=0,TH=.0125;
 function stitches(pts,inset,z,mat){
   var cx=0,cy=0;pts.forEach(function(p){cx+=p.x;cy+=p.y});cx/=pts.length;cy/=pts.length;
@@ -351,19 +350,6 @@ function seam(D,yOff,pts,lift){
   im.count=k;im.userData.stitch=k;totalStitches+=k;return im;
 }
 function lipGeo(w,d,r){var g=new T.ExtrudeGeometry(rrect(w+.06,d+.06,r+.03),{depth:.05,bevelEnabled:true,bevelThickness:.02,bevelSize:.02,bevelOffset:-.02,bevelSegments:3,curveSegments:14});g.rotateX(-Math.PI/2);return g}
-function makeSign(def){ /* a felt board with the agent's name and job, stitched round the edge */
-  var g=patch(rrect(1.3,.78,.07),M.feltCream,{depth:.05,thread:M.threadPink}),c=document.createElement('canvas');c.width=1024;c.height=580;
-  var x=c.getContext('2d'),R=rng(300+def.name.length*7+def.role.length),name=def.name.toUpperCase(),role=def.role.toUpperCase();
-  x.textAlign='center';x.textBaseline='middle';
-  x.font='500 60px "IBM Plex Mono", ui-monospace, monospace';x.fillStyle='#5f5668';x.fillText("HI, I'M",512,82);
-  x.font='250px Anton, Impact, "Arial Narrow", sans-serif';x.fillStyle='#131017';x.fillText(name,512,292);x.fillStyle='#2c2733';x.fillText(name,512,284);
-  x.font='600 60px "IBM Plex Sans", system-ui, sans-serif';x.fillStyle='#7d1f4c';x.fillText(role,512,496);x.fillStyle='#d43b80';x.fillText(role,512,491);
-  x.globalCompositeOperation='source-atop';
-  for(var i=0;i<3000;i++){var px=R()*1024,py=R()*580,an=R()*6.283,l=4+R()*9;x.strokeStyle=R()<.5?'rgba(255,255,255,.15)':'rgba(0,0,0,.17)';x.lineWidth=.8+R();x.beginPath();x.moveTo(px,py);x.lineTo(px+Math.cos(an)*l,py+Math.sin(an)*l);x.stroke()}
-  var t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;
-  var pl=new T.Mesh(new T.PlaneGeometry(1.2,.68),new T.MeshStandardMaterial({map:t,alphaTest:.45,roughness:.95}));pl.position.z=.056;pl.userData.flat=1;g.add(pl);
-  g.children[0].receiveShadow=true;return g;
-}
 function makeEye(e,lidMat){
   var g=new T.Group(),r=e.r,i;
   if(e.button){
@@ -376,6 +362,7 @@ function makeEye(e,lidMat){
   var ball=new T.Mesh(sph,M.eye);ball.scale.set(r,r,r*.55);g.add(ball);
   var pg=new T.Group(),pr=r*(e.pupil||.52),pu=new T.Mesh(sph,M.pupil);pu.scale.set(pr,pr,pr*.45);pg.add(pu);
   var gl=new T.Mesh(sph,M.glint);gl.scale.setScalar(pr*.24);gl.position.set(pr*.36,pr*.4,pr*.4);pg.add(gl);
+  var g2=new T.Mesh(sph,M.glint);g2.scale.setScalar(pr*.11);g2.position.set(-pr*.32,-pr*.3,pr*.42);pg.add(g2);
   pg.position.set(e.px||0,e.py||0,r*.47);g.add(pg);
   var lp=new T.Group();lp.scale.set(r*1.08,r*1.08,r*.66);var lid=new T.Mesh(lidGeo,lidMat);lp.add(lid);g.add(lp);
   g.userData={r:r,pg:pg,lid:lid,rest:e.lid||0,px:e.px||0,py:e.py||0};return g;
@@ -383,115 +370,130 @@ function makeEye(e,lidMat){
 function seq(s){return s.split('').map(function(c){return c==='x'?1:0})}
 
 /* ---------- the cast ---------- */
+function ball(mat,sx,sy,sz){var m=new T.Mesh(sph,mat);m.scale.set(sx,sy==null?sx:sy,sz==null?sx:sz);m.castShadow=true;return m}
+function collar(P,mat){[-1,1].forEach(function(s){put(P.body,patch(poly([[0,.1],[s*.36,.14],[s*.1,-.2]]),mat,{depth:.03}),P.TS(s*.04,1.3),P.bz)})}
 var DEFS=[
- {name:'Mochi',role:'Business Brain',cloth:'Teal corduroy',hex:'#2f7a7c',pitch:"Knows your clients, your services and your tone, so you stop explaining yourself.",say:"A lead came in overnight. Your reply is drafted, in your voice.",brief:[["08:00","A reply ready for last night's lead, in your voice"],["Before a meeting","A brief on the client and what to offer"],["Anytime","Answers about the business, no digging through files"]],mat:M.cordTeal,top:M.knitCream,head:{w:1.1,hu:1.05,hj:.4,d:1,r:.34},teeth:6,
-  eyes:[{x:-.25,y:.56,r:.19,px:.02,py:-.01},{x:.25,y:.56,r:.17,px:-.02,py:.02}],
+ {name:'Mochi',role:'Business Brain',cloth:'Aqua fur',hex:'#2fb8b4',belly:'#a4ebe1',plush:1,act:'spin',mat:M.furAqua,
+  pitch:"Knows your clients, your services and your tone, so you stop explaining yourself.",say:"A lead came in overnight. Your reply is drafted, in your voice.",
+  did:[["08:00","Drafted a reply to last night's lead, in your voice"],["Before the meeting","Briefed you on the client and what to offer"],["All day","Answered questions about the business, no digging through files"]],
+  head:{w:1.2,hu:1,hj:.42,d:1.12,r:.54},eyes:[{x:-.27,y:.5,r:.24,pupil:.64,px:.02},{x:.27,y:.5,r:.22,pupil:.64,px:-.02}],smile:{y:.1,w:.3,c:.07},blush:{x:.45,y:.24},
   extra:function(P){
-    var ns=new T.Mesh(sph,M.knitPink);ns.scale.set(.085,.075,.085);put(P.up,ns,P.U(0,.3),.05);
-    [-.25,.25].forEach(function(x){put(P.up,new T.Mesh(new T.TorusGeometry(.235,.026,8,36),M.ink),P.U(x,.56),.1)});
-    var br=new T.Mesh(new T.CapsuleGeometry(.022,.06,2,6),M.ink);br.rotation.z=Math.PI/2;br.position.set(0,.6,P.d/2+.1);P.up.add(br);
-    var R=rng(5),tuft=new T.Group();for(var i=0;i<11;i++){var b=new T.Mesh(sph,M.knitPink),sd=i%2?1:-1;b.scale.setScalar(.15+R()*.08);b.position.set(sd*(.1+R()*.24),.05+R()*.17,(R()-.5)*.52);b.castShadow=true;tuft.add(b)}
-    tuft.position.y=P.hu;P.up.add(tuft);P.anim.push(function(A){tuft.scale.y=1+A.hit*.12});
+    put(P.up,ball(M.knitPink,.085,.075,.085),P.U(0,.27),P.fz+.02);
+    [-.27,.27].forEach(function(x){put(P.up,new T.Mesh(new T.TorusGeometry(.285,.028,10,40),M.gloss),P.U(x,.5),P.fz+.16)});
+    var br=new T.Mesh(new T.CapsuleGeometry(.024,.05,2,6),M.gloss);br.rotation.z=Math.PI/2;br.position.set(0,.54,P.d/2+P.fz+.16);P.up.add(br);
+    var R=rng(5),tuft=new T.Group();for(var i=0;i<11;i++){var b=ball(M.knitPink,.15+R()*.08),sd=i%2?1:-1;b.position.set(sd*(.1+R()*.24),.08+R()*.17,(R()-.5)*.52);tuft.add(b)}
+    tuft.position.y=P.hu+P.fz*.4;P.up.add(tuft);P.anim.push(function(A){tuft.scale.y=1+A.hit*.14});
   }},
- {name:'Sushi',role:'Social Media',cloth:'Pink felt',hex:'#e86a95',pitch:"Social keeps running, even when you are on holiday.",say:"Your week of content is planned. Just approve it.",brief:[["Sunday","A full week of content, waiting for your approval"],["Daily","Post drafts that sound like you, not like a robot"],["After","What worked this week and what to try next"]],mat:M.feltPink,top:M.stripe,head:{w:1.42,hu:.8,hj:.42,d:1,r:.36},teeth:8,
-  eyes:[{x:-.24,y:.46,r:.22,px:.03},{x:.24,y:.46,r:.22,px:-.03}],
+ {name:'Sushi',role:'Social Media',cloth:'Pink fur',hex:'#ff6fa6',belly:'#ffc0d6',plush:1,act:'shoulder',mat:M.furPink,blushMat:'blushDeep',
+  pitch:"Social keeps running, even when you are on holiday.",say:"Your week of content is planned. Just approve it.",
+  did:[["Sunday","Planned a full week of content for your approval"],["Every day","Drafted posts that sound like you, not like a robot"],["End of week","Reported what worked and what to try next"]],
+  head:{w:1.5,hu:.84,hj:.42,d:1.12,r:.46},eyes:[{x:-.29,y:.46,r:.26,pupil:.64,px:.03},{x:.29,y:.46,r:.26,pupil:.64,px:-.03}],smile:{y:.07,w:.32,c:.08},blush:{x:.56,y:.2},
   extra:function(P){
-    [-.24,.24].forEach(function(x){for(var k=-1;k<=1;k++){var s=P.U(x+k*.11,.46+.24-Math.abs(k)*.03),l=new T.Mesh(new T.CapsuleGeometry(.017,.1,2,6),M.ink);put(P.up,l,s,.03,-k*.35)}});
-    put(P.up,patch(heartShape(.2),M.feltMag),P.U(.6,.2),.0);
-    var hair=[],R=rng(9);for(var i=0;i<9;i++){var h=new T.Group(),m=new T.Mesh(new T.CapsuleGeometry(.05,.22+R()*.14,3,8),M.knitMag);m.position.y=.16;m.castShadow=true;h.add(m);h.position.set((i-4)*.11+(R()-.5)*.05,P.hu-.03,(R()-.5)*.3);h.userData.b=(i-4)*.13;P.up.add(h);hair.push(h)}
-    P.anim.push(function(A){hair.forEach(function(h,i){h.rotation.z=-h.userData.b+Math.sin(A.beat*Math.PI+i)*.14;h.rotation.x=A.hit*.3})});
+    [-.29,.29].forEach(function(x){for(var k=-1;k<=1;k++){var s=P.U(x+k*.12,.46+.28-Math.abs(k)*.03);put(P.up,new T.Mesh(new T.CapsuleGeometry(.019,.11,2,6),M.ink),s,P.fz+.03,-k*.35)}});
+    put(P.up,patch(heartShape(.19),M.feltMag,{thread:M.thread}),P.U(.66,.5),P.bz,.25);
+    var hair=[],R=rng(9);for(var i=0;i<9;i++){var h=new T.Group(),m=new T.Mesh(new T.CapsuleGeometry(.055,.24+R()*.14,3,8),M.knitMag);m.position.y=.17;m.castShadow=true;h.add(m);h.position.set((i-4)*.115+(R()-.5)*.05,P.hu+.02,(R()-.5)*.3);h.userData.b=(i-4)*.13;P.up.add(h);hair.push(h)}
+    P.anim.push(function(A){hair.forEach(function(h,i){h.rotation.z=-h.userData.b+Math.sin(A.beat*Math.PI+i)*.12;h.rotation.x=A.hit*.3})});
   }},
- {name:'Newsie',role:'Newsletter',cloth:'Airmail paper',hex:'#efe6d2',thread:M.threadPink,lipMat:M.airmail,pitch:"The newsletter that writes itself. Almost.",say:"Friday's newsletter is drafted. Add your personal touch.",brief:[["Friday","A draft built from everything that happened this week"],["Always","Subject lines people want to open"],["Bonus","The same content as a post and as a story"]],mat:M.paper,top:M.feltSky,head:{w:1.5,hu:.8,hj:.42,d:.82,r:.09},teeth:8,toothScale:.8,
-  eyes:[{x:-.4,y:.25,r:.15,py:.01},{x:.4,y:.25,r:.15,py:-.01}],
+ {name:'Newsie',role:'Newsletter',cloth:'Snow fur',hex:'#f4eee4',belly:'#ffd9e6',plush:1,act:'deliver',mat:M.furSnow,thread:M.threadPink,
+  pitch:"The newsletter that writes itself. Almost.",say:"Friday's newsletter is drafted. Add your personal touch.",
+  did:[["Friday","Drafted the newsletter from everything that happened this week"],["Every issue","Wrote subject lines people want to open"],["Bonus","Turned the same content into a post and a story"]],
+  head:{w:1.55,hu:.8,hj:.42,d:.92,r:.3},eyes:[{x:-.42,y:.24,r:.18,pupil:.64,py:.01},{x:.42,y:.24,r:.18,pupil:.64,py:-.01}],smile:{y:.0,w:.26,c:.06},blush:{x:.62,y:.06},
   extra:function(P){
-    var flap=new T.Group(),f=patch(poly([[-.72,0],[.72,0],[0,-.5]]),M.paperLite,{depth:.03});flap.add(f);
-    var seal=new T.Mesh(cyl,M.feltMag);seal.rotation.x=Math.PI/2;seal.scale.set(.1,.05,.1);seal.position.set(0,-.36,.05);flap.add(seal);
-    flap.position.set(0,P.hu-.015,P.d/2+.004);P.up.add(flap);P.anim.push(function(A){flap.rotation.x=-.09-A.hit*.5});
-    put(P.jaw,patch(rrect(.24,.26,.02),M.feltPink),P.J(.5,-.2),0,.08);
-    collar(P,M.feltCream);
+    var flap=new T.Group();flap.add(patch(poly([[-.74,0],[.74,0],[0,-.5]]),M.feltCream,{depth:.03,thread:M.threadPink}));
+    var seal=new T.Mesh(cyl,M.feltMag);seal.rotation.x=Math.PI/2;seal.scale.set(.1,.05,.1);seal.position.set(0,-.37,.05);seal.castShadow=true;flap.add(seal);
+    flap.position.set(0,P.hu-.03,P.d/2+P.bz);P.up.add(flap);P.anim.push(function(A){flap.rotation.x=-.07-A.flap*1.25});
+    put(P.up,patch(rrect(.24,.26,.02),M.feltPink,{thread:M.thread}),P.U(.56,-.2),P.bz,.08);
+    collar(P,M.airmail);
   }},
- {name:'Admin',role:'Invoices & Admin',cloth:'Charcoal tweed',hex:'#45414c',pitch:"The part of the business nobody likes, finally off your desk.",say:"Month-end reminders are written. Politely.",brief:[["Month end","Who has not paid yet, with a polite reminder drafted"],["Inbox","What actually needs your reply today"],["Result","Fewer things fall between the cracks"]],mat:M.tweed,top:M.feltCream,head:{w:1.15,hu:.95,hj:.45,d:1.05,r:.2},teeth:6,under:1,
-  eyes:[{x:-.22,y:.4,r:.13,lid:.22},{x:.22,y:.4,r:.13,lid:.22}],
+ {name:'Admin',role:'Invoices & Admin',cloth:'Periwinkle fur',hex:'#7684d6',belly:'#c3caff',plush:1,act:'salute',mat:M.furBlue,
+  pitch:"The part of the business nobody likes, finally off your desk.",say:"Month-end reminders are written. Politely.",
+  did:[["Month end","Listed who has not paid and drafted polite reminders"],["Inbox","Summarised what actually needs your reply today"],["Result","Kept things from falling between the cracks"]],
+  head:{w:1.2,hu:.95,hj:.42,d:1.1,r:.4},eyes:[{x:-.25,y:.4,r:.19,pupil:.64,lid:.08},{x:.25,y:.4,r:.19,pupil:.64,lid:.08}],smile:{y:.06,w:.24,c:.05},blush:{x:.43,y:.17},
   extra:function(P){
-    var ns=new T.Mesh(sph,M.feltRust);ns.scale.set(.07,.085,.08);put(P.up,ns,P.U(0,.25),.04);
-    var band=new T.Mesh(rbox(P.w+.05,.14,P.d+.05,.22,8),M.feltInk);band.position.y=.74;P.up.add(band);
-    var brim=new T.Mesh(new T.CylinderGeometry(.66,.66,.04,32,1,false,0,Math.PI),M.feltMag);brim.rotation.set(.16,-Math.PI/2,0);brim.position.set(0,.7,P.d/2-.06);brim.castShadow=true;P.up.add(brim);
-    [-1,1].forEach(function(s){put(P.up,new T.Mesh(new T.CapsuleGeometry(.024,.16,2,6),M.ink),P.U(s*.22,.585),.03,Math.PI/2+s*.3)});
+    put(P.up,ball(M.feltCoral,.07,.08,.08),P.U(0,.22),P.fz+.02);
+    var band=new T.Mesh(rbox(P.w+.22,.15,P.d+.22,.42,8),M.feltInk);band.position.y=.77;P.up.add(band);
+    var brim=new T.Mesh(new T.CylinderGeometry(.76,.76,.045,36,1,false,0,Math.PI),M.feltMag);brim.rotation.set(.16,-Math.PI/2,0);brim.position.set(0,.73,P.d/2);brim.castShadow=true;P.up.add(brim);
+    [-1,1].forEach(function(s){put(P.up,new T.Mesh(new T.CapsuleGeometry(.026,.17,2,6),M.ink),P.U(s*.25,.63),P.fz+.03,Math.PI/2+s*.16)});
     var pen=new T.Group(),sh=new T.Mesh(cyl,M.feltMustard);sh.scale.set(.03,.46,.03);pen.add(sh);var tip=new T.Mesh(new T.ConeGeometry(.03,.09,10),M.feltCream);tip.position.y=-.275;tip.rotation.x=Math.PI;pen.add(tip);var er=new T.Mesh(cyl,M.feltPink);er.scale.set(.032,.07,.032);er.position.y=.26;pen.add(er);
-    pen.position.set(P.w/2+.035,.52,.05);pen.rotation.x=-1.0;P.up.add(pen);
-    put(P.body,patch(poly([[-.07,.24],[.07,.24],[.05,.14],[.12,-.2],[0,-.32],[-.12,-.2],[-.05,.14]]),M.feltMag),P.TS(0,1.0),.0);
+    pen.position.set(P.w/2+.13,.5,.05);pen.rotation.x=-1.0;P.up.add(pen);
+    put(P.body,patch(poly([[-.07,.24],[.07,.24],[.05,.14],[.12,-.2],[0,-.32],[-.12,-.2],[-.05,.14]]),M.feltMag),P.TS(0,1.02),P.bz+.02);
     collar(P,M.feltCream);
   }},
- {name:'Homey',role:'Family Ops',cloth:'Cable knit',hex:'#eadfcd',pitch:"The house runs, without you being the secretary.",say:"Tomorrow's family plan, in one short message.",brief:[["Evening","What is waiting for the family tomorrow"],["Weekly","A shopping list and a menu that fit your week"],["Ahead","A gift reminder before the birthday, not after"]],mat:M.cable,top:M.knitMustard,head:{w:1.3,hu:.95,hj:.45,d:1.2,r:.48},teeth:7,
-  eyes:[{x:-.27,y:.5,r:.2,button:M.feltMag},{x:.27,y:.52,r:.15,button:M.feltSky}],
+ {name:'Homey',role:'Family Ops',cloth:'Butter fur',hex:'#ffd98f',belly:'#fff0c4',plush:1,act:'wave',mat:M.furButter,
+  pitch:"The house runs, without you being the secretary.",say:"Tomorrow's family plan, in one short message.",
+  did:[["Every evening","Sent tomorrow's family plan in one short message"],["Weekly","Built a shopping list and a menu that fit your week"],["Ahead of time","Reminded you about the gift before the birthday"]],
+  head:{w:1.36,hu:.96,hj:.42,d:1.26,r:.58},eyes:[{x:-.28,y:.48,r:.2,button:M.feltMag},{x:.28,y:.5,r:.17,button:M.feltSky}],smile:{y:.08,w:.34,c:.09},blush:{x:.48,y:.22},
   extra:function(P){
-    var ns=new T.Mesh(sph,M.knitMustard);ns.scale.setScalar(.09);put(P.up,ns,P.U(0,.3),.05);
-    var poms=[-1,1].map(function(s){var g=new T.Group(),m=new T.Mesh(sph,M.knitMustard);m.scale.setScalar(.27);m.castShadow=true;g.add(m);g.position.set(s*(P.w/2+.06),P.hu*.72,-.05);P.up.add(g);return g});
-    P.anim.push(function(A){poms.forEach(function(g,i){g.position.y=P.hu*.72+A.hit*.07;g.scale.setScalar(1+A.hit*.1)})});
-    [1.12,.84,.56].forEach(function(y,i){var b=makeEye({r:.07,button:i%2?M.feltSky:M.feltMag});put(P.body,b,P.TS(0,y),.01)});
+    put(P.up,ball(M.feltCoral,.085),P.U(0,.27),P.fz+.02);
+    var poms=[-1,1].map(function(s){var g=new T.Group();g.add(ball(M.knitMustard,.28));g.position.set(s*(P.w/2+.1),P.hu*.74,-.05);P.up.add(g);return g});
+    P.anim.push(function(A){poms.forEach(function(g){g.position.y=P.hu*.74+A.hit*.08;g.scale.setScalar(1+A.hit*.12)})});
+    [1.14,.92].forEach(function(y,i){put(P.body,makeEye({r:.07,button:i%2?M.feltSky:M.feltMag}),P.TS(0,y),P.bz+.02)});
   }},
- {name:'Trendy',role:'Trend Hunter',cloth:'Mustard felt',hex:'#e2ac3f',pitch:"The trend broke this morning. Your draft is already waiting.",say:"Today's trend in five lines, with your angle on it.",brief:[["07:30","What your field is talking about today, in five lines"],["Right away","A personal angle that fits only you"],["Ready","A post draft waiting for approval"]],mat:M.feltMustard,top:M.feltInk,sleeve:M.feltCream,head:{w:1.05,hu:1.15,hj:.4,d:.95,r:.16},teeth:6,
-  eyes:[{x:-.23,y:.56,r:.17,px:.02},{x:.24,y:.6,r:.15,px:.01}],
+ {name:'Trendy',role:'Trend Hunter',cloth:'Sunny fur',hex:'#ffab2e',belly:'#ffd98a',plush:1,act:'jumpspin',mat:M.furSun,
+  pitch:"The trend broke this morning. Your draft is already waiting.",say:"Today's trend in five lines, with your angle on it.",
+  did:[["07:30","Summed up what your field is talking about, in five lines"],["Right away","Found a personal angle that fits only you"],["Ready","Left a post draft waiting for your approval"]],
+  head:{w:1.12,hu:1.1,hj:.42,d:1.02,r:.38},eyes:[{x:-.26,y:.52,r:.21,pupil:.64,px:.02},{x:.26,y:.54,r:.2,pupil:.64,px:.01}],smile:{y:.12,w:.26,c:.07},blush:{x:.41,y:.27},
   extra:function(P){
-    var cap=new T.Mesh(rbox(P.w+.09,.44,P.d+.09,.2,8,'bottom'),M.feltRust);cap.position.y=P.hu-.08;cap.castShadow=true;P.up.add(cap);
-    var brim=new T.Mesh(rbox(.74,.05,.46,.024,4),M.feltRust);brim.position.set(0,P.hu-.27,-P.d/2-.2);brim.rotation.x=.14;brim.castShadow=true;P.up.add(brim);
-    var bt=new T.Mesh(sph,M.feltCream);bt.scale.setScalar(.055);bt.position.y=P.hu+.15;P.up.add(bt);
-    put(P.up,new T.Mesh(new T.CapsuleGeometry(.026,.2,2,6),M.ink),P.U(-.23,.76),.03,Math.PI/2-.12);
-    put(P.up,new T.Mesh(new T.CapsuleGeometry(.026,.18,2,6),M.ink),P.U(.24,.84),.03,Math.PI/2+.38);
-    put(P.up,patch(boltShape(.34),M.feltMag),P.U(.3,.2),0,-.15);
+    var cap=new T.Mesh(rbox(P.w+.24,.48,P.d+.24,.4,10,'bottom'),M.feltCoral);cap.position.y=P.hu-.12;cap.castShadow=true;P.up.add(cap);
+    var brim=new T.Mesh(rbox(.82,.055,.5,.027,4),M.feltCoral);brim.position.set(0,P.hu-.3,-P.d/2-.3);brim.rotation.x=.14;brim.castShadow=true;P.up.add(brim);
+    var bt=ball(M.feltCream,.06);bt.position.y=P.hu+.14;P.up.add(bt);
+    put(P.up,new T.Mesh(new T.CapsuleGeometry(.027,.2,2,6),M.ink),P.U(-.26,.76),P.fz+.03,Math.PI/2+.1);
+    put(P.up,new T.Mesh(new T.CapsuleGeometry(.027,.18,2,6),M.ink),P.U(.26,.8),P.fz+.03,Math.PI/2+.3);
+    put(P.up,patch(boltShape(.32),M.feltMag,{thread:M.thread}),P.U(.44,.06),P.bz,-.15);
     collar(P,M.feltCream);
   }},
- {name:'Luna',role:'Night Shift',cloth:'Navy velvet',hex:'#262b5c',pitch:"Routines that run while you sleep.",say:"It is 06:00. Your morning briefing is waiting.",brief:[["06:00","A morning briefing: calendar, key emails, what is new"],["Hourly","An update only when something is worth knowing"],["Sunday","Last week's summary and a plan for the next"]],mat:M.velvet,top:M.pj,head:{w:1.25,hu:.9,hj:.42,d:1.1,r:.45},teeth:6,
-  eyes:[{x:-.26,y:.44,r:.18,lid:.5,py:-.035},{x:.26,y:.44,r:.18,lid:.5,py:-.035}],
+ {name:'Luna',role:'Night Shift',cloth:'Navy velvet',hex:'#262b5c',act:'doze',mat:M.velvet,top:M.pj,
+  pitch:"Routines that run while you sleep.",say:"It is 06:00. Your morning briefing is waiting.",
+  did:[["06:00","Prepared your morning briefing: calendar, key emails, what is new"],["Every hour","Stayed quiet unless something was worth knowing"],["Sunday","Summed up last week and planned the next"]],
+  head:{w:1.25,hu:.9,hj:.42,d:1.1,r:.45},teeth:6,eyes:[{x:-.26,y:.44,r:.18,lid:.5,py:-.035},{x:.26,y:.44,r:.18,lid:.5,py:-.035}],
   extra:function(P){
     var cg=new T.ConeGeometry(.52,1.25,22,10),p=cg.attributes.position;for(var i=0;i<p.count;i++){var t=(p.getY(i)+.625)/1.25;p.setX(i,p.getX(i)+t*t*.75);p.setY(i,p.getY(i)-t*t*.42)}cg.computeVertexNormals();
     var cap=new T.Group(),cm=new T.Mesh(cg,M.capStripe);cm.position.y=.56;cm.castShadow=true;cap.add(cm);
     var band=new T.Mesh(new T.TorusGeometry(.5,.085,10,32),M.knitCream);band.rotation.x=Math.PI/2;cap.add(band);
-    var pom=new T.Mesh(sph,M.feltCream);pom.scale.setScalar(.15);pom.position.set(.75,.78,0);pom.castShadow=true;cap.add(pom);
-    cap.position.set(0,P.hu-.16,-.02);P.up.add(cap);P.anim.push(function(A){cap.rotation.z=-.08+Math.sin(A.beat*Math.PI)*.07;cap.rotation.x=-A.hit*.08});
+    var pom=ball(M.feltCream,.15);pom.position.set(.75,.78,0);cap.add(pom);
+    cap.position.set(0,P.hu-.16,-.02);P.up.add(cap);P.anim.push(function(A){cap.rotation.z=-.08+Math.sin(A.beat*Math.PI)*.07+A.hit*.12;cap.rotation.x=-A.hit*.1});
     put(P.up,patch(starShape(.1,.045),M.feltMustard,{stitch:false}),P.U(0,.2),.0);
     put(P.up,patch(starShape(.085,.038),M.feltMustard,{stitch:false}),P.U(.55,.13),0,.3);
     put(P.up,patch(starShape(.06,.027),M.feltCream,{stitch:false}),P.U(-.54,.2),0,-.2);
     put(P.body,patch(moonShape(.15),M.feltMustard),P.TS(.34,.98),0,.3);
   }}
 ];
-function collar(P,mat){[-1,1].forEach(function(s){put(P.body,patch(poly([[0,.1],[s*.36,.14],[s*.1,-.2]]),mat,{depth:.03}),P.TS(s*.04,1.3),.0)})}
 
 function build(def,idx){
-  var H=def.head,w=H.w,hu=H.hu,hj=H.hj,d=H.d,r=H.r,hm=def.mat,root=new T.Group(),body=new T.Group();root.add(body);root.userData.pid=idx;
-  var TD={w:1.38,h:1.45,d:.8,r:.38,flat:'bottom'},torso=new T.Mesh(rbox(TD.w,TD.h,TD.d,TD.r,8,'bottom'),def.top);torso.position.y=TD.h/2;body.add(torso);
+  var H=def.head,w=H.w,hu=H.hu,hj=H.hj,d=H.d,r=H.r,hm=def.mat,plush=!!def.plush,fz=hm.userData.fuzz||0,bz=plush?fz*.78:0;
+  var root=new T.Group(),spin=new T.Group(),body=new T.Group();root.add(spin);spin.add(body);root.userData.pid=idx;THREAD=def.thread||M.thread;
+  var TD={w:1.38,h:1.45,d:.8,r:.38,flat:'bottom'},torso=new T.Mesh(rbox(TD.w,TD.h,TD.d,TD.r,8,'bottom'),def.top||hm);torso.position.y=TD.h/2;body.add(torso);
   var TS=function(x,y){var s=surf(TD,x,y-TD.h/2);s.p.y+=TD.h/2;return s};
-  var arms=[-1,1].map(function(sd){var a=new T.Group();a.position.set(sd*.63,1.12,0);var sl=new T.Mesh(armGeo,def.sleeve||def.top);sl.position.y=-.36;var hand=new T.Mesh(sph,hm);hand.scale.setScalar(.2);hand.position.y=-.82;a.add(sl,hand);body.add(a);return a});
+  var arms=[-1,1].map(function(sd){var a=new T.Group();a.position.set(sd*.66,1.14,0);var sl=new T.Mesh(armGeo,def.top||hm);sl.position.y=-.36;var hand=new T.Mesh(handGeo,hm);hand.position.y=-.82;a.add(sl,hand);body.add(a);
+    if(plush){fuzzOn(sl,0,3.3,3.1);fuzzOn(hand,0,4.3,2.2)}return a});
   var neck=new T.Mesh(neckGeo,hm);neck.position.y=1.5;body.add(neck);
   var headPivot=new T.Group();headPivot.position.y=1.56;body.add(headPivot);
   var hinge=new T.Group();hinge.position.set(0,hj,-d*.4);headPivot.add(hinge);
   var upP=new T.Group(),jawP=new T.Group();hinge.add(upP,jawP);
   var up=new T.Group(),jaw=new T.Group();up.position.z=jaw.position.z=d*.4;upP.add(up);jawP.add(jaw);
-  var UD={w:w,h:hu,d:d,r:r,flat:'bottom'},JD={w:w*.97,h:hj,d:d*.97,r:Math.min(r,hj*.85),flat:'top'};
-  var um=new T.Mesh(rbox(w,hu,d,r,12,'bottom'),hm);um.position.y=hu/2;up.add(um);
-  var jm=new T.Mesh(rbox(JD.w,hj,JD.d,JD.r,10,'top'),hm);jm.position.y=-hj/2;jaw.add(jm);
-  THREAD=def.thread||M.thread;var fz=hm.userData.fuzz||0,lipM=def.lipMat||(def.lipMat=fabric('felt',hexOf(mixA(def.hex,'#000000',.38)),{seed:60+idx,fuzz:0}));
-  var lu=new T.Mesh(lipGeo(w,d,r),lipM);lu.position.y=.008;up.add(lu);var lj=new T.Mesh(lipGeo(JD.w,JD.d,JD.r),lipM);lj.position.y=-.058;jaw.add(lj);
-  up.add(seam(UD,hu/2,ring(UD,.14-hu/2,.056),fz));jaw.add(seam(JD,-hj/2,ring(JD,-.14+hj/2,.056),fz));
-  var U=function(x,y){var s=surf(UD,x,y-hu/2);s.p.y+=hu/2;return s},J=function(x,y){var s=surf(JD,x,y+hj/2);s.p.y-=hj/2;return s};
-  var plate=new T.ShapeGeometry(rrect(w*.9,d*.9,Math.max(.02,r*.9)),8);
-  var roof=new T.Mesh(plate,M.roof);roof.rotation.x=Math.PI/2;roof.position.y=-.016;up.add(roof);
-  var fl=new T.Mesh(plate,M.gum);fl.rotation.x=-Math.PI/2;fl.position.y=.016;jaw.add(fl);
-  var th=new T.Mesh(sph,M.roof);th.scale.set(w*.4,.25,d*.3);th.position.set(0,hj,-d*.1);headPivot.add(th);
-  var tg=new T.Mesh(sph,M.tongue);tg.scale.set(w*.25,.06,d*.27);tg.position.set(0,.038,d*.13);jaw.add(tg);
-  /* teeth follow the curve of the lip */
-  var R=rng(100+idx*17),tn=def.teeth,span=w*.36,ts=def.toothScale||1;
-  function lip(D,x){var ax=Math.abs(x)-(D.w/2-D.r),nz=ax>0?Math.sqrt(Math.max(0,D.r*D.r-ax*ax)):D.r;return{z:D.d/2-D.r+nz,ry:ax>0?Math.atan2(Math.sign(x)*ax,nz):0}}
-  function tooth(par,x,y,th2,tw,D,inset,rot){var q=lip(D,x),t=new T.Mesh(toothGeo,M.tooth);t.scale.set(tw,th2,.095);t.position.set(x,y,q.z-inset);t.rotation.set(0,q.ry,rot);t.castShadow=true;par.add(t)}
-  for(var i=0;i<tn;i++){var u=i/(tn-1),x=(u-.5)*2*span,mid=1-Math.abs(u-.5)*1.1,h2=(.155+.08*mid)*(.85+R()*.3)*ts*(def.under?.8:1);tooth(up,x,-h2/2+.035,h2,2*span/tn*.92*(.85+R()*.3),UD,.085,(R()-.5)*.16)}
-  for(i=0;i<tn-1;i++){u=(i+.5)/(tn-1);x=(u-.5)*2*span;h2=(.12+.05*(1-Math.abs(u-.5)))*(.85+R()*.3)*ts*(def.under?1.6:1);tooth(jaw,x,h2/2-.03,h2,2*span/tn*.86*(.85+R()*.3),JD,def.under?.06:.125,(R()-.5)*.16)}
-  var eyes=def.eyes.map(function(e){var g=makeEye(e,hm),s=U(e.x,e.y);put(up,g,s,-e.r*.1);return g.userData});
-  var P={def:def,root:root,body:body,headPivot:headPivot,upP:upP,jawP:jawP,up:up,jaw:jaw,U:U,J:J,TS:TS,arms:arms,eyes:eyes,anim:[],w:w,hu:hu,hj:hj,d:d,r:r,open:0,yaw:0};
+  var U,J,P,smileG=null,blush=[];
+  if(plush){ /* one soft rounded head, a stitched smile and two blushing cheeks */
+    var ht=hu+hj,cy=(hu-hj)/2,HD={w:w,h:ht,d:d,r:r},hmesh=new T.Mesh(rbox(w,ht,d,r,14),hm);hmesh.position.y=cy;up.add(hmesh);fuzzOn(hmesh,0);fuzzOn(torso,-1);
+    U=J=function(x,y){var s=surf(HD,x,y-cy);s.p.y+=cy;return s};jaw=up;neck.visible=false;headPivot.position.y=1.37;headPivot.scale.setScalar(1.16);
+    var pts=[],c0=new T.Vector3(),sm=def.smile;for(var k=0;k<=14;k++){var x=(k/14-.5)*sm.w,s=U(x,sm.y+sm.c*Math.pow(Math.abs(x)/(sm.w/2),2)),q=s.p.clone().addScaledVector(s.n,bz+.012);pts.push(q);c0.add(q)}
+    c0.multiplyScalar(1/pts.length);pts.forEach(function(q){q.sub(c0)});smileG=new T.Group();smileG.position.copy(c0);smileG.add(new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),28,.021,8),M.ink));up.add(smileG);
+    [-1,1].forEach(function(sd){var b=new T.Mesh(new T.CircleGeometry(.11,28),M[def.blushMat||'blush']);put(up,b,U(sd*def.blush.x,def.blush.y),bz);blush.push(b)});
+    put(body,patch(rrect(.62,.66,.3),def.bellyMat||(def.bellyMat=fabric('felt',def.belly,{seed:80+idx,fuzz:0,size:256})),{depth:.03}),TS(0,.56),bz);
+  }else{ /* the two-part head with lips, seams and teeth (mouth kept shut) */
+    var UD={w:w,h:hu,d:d,r:r,flat:'bottom'},JD={w:w*.97,h:hj,d:d*.97,r:Math.min(r,hj*.85),flat:'top'};
+    var um=new T.Mesh(rbox(w,hu,d,r,12,'bottom'),hm);um.position.y=hu/2;up.add(um);var jm=new T.Mesh(rbox(JD.w,hj,JD.d,JD.r,10,'top'),hm);jm.position.y=-hj/2;jaw.add(jm);
+    var lipM=def.lipMat||(def.lipMat=fabric('felt',hexOf(mixA(def.hex,'#000000',.38)),{seed:60+idx,fuzz:0,size:256}));
+    var lu=new T.Mesh(lipGeo(w,d,r),lipM);lu.position.y=.008;up.add(lu);var lj=new T.Mesh(lipGeo(JD.w,JD.d,JD.r),lipM);lj.position.y=-.058;jaw.add(lj);
+    up.add(seam(UD,hu/2,ring(UD,.14-hu/2,.056),fz));jaw.add(seam(JD,-hj/2,ring(JD,-.14+hj/2,.056),fz));
+    U=function(x,y){var s=surf(UD,x,y-hu/2);s.p.y+=hu/2;return s};J=function(x,y){var s=surf(JD,x,y+hj/2);s.p.y-=hj/2;return s};
+    fuzzOn(um,-1);fuzzOn(jm,1);fuzzOn(torso,-1);
+  }
+  var lidM=plush?(def.lidMat||(def.lidMat=fabric('felt',def.hex,{seed:70+idx,fuzz:0,size:256}))):hm;
+  var eyes=def.eyes.map(function(e){var g=makeEye(e,lidM),s=U(e.x,e.y);put(up,g,s,plush?(e.button?bz:.035):-e.r*.1);return g.userData});
+  P={def:def,root:root,spin:spin,body:body,headPivot:headPivot,up:up,jaw:jaw,U:U,J:J,TS:TS,arms:arms,eyes:eyes,anim:[],smileG:smileG,blush:blush,w:w,hu:hu,hj:hj,d:d,r:r,fz:fz,bz:bz,yaw:0};
   def.extra(P);
-  fuzzOn(um,-1);fuzzOn(jm,1);fuzzOn(torso,-1);
-  var sg=makeSign(def);sg.position.set(0,.8,.7);sg.rotation.x=-.1;body.add(sg);
-  var tris=0,st=0,vt=0;root.traverse(function(o){if(o.isMesh&&!o.userData.shell){o.castShadow=true;var g=o.geometry,n=(g.index?g.index.count:g.attributes.position.count)/3,k=o.isInstancedMesh?o.count:1;tris+=n*k;vt+=g.attributes.position.count*k;if(o.userData.stitch)st+=o.userData.stitch}});
-  torso.receiveShadow=true;P.tris=Math.round(tris);P.verts=vt;P.stitches=st;P.teeth=tn*2-1;
+  var tris=0,st=0,vt=0;P.shells=[];root.traverse(function(o){if(!o.isMesh)return;if(o.userData.shell){P.shells.push(o);return}o.castShadow=true;var g=o.geometry,n=(g.index?g.index.count:g.attributes.position.count)/3,k=o.isInstancedMesh?o.count:1;tris+=n*k;vt+=g.attributes.position.count*k;if(o.userData.stitch)st+=o.userData.stitch});
+  torso.receiveShadow=true;P.tris=Math.round(tris);P.verts=vt;P.stitches=st;
   return P;
 }
 
@@ -510,35 +512,52 @@ puppets.forEach(function(p,i){p.root.position.copy(SLOTS[i]);scene.add(p.root)})
 
 /* ---------- state ---------- */
 var S={sel:0,view:'solo',shade:'fabric',lift:0,zoom:1};
-var orb={az:0,el:0},cs=null,manual=false,lastManual=null,NOW=0,CPS=26;
-var talk={i:-1,t0:0,text:''};
-function say(i){talk.i=i;talk.t0=NOW+.5;talk.text=i<0?'':puppets[i].def.say}
+var orb={az:0,el:0},cs=null,manual=false,lastManual=null,NOW=0;
+var act={i:-1,t0:0};                                   /* who is performing, and since when */
+function perform(i){act.i=i;act.t0=NOW+.6}             /* the move starts once the agent has reached the spot */
+function lod(){ /* full fur for the one on the spot, every other layer for the rest */
+  puppets.forEach(function(p,i){var full=S.view==='solo'&&i===S.sel;p.shells.forEach(function(s){s.visible=S.shade==='fabric'&&(full||!s.userData.lod)})});
+}
 
-/* calm by design: they breathe, look around and talk. Nobody jumps. */
+/* ---------- one move each ---------- */
+function ease(x){return x<=0?0:x>=1?1:x*x*(3-2*x)}
+function ramp(u,a,b){return ease((u-a)/(b-a))}
+function bump(u,a,b){return u<=a||u>=b?0:Math.sin((u-a)/(b-a)*Math.PI)}
+var ACT={
+  spin:function(u,o){var p=ramp(u,0,1.5);o.ry=6.2832*p;o.armOut=bump(u,0,1.5)*.95;o.lean=Math.sin(p*6.2832)*.05;o.nod=bump(u,1.55,2.05)*.22;o.smile=ramp(u,1.4,1.9);o.hit=bump(u,0,1.5)*.6},
+  shoulder:function(u,o){var back=1-ramp(u,3.0,3.8);o.ry=2.3*ramp(u,-.5,0)*back;o.hy=-1.75*ramp(u,.15,.85)*back;o.tilt=.16*ramp(u,.5,1)*back;o.wink=bump(u,1.2,1.7);o.smile=ramp(u,1,1.5);o.armOut=.1;o.hit=bump(u,.15,.85)*.5},
+  deliver:function(u,o){o.flap=bump(u,.1,.7)+bump(u,.75,1.35);o.hop=bump(u,.1,.45)*.14+bump(u,.75,1.1)*.14;o.bow=bump(u,1.35,2.35)*.38;o.smile=ramp(u,.2,.6)},
+  salute:function(u,o){o.hy=-.6*bump(u,.1,.75)+.6*bump(u,.75,1.4);o.armR=ramp(u,1.4,1.75)*(1-ramp(u,2.7,3.1));o.nod=bump(u,1.95,2.25)*.2+bump(u,2.3,2.6)*.2;o.smile=ramp(u,1.6,2)},
+  wave:function(u,o){var on=ramp(u,.1,.45)*(1-ramp(u,2.5,2.9));o.armR=on;o.waveR=on*Math.sin(u*11)*.35;o.lean=on*Math.sin(u*5.5)*.07;o.tilt=on*.1;o.smile=ramp(u,.2,.6);o.hit=on*Math.abs(Math.sin(u*5.5))},
+  jumpspin:function(u,o){var p=clamp((u-.35)/.95,0,1),air=u>.35&&u<1.3;o.squash=bump(u,0,.4)*.16+bump(u,1.3,1.65)*.2;o.jump=air?1.5*4*p*(1-p):0;o.ry=6.2832*ease(p);o.armUp=air?1:ramp(u,.15,.35)*(1-ramp(u,1.3,1.5));o.armOut=bump(u,1.6,2.6)*.6;o.smile=ramp(u,1.3,1.6);o.hit=air?.7:0},
+  doze:function(u,o){var sleep=ramp(u,.2,1.3)*(1-ramp(u,1.7,1.82)),wake=bump(u,1.75,2.5);o.lids=sleep-wake*.5;o.nod=sleep*.38;o.sink=sleep*.06;o.hop=bump(u,1.75,2.05)*.14;o.hit=wake}
+};
 function animate(p,i,t,dt,az){
   var ph=i*1.7,solo=S.view==='solo'&&i===S.sel,tg=solo?SPOT:SLOTS[i],kk=1-Math.exp(-dt*3.4),calm=reduce&&!manual;
   var b=calm?0:Math.sin(t*1.5+ph),s2=calm?0:Math.sin(t*.62+ph*1.3),s3=calm?0:Math.sin(t*.37+ph*.7);
-  /* talking: the jaw follows the letters of the line as it is typed */
-  var target=0;
-  if(talk.i===i&&solo&&!calm){var c=Math.floor((t-talk.t0)*CPS);if(c>=0&&c<talk.text.length){var ch=talk.text.charAt(c);target=/[aeiouy]/i.test(ch)?1:/[a-z0-9]/i.test(ch)?.5:.06}}
-  p.open+=(target-p.open)*(1-Math.exp(-dt*(target>p.open?30:14)));
-  var a=.13+p.open*.4;p.jawP.rotation.x=a*.74;p.upP.rotation.x=-a*.26;
+  var o={ry:0,hy:0,tilt:0,nod:0,lean:0,bow:0,jump:0,hop:0,squash:0,sink:0,armOut:0,armUp:0,armR:0,waveR:0,wink:0,smile:0,lids:0,flap:0,hit:0};
+  if(solo&&act.i===i&&!calm)ACT[p.def.act](t-act.t0,o);else if(solo)o.smile=1;
   /* the one on the spot looks at you; the others turn to listen */
   var yaw=0;if(S.view==='solo')yaw=solo?clamp(az*.45,-.55,.55):clamp(Math.atan2(SPOT.x-p.root.position.x,SPOT.z-p.root.position.z)*.6,-.7,.7);
   p.yaw=lerp(p.yaw,yaw,1-Math.exp(-dt*2.6));
-  p.body.rotation.set(0,s3*.03,s2*.018);p.body.scale.set(1,1+b*.008,1);
-  p.headPivot.rotation.set(-.03+b*.012+p.open*.05,p.yaw+s3*.06,s2*.03);
-  p.arms[0].rotation.set(-1.02+b*.012,0,-.22);p.arms[1].rotation.set(-1.02+b*.012,0,.22);
+  p.spin.rotation.y=o.ry;p.spin.position.y=o.jump+o.hop-o.sink;
+  p.body.rotation.set(o.bow,s3*.03,s2*.018+o.lean);p.body.scale.set(1+o.squash*.5,(1+b*.008)*(1-o.squash),1+o.squash*.5);
+  p.headPivot.rotation.set(-.03+b*.012+o.nod,p.yaw+s3*.06+o.hy,s2*.03+o.tilt);
+  var up=o.armUp*2.6,out=.12+o.armOut+b*.01;
+  p.arms[0].rotation.set(0,0,-(out+up));p.arms[1].rotation.set(-o.armR*.5,0,out+up+o.armR*2.5+o.waveR);
   for(var k=0;k<p.eyes.length;k++){var e=p.eyes[k];if(e.button)continue;
     e.pg.position.x=e.px+(solo?clamp((az-p.yaw)*.5,-.5,.5)*e.r*.3:s3*e.r*.05);e.pg.position.y=e.py;
-    var tb=t*.29+.45+i*.37+k*.02,bf=tb-Math.floor(tb),blk=bf<.04?Math.sin(bf/.04*Math.PI):0;e.lid.rotation.x=-1.25+Math.min(1,e.rest+blk*(1-e.rest))*2.5}
-  var A={beat:t*.33+ph,hit:p.open*.55,t:t};for(k=0;k<p.anim.length;k++)p.anim[k](A);
+    var tb=t*.29+.45+i*.37+k*.02,bf=tb-Math.floor(tb),blk=bf<.04?Math.sin(bf/.04*Math.PI):0,cl=clamp(e.rest+o.lids+blk*(1-e.rest)+o.smile*.1,0,1);
+    if(k===1)cl=Math.max(cl,o.wink);e.lid.rotation.x=-1.25+cl*2.5;
+    var sq=1-clamp((cl-.6)/.34,0,1);e.pg.scale.y=Math.max(.04,sq);e.pg.visible=sq>.06} /* a closing lid squeezes the pupil shut */
+  if(p.smileG){p.smileG.scale.set(1+o.smile*.3,1+o.smile*.55,1);for(k=0;k<p.blush.length;k++)p.blush[k].scale.setScalar(1+o.smile*.18)}
+  var A={beat:t*.33+ph,hit:o.hit,flap:o.flap,t:t};for(k=0;k<p.anim.length;k++)p.anim[k](A);
   p.root.position.x=lerp(p.root.position.x,tg.x,kk);p.root.position.z=lerp(p.root.position.z,tg.z,kk);p.gy=lerp(p.gy==null?tg.y:p.gy,tg.y,kk);p.root.position.y=p.gy;
   p.root.rotation.y=lerp(p.root.rotation.y,solo?0:-tg.x*.07,kk);
 }
 function camGoal(){ /* where the camera sits, where the lens focuses (fz) and how wide it is open (ap) */
   var a=cam.aspect,th=Math.tan(cam.fov*Math.PI/360),d;
-  if(S.view==='solo'){d=Math.max(1.8/th,1.14/(th*a))*S.zoom;return{tx:0,ty:1.95+S.lift,tz:SPOT.z+.2,d:d,el:.04,f:38,fz:d-.45,ap:1.15}}
+  if(S.view==='solo'){d=Math.max(2.3/th,1.5/(th*a))*S.zoom;return{tx:0,ty:2.05+S.lift,tz:SPOT.z,d:d,el:.05,f:40,fz:d-.4,ap:1}}
   d=Math.max(3.1/th,4.45/(th*a));return{tx:0,ty:2.6,tz:-.1,d:d,el:.09,f:32,fz:d-1.05,ap:.4};
 }
 function draw(t){
@@ -548,11 +567,12 @@ function draw(t){
 }
 function update(t,dt,skip){
   dt=clamp(dt,0,.1);NOW=t;
-  var calm=reduce&&!manual,az=orb.az+(calm?0:Math.sin(t*.42)*.2);
-  for(var i=0;i<puppets.length;i++)animate(puppets[i],i,t,dt,az);
+  var calm=reduce&&!manual,az=orb.az+(calm?0:Math.sin(t*.42)*.16),i;
+  for(i=0;i<puppets.length;i++)animate(puppets[i],i,t,dt,az);
+  for(i=0;i<FURMATS.length;i++)if(FURMATS[i].userData.uT)FURMATS[i].userData.uT.value=calm?0:t;
   var g=camGoal();if(!cs)cs=g;var k=1-Math.exp(-dt*3.6);for(var q in g)cs[q]=lerp(cs[q],g[q],k);
-  var el=clamp(cs.el+orb.el+(calm?0:Math.sin(t*.31)*.02),-.1,.75);
-  cam.position.set(cs.tx+Math.sin(az)*Math.cos(el)*cs.d,cs.ty+Math.sin(el)*cs.d,cs.tz+Math.cos(az)*Math.cos(el)*cs.d);cam.lookAt(cs.tx,cs.ty,cs.tz);
+  var el=clamp(cs.el+orb.el+(calm?0:Math.sin(t*.31)*.02),-.1,.75),ty=cs.ty+(S.view==='solo'?puppets[S.sel].spin.position.y*.45:0);
+  cam.position.set(cs.tx+Math.sin(az)*Math.cos(el)*cs.d,ty+Math.sin(el)*cs.d,cs.tz+Math.cos(az)*Math.cos(el)*cs.d);cam.lookAt(cs.tx,ty,cs.tz);
   scene.fog.near=cs.d+1.6;scene.fog.far=cs.d+cs.f;
   if(!skip)draw(t);ui(t);
 }
@@ -563,30 +583,33 @@ function frame(){
 }
 
 /* ---------- interface ---------- */
-var castEl=$('#cast'),sayEl=$('#say'),castBtns=[],shown=-1,shownFor=-2;
+var castEl=$('#cast'),nameEl=$('#w-name'),roleEl=$('#w-role'),lineEl=$('#w-line'),didhEl=$('#w-didh'),didEl=$('#w-did'),kickEl=$('#w-kick'),castBtns=[],rows=[];
+var card={t0:0,text:'',typed:-1},CPS=30;
 function el(t,c,txt){var e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e}
 function press(id,on){$(id).setAttribute('aria-pressed',on?'true':'false')}
-DEFS.forEach(function(d,i){var li=el('li'),b=el('button'),sw=el('i','sw');b.type='button';sw.style.background=d.hex;
-  b.appendChild(sw);b.appendChild(el('b','',d.name));b.appendChild(el('em','',d.role));
+DEFS.forEach(function(d,i){var li=el('li'),b=el('button'),sw=el('i','sw');b.type='button';sw.style.background=d.hex;b.appendChild(sw);b.appendChild(document.createTextNode(d.name));
   b.addEventListener('click',function(){select(i,true)});li.appendChild(b);castEl.appendChild(li);castBtns.push(b)});
-function paintView(){press('#vsolo',S.view==='solo');press('#vteam',S.view==='team')}
-function select(i,goSolo){
-  S.sel=i;if(goSolo)S.view='solo';var p=puppets[i],d=p.def;
-  castBtns.forEach(function(b,k){b.setAttribute('aria-pressed',k===i?'true':'false')});
-  $('#b-cloth').textContent=d.cloth;$('#b-name').textContent=d.name;$('#b-role').textContent=d.role;$('#b-pitch').textContent=d.pitch;
-  var rows=$('#b-rows');rows.textContent='';d.brief.forEach(function(r){rows.appendChild(el('dt','',r[0]));rows.appendChild(el('dd','',r[1]))});
-  $('#b-made').textContent='Sewn in code, no model files: '+d.cloth.toLowerCase()+', '+p.stitches+' yarn stitches and '+p.teeth+' teeth.';
-  say(S.view==='solo'?i:-1);paintView();
+function tell(kick,name,role,line,head,list){ /* the text on the right; ui() then brings it in piece by piece */
+  kickEl.textContent=kick;nameEl.textContent=name;roleEl.textContent=role;didhEl.textContent=head;card.text=line;card.typed=-1;card.t0=NOW;
+  lineEl.setAttribute('aria-label',line);didEl.textContent='';rows=list.map(function(r){var li=el('li'),box=el('div');li.appendChild(el('i'));box.appendChild(el('b','',r[0]));box.appendChild(el('span','',r[1]));li.appendChild(box);didEl.appendChild(li);return li});
 }
-function setView(v){S.view=v;say(v==='solo'?S.sel:-1);paintView()}
+function paint(){
+  press('#vsolo',S.view==='solo');press('#vteam',S.view==='team');castBtns.forEach(function(b,k){b.setAttribute('aria-pressed',S.view==='solo'&&k===S.sel?'true':'false')});
+  if(S.view==='solo'){var d=DEFS[S.sel];tell(d.cloth+' · agent '+(S.sel+1)+' of '+DEFS.length,d.name,d.role,'“'+d.say+'”','What I did for you',d.did);perform(S.sel)}
+  else{tell('Seven agents','The crew','by Shelly Or Gisser','One for every job you would rather not do.','Who does what',DEFS.map(function(d){return[d.role,d.name]}));act.i=-1}
+  lod();
+}
+function select(i,goSolo){S.sel=i;if(goSolo)S.view='solo';paint()}
+function setView(v){S.view=v;paint()}
 var wireMat=new T.MeshBasicMaterial({color:new T.Color(cssVar('--accent')||'#ff5c9d'),wireframe:true,toneMapped:false,transparent:true,opacity:.42,depthWrite:false});
-function setShade(m){S.shade=m;SHELLS.forEach(function(s){s.visible=m==='fabric'});scene.overrideMaterial=m==='wire'?wireMat:null;press('#wire',m==='wire')}
-function ui(t){ /* the caption types in step with the jaw */
-  var i=talk.i,n=talk.text.length,c=i<0?0:((reduce&&!manual)?n:clamp(Math.floor((t-talk.t0)*CPS),0,n));
-  if(i===shownFor&&c===shown)return;shownFor=i;shown=c;sayEl.textContent='';
-  if(i<0){sayEl.removeAttribute('aria-label');sayEl.appendChild(el('b','','The crew'));sayEl.appendChild(document.createTextNode('Seven agents, one for every job you would rather not do.'));return}
-  sayEl.setAttribute('aria-label',puppets[i].def.name+' says: '+talk.text);
-  sayEl.appendChild(el('b','',puppets[i].def.name));sayEl.appendChild(document.createTextNode('“'+talk.text.slice(0,c)+(c<n?'':'”')));
+function setShade(m){S.shade=m;scene.overrideMaterial=m==='wire'?wireMat:null;press('#wire',m==='wire');lod()}
+function ui(t){ /* the name rises, the line types itself, then the done-list ticks in */
+  var still=reduce&&!manual,u=still?99:t-card.t0,e=1-ease(u/.6),k,n=card.text.length,c=clamp(Math.floor((u-.75)*CPS),0,n);
+  nameEl.style.transform='translateY('+(e*108).toFixed(1)+'%)';
+  e=ease((u-.4)/.4);roleEl.style.opacity=e.toFixed(3);roleEl.style.transform='translateY('+((1-e)*8).toFixed(1)+'px)';
+  if(c!==card.typed){card.typed=c;lineEl.textContent=card.text.slice(0,c)}
+  e=ease((u-1.5)/.4);didhEl.style.opacity=e.toFixed(3);
+  for(k=0;k<rows.length;k++){e=ease((u-1.7-k*(rows.length>4?.12:.4))/.4);rows[k].style.opacity=e.toFixed(3);rows[k].style.transform='translateY('+((1-e)*10).toFixed(1)+'px)'}
 }
 $('#vsolo').addEventListener('click',function(){setView('solo')});$('#vteam').addEventListener('click',function(){setView('team')});
 $('#wire').addEventListener('click',function(){setShade(S.shade==='wire'?'fabric':'wire')});
@@ -614,7 +637,7 @@ requestAnimationFrame(frame);
 window.aiCrew={
   select:select,setView:setView,setShade:setShade,puppets:puppets,set:function(k,v){S[k]=v},
   renderAt:function(sec,skip){manual=true;var dt=lastManual==null?1/30:sec-lastManual;lastManual=sec;update(sec,dt,skip)},
-  snap:function(){cs=camGoal();puppets.forEach(function(p,i){var solo=S.view==='solo'&&i===S.sel,tg=solo?SPOT:SLOTS[i];p.root.position.copy(tg);p.gy=tg.y;p.root.rotation.y=solo?0:-tg.x*.07;p.yaw=0;p.open=0})}
+  snap:function(){cs=camGoal();puppets.forEach(function(p,i){var solo=S.view==='solo'&&i===S.sel,tg=solo?SPOT:SLOTS[i];p.root.position.copy(tg);p.gy=tg.y;p.root.rotation.y=solo?0:-tg.x*.07;p.yaw=0})}
 };
 }
 boot();
